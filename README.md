@@ -1,3 +1,3 @@
-See finsim in action here:
+See charting finance in action here:
 
-https://finsim.club
+https://charting.finance
