@@ -150,9 +150,10 @@ div.scrollable-x > .asset {
 .tab {
     background-color: inherit;
     float: left;
-    border: 1px whitesmoke;
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
     outline: none;
-    width: 50%;
+    width: 33%;
 }
 
 .tab.active {

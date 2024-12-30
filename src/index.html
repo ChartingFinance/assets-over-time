@@ -98,13 +98,21 @@
                     <div class="tab" id="tab2" onclick="tab2_click()">
                         <blockquote>Liquidity View</blockquote>
                     </div>
+                    <div>
+                        <div class="tab" id="tab3" style="width: 34%" onclick="tab3_click()">
+                            <blockquote>Cash Flow View</blockquote>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="width: 100%">
                     <canvas id="chartAssetCanvas"></canvas>
                 </div>
                 <div style="width: 100%; display: none">
-                    <canvas id="chartFlowCanvas"></canvas>
+                    <canvas id="chartLiquidityCanvas"></canvas>
+                </div>
+                <div style="width: 100%; display: none">
+                    <canvas id="chartCashFlowCanvas"></canvas>
                 </div>
                 
             </div>
@@ -169,9 +177,11 @@
             var totalElement = document.getElementById('total');
             
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
-            var chartFlowCanvas = document.getElementById('chartFlowCanvas');
+            var chartLiquidityCanvas = document.getElementById('chartLiquidityCanvas');
+            var chartCashFlowCanvas = document.getElementById('chartCashFlowCanvas');
             var activeAssetCanvas = null;
-            var activeFlowCanvas = null;
+            var activeLiquidityCanvas = null;
+            var activeCashFlowCanvas = null;
 
             var highlightDisplayName = null;
         </script>
@@ -333,19 +343,40 @@
             function tab1_click() {
                 if (tab2.classList.contains('active')) {
                     tab2.classList.remove('active');
-                    chartFlowCanvas.parentElement.style.display = 'none';
-                    tab1.classList.add('active');
-                    chartAssetCanvas.parentElement.style.display = '';
+                    chartLiquidityCanvas.parentElement.style.display = 'none';
                 }
+                else if (tab3.classList.contains('active')) {
+                    tab3.classList.remove('active');
+                    chartCashFlowCanvas.parentElement.style.display = 'none';                    
+                }
+                tab1.classList.add('active');
+                chartAssetCanvas.parentElement.style.display = '';
             }
 
             function tab2_click() {
                 if (tab1.classList.contains('active')) {
                     tab1.classList.remove('active');
                     chartAssetCanvas.parentElement.style.display = 'none';
-                    tab2.classList.add('active');
-                    chartFlowCanvas.parentElement.style.display = '';
                 }
+                else if (tab3.classList.contains('active')) {
+                    tab3.classList.remove('active');
+                    chartCashFlowCanvas.parentElement.style.display = 'none';                    
+                }
+                tab2.classList.add('active');
+                chartLiquidityCanvas.parentElement.style.display = '';                
+            }
+
+            function tab3_click() {
+                if (tab1.classList.contains('active')) {
+                    tab1.classList.remove('active');
+                    chartAssetCanvas.parentElement.style.display = 'none';
+                }
+                else if (tab2.classList.contains('active')) {
+                    tab2.classList.remove('active');
+                    chartLiquidityCanvas.parentElement.style.display = 'none';                    
+                }
+                tab3.classList.add('active');
+                chartCashFlowCanvas.parentElement.style.display = '';                
             }
         </script>
         <script>
@@ -372,7 +403,8 @@
                 let modelAssets = membrane_htmlElementsToAssetModels();
                 charting_buildFromModelAssets(modelAssets, false);
                 activeAssetCanvas.update(); 
-                activeFlowCanvas.update();                
+                activeLiquidityCanvas.update();
+                activeCashFlowCanvas.update();                
             }
 
             function calculate() {
@@ -401,12 +433,16 @@
             function innerCalculate() {              
                 if (activeAssetCanvas != null)
                     activeAssetCanvas.destroy();
-                if (activeFlowCanvas != null)
-                    activeFlowCanvas.destroy();
+                if (activeLiquidityCanvas != null)
+                    activeLiquidityCanvas.destroy();
+                if (activeCashFlowCanvas != null)
+                    activeCashFlowCanvas.destroy();
                 if (charting_jsonAssetsChartData != null)
                     activeAssetCanvas = new Chart(chartAssetCanvas, charting_jsonAssetsChartData);
-                if (charting_jsonFlowsChartData != null)
-                    activeFlowCanvas = new Chart(chartFlowCanvas, charting_jsonFlowsChartData);
+                if (charting_jsonLiquidityChartData != null)
+                    activeLiquidityCanvas = new Chart(chartLiquidityCanvas, charting_jsonLiquidityChartData);
+                if (charting_jsonCashFlowChartData != null)
+                    activeCashFlowCanvas = new Chart(chartCashFlowCanvas, charting_jsonCashFlowChartData);
             }
 
             function save() {

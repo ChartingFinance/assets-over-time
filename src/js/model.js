@@ -288,10 +288,10 @@ class ModelAsset {
         }
     }
 
-    monthlyFlowDataToDisplayFlowData(monthsSpan) {
-        this.displayFlowData = [];
+    monthlyLiquidityDataToDisplayLiquidityData(monthsSpan) {
+        this.displayLiquidityData = [];
         for (let ii = monthsSpan.offsetMonths; ii < this.monthlyDelta.length; ii += monthsSpan.combineMonths) {
-            this.displayFlowData.push(this.monthlyDelta[ii]);
+            this.displayLiquidityData.push(this.monthlyDelta[ii]);
         }
     }
 

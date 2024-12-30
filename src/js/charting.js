@@ -43,7 +43,7 @@ const lineChartConfig = {
       },
       title: {
         display: true,
-        text: 'Cash Flow Chart'
+        text: ''
       }
     }
   },
@@ -57,14 +57,13 @@ const lineChartData = {
 const lineChartDataSet = {
   label: '',
   data: []
-  //borderColor: Utils.CHART_COLORS.red,
-  //backgroundColor: Utils.transparentize(Utils.CHART_COLORS.red, 0.5),
 };
 
 const flowLineChartExclusions = ['home','mortgage'];
 
 var charting_jsonAssetsChartData = null;
-var charting_jsonFlowsChartData = null;
+var charting_jsonLiquidityChartData = null;
+var charting_jsonCashFlowChartData = null;
 
 function charting_buildMonthsSpan(firstDateInt, lastDateInt) {
   let totalMonths = util_totalMonths(firstDateInt, lastDateInt);
@@ -97,7 +96,7 @@ function charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets) {
     let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
     for (modelAsset of modelAssets) {
       modelAsset.monthlyAssetDataToDisplayAssetData(monthsSpan);
-      modelAsset.monthlyFlowDataToDisplayFlowData(monthsSpan);
+      modelAsset.monthlyLiquidityDataToDisplayLiquidityData(monthsSpan);
     }    
 }
 
@@ -237,38 +236,8 @@ function charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, m
   return chartingAssetConfig;
 }
 
-function charting_buildCashFlowDataSet(modelAssets) {
-  let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
-  cashFlowDataSet.label = 'Cash Flow';
-
-  let firstModelAsset = true;
-  for (const modelAsset of modelAssets) {
-    if (flowLineChartExclusions.includes(modelAsset.instrument))
-      continue;
-
-    for (let ii = 0; ii < modelAsset.displayFlowData.length; ii++) {
-      let displayData = modelAsset.displayFlowData[ii];
-      if (displayData == null)
-        displayData = 0.0;
-      if (firstModelAsset)
-        cashFlowDataSet.data.push(displayData);
-      else
-        cashFlowDataSet.data[ii] += displayData;
-
-      if (cashFlowDataSet.data[ii] > 0.0)
-        cashFlowDataSet.backgroundColor = positiveBackgroundColor;
-      else if (cashFlowDataSet.data[ii] < 0.0)
-        cashFlowDataSet.backgroundColor = negativeBackgroundColor;
-    }
-
-    firstModelAsset = false;
-  }
-
-  return cashFlowDataSet;
-}
-
 // The reduction keeps the modelAssets positionally in the array. This is so the colorId value is consistent across chart views.
-function charting_reducedModelAssetsForFlows(modelAssets) {
+function charting_reducedModelAssetsForLiquidity(modelAssets) {
   let results = [];
   for (const modelAsset of modelAssets) {
       if (flowLineChartExclusions.includes(modelAsset.instrument))
@@ -279,36 +248,36 @@ function charting_reducedModelAssetsForFlows(modelAssets) {
   return results;
 }
 
-function charting_buildDisplayFlowsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet) {
+function charting_buildDisplayLiquidityFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet) {
   if (firstDateInt == null) {
-    console.log('charting_buildDisplayFlowsFromModelAssets - null firstDateInt provided');
+    console.log('charting_buildDisplayLiquidityFromModelAssets - null firstDateInt provided');
     return null;
   }  
   else if (lastDateInt == null) {
-    console.log('charting_buildDisplayFlowsFromModelAssets - null lastDateInt provided');
+    console.log('charting_buildDisplayLiquidityFromModelAssets - null lastDateInt provided');
     return null;
   }
   
-  let chartingFlowConfig = null;
-  let chartingFlowData = null;
+  let chartingLiquidityConfig = null;
+  let chartingLiquidityData = null;
 
-  if (!buildNewDataSet && charting_jsonFlowsChartData == null) {
-    console.log('charting_buildDisplayFlowsFromModelAssets - attempting to reuse null charting_jsonFlowsChartData. Building new data set.');
+  if (!buildNewDataSet && charting_jsonLiquidityChartData == null) {
+    console.log('charting_buildDisplayLiquidityFromModelAssets - attempting to reuse null charting_jsonLiquidityChartData. Building new data set.');
     buildNewDataSet = true;
   }
 
   if (buildNewDataSet) {
-    chartingFlowConfig = JSON.parse(JSON.stringify(lineChartConfig));    
-    chartingFlowData = JSON.parse(JSON.stringify(lineChartData));
+    chartingLiquidityConfig = JSON.parse(JSON.stringify(lineChartConfig));    
+    chartingLiquidityData = JSON.parse(JSON.stringify(lineChartData));
     let labels = charting_buildDisplayLabels(firstDateInt, lastDateInt);
-    chartingFlowData.labels = labels;  
+    chartingLiquidityData.labels = labels;  
   }
   else {
-    chartingFlowConfig = charting_jsonFlowsChartData;
-    chartingFlowData = chartingFlowConfig.data;
+    chartingLiquidityConfig = charting_jsonLiquidityChartData;
+    chartingLiquidityData = chartingLiquidityConfig.data;
   }
   
-  let reducedModelAssets = charting_reducedModelAssetsForFlows(modelAssets);
+  let reducedModelAssets = charting_reducedModelAssetsForLiquidity(modelAssets);
   let colorId = -1;
   let dataIndex = -1;
 
@@ -320,38 +289,101 @@ function charting_buildDisplayFlowsFromModelAssets(firstDateInt, lastDateInt, mo
       modelAsset.colorId = colorId;
     ++dataIndex;
 
-    let chartingFlowDataSet = null;
+    let chartingLiquidityDataSet = null;
     
     if (buildNewDataSet) {
-      chartingFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
-      chartingFlowDataSet.label = modelAsset.displayName;
-      chartingFlowDataSet.data = modelAsset.displayFlowData;
+      chartingLiquidityDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
+      chartingLiquidityDataSet.label = modelAsset.displayName;
+      chartingLiquidityDataSet.data = modelAsset.displayLiquidityData;
     }
     else
-      chartingFlowDataSet = chartingFlowData.datasets[dataIndex];
+      chartingLiquidityDataSet = chartingLiquidityData.datasets[dataIndex];
 
     if (highlightDisplayName != null) {
       if (highlightDisplayName == modelAsset.displayName)
-        chartingFlowDataSet.backgroundColor = colorRange[modelAsset.colorId];
+        chartingLiquidityDataSet.backgroundColor = colorRange[modelAsset.colorId];
       else
-        chartingFlowDataSet.backgroundColor = 'whitesmoke'; 
+        chartingLiquidityDataSet.backgroundColor = 'whitesmoke'; 
     }
     else {
-      chartingFlowDataSet.backgroundColor = colorRange[modelAsset.colorId];       
+      chartingLiquidityDataSet.backgroundColor = colorRange[modelAsset.colorId];       
     }
 
     if (buildNewDataSet)
-      chartingFlowData.datasets.push(chartingFlowDataSet);
+      chartingLiquidityData.datasets.push(chartingLiquidityDataSet);
   }
 
-  if (buildNewDataSet) {
-    // determine total cash flow
-    let cashFlowDataSet = charting_buildCashFlowDataSet(modelAssets);
-    chartingFlowData.datasets.push(cashFlowDataSet);
+  chartingLiquidityConfig.data = chartingLiquidityData;
+  return chartingLiquidityConfig;
+}
+
+function charting_buildCashFlowDataSet(modelAssets, label, sign) {
+  let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
+  cashFlowDataSet.label = label;
+
+  let firstModelAsset = true;
+  for (const modelAsset of modelAssets) {
+    if (modelAsset == null)
+      continue;
+    else if (flowLineChartExclusions.includes(modelAsset.instrument))
+      continue;
+
+    for (let ii = 0; ii < modelAsset.displayLiquidityData.length; ii++) {
+
+      if (firstModelAsset)
+        cashFlowDataSet.data.push(0.0);
+
+      let displayData = modelAsset.displayLiquidityData[ii];
+      if (displayData == null)
+        displayData = 0.0;
+
+      if (sign > 0 && displayData > 0.0)
+        cashFlowDataSet.data[ii] += displayData;
+      else if (sign < 0 && displayData < 0.0)
+        cashFlowDataSet.data[ii] += displayData;
+      else if (sign == 0)
+        cashFlowDataSet.data[ii] += displayData;
+    }
+
+    firstModelAsset = false;
   }
 
-  chartingFlowConfig.data = chartingFlowData;
-  return chartingFlowConfig;
+  if (sign > 0)
+    cashFlowDataSet.backgroundColor = positiveBackgroundColor;
+  else if (sign < 0)
+    cashFlowDataSet.backgroundColor = negativeBackgroundColor;
+  else
+    cashFlowDataSet.backgroundColor = '#000';
+
+  return cashFlowDataSet;
+}
+
+function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets) {
+  if (firstDateInt == null) {
+    console.log('charting_buildDisplayCashFlowFromModelAssets - null firstDateInt provided');
+    return null;
+  }  
+  else if (lastDateInt == null) {
+    console.log('charting_buildDisplayCashFlowFromModelAssets - null lastDateInt provided');
+    return null;
+  }
+  
+  let chartingCashFlowConfig = JSON.parse(JSON.stringify(lineChartConfig));
+  let chartingCashFlowData = JSON.parse(JSON.stringify(lineChartData));
+  chartingCashFlowData.labels = charting_buildDisplayLabels(firstDateInt, lastDateInt);
+
+  let reducedModelAssets = charting_reducedModelAssetsForLiquidity(modelAssets);
+
+  let chartingCashFlowDataSet_credits = charting_buildCashFlowDataSet(reducedModelAssets, 'Credits', 1);
+  let chartingCashFlowDataSet_debits = charting_buildCashFlowDataSet(reducedModelAssets, 'Debits', -1);
+  let chartingCashFlowDataSet_cash = charting_buildCashFlowDataSet(reducedModelAssets, 'Cash', 0);
+    
+  chartingCashFlowData.datasets.push(chartingCashFlowDataSet_credits);
+  chartingCashFlowData.datasets.push(chartingCashFlowDataSet_debits);
+  chartingCashFlowData.datasets.push(chartingCashFlowDataSet_cash);
+
+  chartingCashFlowConfig.data = chartingCashFlowData;
+  return chartingCashFlowConfig;
 }
 
 function charting_buildFromModelAssets(modelAssets, buildNewDataSet) {
@@ -366,5 +398,6 @@ function charting_buildFromModelAssets(modelAssets, buildNewDataSet) {
   charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets);
 
   charting_jsonAssetsChartData = charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
-  charting_jsonFlowsChartData = charting_buildDisplayFlowsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+  charting_jsonLiquidityChartData = charting_buildDisplayLiquidityFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+  charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
 }
