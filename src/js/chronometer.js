@@ -56,6 +56,8 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
         }
     }
 
+    chronometer_applyTaxes(currentDateInt, modelAssets);
+
     if (firstDateInt.toInt() == currentDateInt.toInt())
         summary_setStartValue(startTotal);
 
@@ -65,4 +67,18 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
     summary_setAccumulatedValue(accumulatedValue);
 
     return totalMonths;
+}
+
+function chronometer_applyTaxes(currentDateInt, modelAssets) {
+    // think about quarterly tax estimates
+    if (currentDateInt.month == 1) {
+        if (!activeTaxTable)
+            console.log('activeTaxTable not set');
+        else {
+            let runningTax = new Currency();
+            for (const modelAsset of modelAssets) {
+                activeTaxTable.applyAnnualTax(modelAsset);
+            }           
+        }
+    }
 }

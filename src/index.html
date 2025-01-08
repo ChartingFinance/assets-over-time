@@ -12,7 +12,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="Charting financial simulations for saving, investment, retirement, and knowledge">
         <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large"/>
-        <title>📈 Charting Financial Models and Simulation for Saving, Investing, Retiring, and Knowledge</title>
+        <title>📈 Charting Financial Models and Projecting for Saving, Investing, Retiring, and Knowledge</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="js/charting.js"></script>
         <script src="js/chronometer.js"></script>
@@ -182,6 +182,7 @@
             var activeAssetCanvas = null;
             var activeLiquidityCanvas = null;
             var activeCashFlowCanvas = null;
+            var activeTaxTable = null;
 
             var highlightDisplayName = null;
         </script>
@@ -481,6 +482,8 @@
             connectAssetsContainerSelects();
             connectCreateAsset();
             connectRemoveAsset();
+            
+            activeTaxTable = new TaxTable();
         </script>
     </body>
 </html>

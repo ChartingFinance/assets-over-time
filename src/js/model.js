@@ -40,7 +40,7 @@ class ModelAsset {
             this.monthsRemaining = 0;
         this.annualReturnRate = annualReturnRate;
         this.accumulatedCurrency = new Currency(0.0);
-        this.monthlyDelta = [];
+        this.monthlyEarning = [];
         this.monthlyTotal = [];
         this.fundingSource = null;
         this.colorId = 0;
@@ -132,7 +132,7 @@ class ModelAsset {
     }
 
     startMonth() {
-        this.monthlyDelta = [];
+        this.monthlyEarning = [];
         this.monthlyTotal = [];
         this.monthsRemainingDynamic = this.monthsRemaining;
         this.finishCurrency.zero();
@@ -256,16 +256,16 @@ class ModelAsset {
 
         if (isInMonth) {
             if (isMonthlyExpense(this.instrument) || isMonthlyIncome(this.instrument)) {
-                this.monthlyDelta.push(this.finishCurrency.toCurrency())    
+                this.monthlyEarning.push(this.finishCurrency.toCurrency())    
             }
             else {
                 let postFinishCurrency = new Currency(this.finishCurrency.amount);
-                this.monthlyDelta.push(postFinishCurrency.subtract(preFinishCurrency).toCurrency())
+                this.monthlyEarning.push(postFinishCurrency.subtract(preFinishCurrency).toCurrency())
             }
             this.monthlyTotal.push(this.finishCurrency.toCurrency());
         }
         else {
-            this.monthlyDelta.push(0.0);
+            this.monthlyEarning.push(0.0);
             this.monthlyTotal.push(0.0);
         }
 
@@ -290,8 +290,8 @@ class ModelAsset {
 
     monthlyLiquidityDataToDisplayLiquidityData(monthsSpan) {
         this.displayLiquidityData = [];
-        for (let ii = monthsSpan.offsetMonths; ii < this.monthlyDelta.length; ii += monthsSpan.combineMonths) {
-            this.displayLiquidityData.push(this.monthlyDelta[ii]);
+        for (let ii = monthsSpan.offsetMonths; ii < this.monthlyEarning.length; ii += monthsSpan.combineMonths) {
+            this.displayLiquidityData.push(this.monthlyEarning[ii]);
         }
     }
 
@@ -302,6 +302,28 @@ class ModelAsset {
             return this.accumulatedCurrency;
         else
             return this.finishCurrency;
+    }
+
+    lastTwelveMonthTotal() {
+        let length = this.monthlyTotal.length;
+        let counter = 1;
+        let result = new Currency();
+        while (counter < 13 && length > 0) {
+            result.add(this.monthlyTotal[length-counter]);
+            ++counter;
+        }
+        return result;
+    }
+
+    lastTwelveMonthEarnings() {
+        let length = this.monthlyTotal.length;
+        let counter = 1;
+        let result = new Currency();
+        while (counter < 13 && length > 0) {
+            result.add(this.monthlyEarning[length-counter]);
+            ++counter;
+        }
+        return result;
     }
 
     isPositive() {
