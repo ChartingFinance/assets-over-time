@@ -262,6 +262,10 @@ function isMonthlyIncome(value) {
     return value == sInstrumentNames[sInstrumentsIDs.monthlyIncome];
 }
 
+function isTaxableAccount(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.taxableEquity];
+}
+
 function isFundableAsset(value) {
     if (value == sInstrumentNames[sInstrumentsIDs.cash])
         return true;

@@ -75,10 +75,7 @@ function chronometer_applyTaxes(currentDateInt, modelAssets) {
         if (!activeTaxTable)
             console.log('activeTaxTable not set');
         else {
-            let runningTax = new Currency();
-            for (const modelAsset of modelAssets) {
-                activeTaxTable.applyAnnualTax(modelAsset);
-            }           
+            activeTaxTable.applyAnnualTaxes(modelAssets);           
         }
     }
 }

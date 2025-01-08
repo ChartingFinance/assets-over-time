@@ -39,22 +39,34 @@ class TaxTable {
     }
 
     calculateIncome(modelAsset) {
-        if (isMonthlyIncome(modelAsset)) {
-            return modelAsset.lastTwelveMonthsTotal();
+        if (isMonthlyIncome(modelAsset.instrument)) {
+            return modelAsset.lastTwelveMonthTotal();
         }
         else
             return new Currency(0);
     }
 
     calculateShortTermCapitalGains(modelAsset) {
-        return new Currency(0);
+        //if (isMonthlyIncome(modelAsset)) {
+        //    return modelAsset.lastTwelveMonthTotal();
+        //}
+        //else
+            return new Currency(0);
     }
 
     calculateLongTermCaptialGains(modelAsset) {
-        return new Currency(0);
+        //if (isMonthlyIncome(modelAsset)) {
+        //    return modelAsset.lastTwelveMonthTotal();
+        //}
+        //else
+            return new Currency(0);
     }
 
     calculateMortgageDeduction(modelAsset) {
-        return new Currency(0);
+        if (isMortgage(modelAsset)) {
+            return modelAsset.lastTwelveMonthEarnings();
+        }
+        else
+            return new Currency(0);
     }
 }

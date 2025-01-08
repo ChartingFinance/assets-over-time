@@ -309,7 +309,8 @@ class ModelAsset {
         let counter = 1;
         let result = new Currency();
         while (counter < 13 && length > 0) {
-            result.add(this.monthlyTotal[length-counter]);
+            let c = new Currency(this.monthlyTotal[length-counter] * 100.0);
+            result.add(c);
             ++counter;
         }
         return result;
@@ -320,7 +321,8 @@ class ModelAsset {
         let counter = 1;
         let result = new Currency();
         while (counter < 13 && length > 0) {
-            result.add(this.monthlyEarning[length-counter]);
+            let c = new Currency(this.monthlyEarning[length-counter] * 100.0);
+            result.add(c);
             ++counter;
         }
         return result;
