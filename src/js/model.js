@@ -9,8 +9,8 @@ const sFinishValue = 'finishValue';
 const sAnnualReturnRate = 'annualReturnRate';
 const sFundingSource = 'fundingSource';
 
-const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash'];
-const sIntrumentDisplayNames = ['💲💰 Monthly Income', '💸💰 Monthly Expense', '🏡 House', '💸🏡 Mortgage', '💳 Debt', '🧾📈 Taxable Account', '⏳📈 Tax Deferred Account', '📈 Tax Free Account', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '💰 Cash'];
+const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash', 'federalIncomeTaxes'];
+const sIntrumentDisplayNames = ['💲💰 Monthly Income', '💸💰 Monthly Expense', '🏡 House', '💸🏡 Mortgage', '💳 Debt', '🧾📈 Taxable Account', '⏳📈 Tax Deferred Account', '📈 Tax Free Account', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '💰 Cash', 'Federal Income Taxes'];
 const sInstrumentsIDs = Object.freeze({
     monthlyIncome: 0,    
     monthlyExpense: 1,   
@@ -23,7 +23,8 @@ const sInstrumentsIDs = Object.freeze({
     usBond: 8,
     corpBond: 9,
     bank: 10,
-    cash: 11
+    cash: 11,
+    federalIncomeTaxes: 12
 });
 
 class ModelAsset {
@@ -39,9 +40,10 @@ class ModelAsset {
         else
             this.monthsRemaining = 0;
         this.annualReturnRate = annualReturnRate;
+        this.earningCurrency = new Currency(0.0);
         this.accumulatedCurrency = new Currency(0.0);
         this.monthlyEarning = [];
-        this.monthlyTotal = [];
+        this.monthlyValue = [];
         this.fundingSource = null;
         this.colorId = 0;
     }
@@ -133,28 +135,26 @@ class ModelAsset {
 
     startMonth() {
         this.monthlyEarning = [];
-        this.monthlyTotal = [];
+        this.monthlyValue = [];
         this.monthsRemainingDynamic = this.monthsRemaining;
+        this.earningCurrency.zero();
         this.finishCurrency.zero();
-
-        // bump 
     }
 
     applyMonth_common(isInMonth) {
 
         if (isInMonth) {
-            let currentAmount = new Currency(0.0);
-            if (this.hasMonthlyRate())
-                currentAmount = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-            else if (this.hasMonthlyAmount())
-                currentAmount = new Currency(0.0);
+            this.earningCurrency = new Currency(0.0);
 
-            this.credit(currentAmount);        
+            if (this.hasMonthlyRate())
+                this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
+
+            this.credit(this.earningCurrency);        
         }
 
     }
 
-    applyMonth_mortgage(isInMonth) {
+    applyMonth_mortgageOrDebt(isInMonth) {
 
         if (this.startCurrency.amount > 0) {
             this.startCurrency.amount *= -1;
@@ -164,16 +164,17 @@ class ModelAsset {
         if (isInMonth) {                	
 	        let monthlyMortgagePayment = (this.finishCurrency.amount * this.annualReturnRate.asMonthly()) * Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic)
 	        monthlyMortgagePayment /= Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic) - 1.0
-            let monthlyMortgageInterest = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-	        let monthlyMortgagePrincipal = new Currency(monthlyMortgagePayment - monthlyMortgageInterest.amount);            
+            this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
+	        let monthlyMortgagePrincipal = new Currency(monthlyMortgagePayment - this.earningCurrency.amount);            
             --this.monthsRemainingDynamic;
 
             this.finishCurrency.subtract(monthlyMortgagePrincipal);
-            this.accumulatedCurrency.add(new Currency(monthlyMortgagePayment));	
+            this.accumulatedCurrency.add(new Currency(monthlyMortgagePayment));            	
         }
 
     }
 
+    /*
     applyMonth_debt(isInMonth) {
 
         if (this.startCurrency.amount > 0) {
@@ -182,17 +183,19 @@ class ModelAsset {
         }
 
         if (isInMonth) {                	
-	        let monthlyMortgagePayment = (this.finishCurrency.amount * this.annualReturnRate.asMonthly()) * Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic)
-	        monthlyMortgagePayment /= Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic) - 1.0
-            let monthlyMortgageInterest = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-	        let monthlyMortgagePrincipal = new Currency(monthlyMortgagePayment - monthlyMortgageInterest.amount);            
+	        let monthlyPayment = (this.finishCurrency.amount * this.annualReturnRate.asMonthly()) * Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic)
+	        monthlyPayment /= Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic) - 1.0
+            let monthlyInterest = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
+	        let monthlyPrincipal = new Currency(monthlyPayment - monthlyInterest.amount);            
             --this.monthsRemainingDynamic;
             
-            this.finishCurrency.subtract(monthlyMortgagePrincipal);
-            this.accumulatedCurrency.add(new Currency(monthlyMortgagePayment));            	
+            this.finishCurrency.subtract(monthlyPrincipal);
+            this.accumulatedCurrency.add(new Currency(monthlyPayment));
+            this.monthlyEarnings.push(monthlyInterest.toCurrency())            	
         }
 
     }
+    */
 
     applyMonth_expenseOrIncome(isInMonth) {
 
@@ -209,10 +212,11 @@ class ModelAsset {
         }
 
         if (isInMonth) {
-            let currentAmount = new Currency(0.0);
-            currentAmount = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-            this.finishCurrency.add(currentAmount);
-            this.accumulatedCurrency.add(this.finishCurrency);               
+            //this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
+            this.earningCurrency = new Currency(this.finishCurrency.amount * (1+this.annualReturnRate.asMonthly()));
+            //this.finishCurrency.add(this.earningCurrency);
+            this.finishCurrency = new Currency(this.earningCurrency.amount);
+            this.accumulatedCurrency.add(this.finishCurrency);
         }
     }
 
@@ -241,11 +245,8 @@ class ModelAsset {
         if (isInMonth)
             preFinishCurrency = new Currency(this.finishCurrency.amount);
 
-        if (isMortgage(this.instrument)) {
-            this.applyMonth_mortgage(isInMonth);
-        }
-        else if (isDebt(this.instrument)) {
-            this.applyMonth_debt(isInMonth);
+        if (isMortgage(this.instrument) || isDebt(this.instrument)) {
+            this.applyMonth_mortgageOrDebt(isInMonth);
         }
         else if (isMonthlyExpense(this.instrument) || isMonthlyIncome(this.instrument)) {
             this.applyMonth_expenseOrIncome(isInMonth);
@@ -255,18 +256,12 @@ class ModelAsset {
         }
 
         if (isInMonth) {
-            if (isMonthlyExpense(this.instrument) || isMonthlyIncome(this.instrument)) {
-                this.monthlyEarning.push(this.finishCurrency.toCurrency())    
-            }
-            else {
-                let postFinishCurrency = new Currency(this.finishCurrency.amount);
-                this.monthlyEarning.push(postFinishCurrency.subtract(preFinishCurrency).toCurrency())
-            }
-            this.monthlyTotal.push(this.finishCurrency.toCurrency());
+            this.monthlyEarning.push(this.earningCurrency.toCurrency());
+            this.monthlyValue.push(this.finishCurrency.toCurrency());
         }
         else {
             this.monthlyEarning.push(0.0);
-            this.monthlyTotal.push(0.0);
+            this.monthlyValue.push(0.0);
         }
 
         return isInMonth;
@@ -283,8 +278,8 @@ class ModelAsset {
 
     monthlyAssetDataToDisplayAssetData(monthsSpan) {
         this.displayAssetData = [];
-        for (let ii = monthsSpan.offsetMonths; ii < this.monthlyTotal.length; ii += monthsSpan.combineMonths) {
-            this.displayAssetData.push(this.monthlyTotal[ii]);
+        for (let ii = monthsSpan.offsetMonths; ii < this.monthlyValue.length; ii += monthsSpan.combineMonths) {
+            this.displayAssetData.push(this.monthlyValue[ii]);
         }
     }
 
@@ -304,36 +299,21 @@ class ModelAsset {
             return this.finishCurrency;
     }
 
-    lastTwelveMonthTotal() {
-        let length = this.monthlyTotal.length;
-        let counter = 1;
-        let result = new Currency();
-        while (counter < 13 && length > 0) {
-            let c = new Currency(this.monthlyTotal[length-counter] * 100.0);
-            result.add(c);
-            ++counter;
-        }
-        return result;
-    }
-
-    lastTwelveMonthEarnings() {
-        let length = this.monthlyTotal.length;
-        let counter = 1;
-        let result = new Currency();
-        while (counter < 13 && length > 0) {
-            let c = new Currency(this.monthlyEarning[length-counter] * 100.0);
-            result.add(c);
-            ++counter;
-        }
-        return result;
-    }
-
     isPositive() {
         return this.accumulatedCurrency.amount > 0.0;
     }
 
     isNegative() {
         return this.accumulatedCurrency.amount < 0.0;
+    }
+
+    mostRecentMonthlyEarnings() {
+        if (this.monthlyEarnings && this.monthlyEarnings.length > 0) {
+            let spot = this.monthlyEarnings.length -1;
+            return Currency.parse(this.monthlyEarnings[spot]);
+        }
+        else
+            return new Currency(0.0);
     }
 
     getEmoji() {

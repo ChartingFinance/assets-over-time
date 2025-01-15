@@ -1,4 +1,7 @@
 function chronometer_applyMonths(modelAssets) {
+    if (activeTaxTable != null)
+        activeTaxTable.startMonth();
+
     if (modelAssets != null && modelAssets.length > 0) {
         for (modelAsset of modelAssets) {
             modelAsset.startMonth();
@@ -23,6 +26,9 @@ function chronometer_applyMonths(modelAssets) {
 }
 
 function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets) {
+
+    this.chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets);
+
     let startTotal = new Currency(0.0);
     let finishTotal = new Currency(0.0);
     let accumulatedValue = new Currency(0.0);
@@ -56,7 +62,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
         }
     }
 
-    chronometer_applyTaxes(currentDateInt, modelAssets);
+    this.chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets);
 
     if (firstDateInt.toInt() == currentDateInt.toInt())
         summary_setStartValue(startTotal);
@@ -69,13 +75,26 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
     return totalMonths;
 }
 
-function chronometer_applyTaxes(currentDateInt, modelAssets) {
-    // think about quarterly tax estimates
-    if (currentDateInt.month == 1) {
-        if (!activeTaxTable)
-            console.log('activeTaxTable not set');
-        else {
-            activeTaxTable.applyAnnualTaxes(modelAssets);           
-        }
+function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets) {
+    if (!activeTaxTable) {
+        console.log('chronometer_applyTaxesBeforeComputationsThisMonth - activeTaxTable not set');
+        return;
     }
+
+    // first things first, compute last year's taxes in January
+    // think about quarterly tax estimates
+    if (currentDateInt.month == 1)
+        activeTaxTable.applyYearlyTaxes(modelAssets);           
+
+    if (currentDateInt.month == 4)
+        activeTaxTable.payYearlyTaxes(modelAssets);
+}
+
+function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets) {
+    if (!activeTaxTable) {
+        console.log('chronometer_applyTaxesAfterComputationsThisMonth - activeTaxTable not set');
+        return;
+    }
+
+    activeTaxTable.applyMonthlyTaxes(modelAssets);
 }

@@ -16,6 +16,7 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="js/charting.js"></script>
         <script src="js/chronometer.js"></script>
+        <script src="js/globals.js"></script>
         <script src="js/html.js"></script>
         <script src="js/membrane.js"></script>
         <script src="js/model.js"></script>
@@ -477,14 +478,17 @@
         </script>
         <script>
             // initialization routines
-            buildInstrumentOptions();
-            initiateActiveData();            
-            connectAssetSelect();
-            connectAssetsContainerSelects();
-            connectCreateAsset();
-            connectRemoveAsset();
+            function initialize() {
+                buildInstrumentOptions();
+                initiateActiveData();            
+                connectAssetSelect();
+                connectAssetsContainerSelects();
+                connectCreateAsset();
+                connectRemoveAsset();
+            }
             
             activeTaxTable = new TaxTable();
+            initialize();
         </script>
     </body>
 </html>

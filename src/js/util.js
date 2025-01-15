@@ -101,6 +101,10 @@ class Currency {
         this.amount = 0.0;
     }
 
+    flipSign() {
+        this.amount *= -1.0;
+    }
+
     add(currency) {
         if (currency && currency.amount)
             this.amount += currency.amount;
@@ -110,6 +114,19 @@ class Currency {
     subtract(currency) {
         if (currency && currency.amount)
             this.amount -= currency.amount;
+        return this;
+    }
+
+    multiply(m) {
+        this.amount *= m;
+        return this;
+    }
+
+    divide(d) {
+        if (d == 0)
+            console.error('Currency.divide - divide by zero!!');
+        else
+            this.amount /= d;
         return this;
     }
 
@@ -246,6 +263,10 @@ function findModelAssetByDisplayName(modelAssets, displayName) {
     return null;
 }
 
+function isHome(value) { // should be distinct from 2nd property and rentals
+    return value == sInstrumentNames[sInstrumentsIDs.home];
+}
+
 function isMortgage(value) {
     return value == sInstrumentNames[sInstrumentsIDs.mortgage];
 }
@@ -264,6 +285,10 @@ function isMonthlyIncome(value) {
 
 function isTaxableAccount(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxableEquity];
+}
+
+function isTaxDeferred(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity];
 }
 
 function isFundableAsset(value) {
@@ -297,14 +322,6 @@ function displayElementSet(sourceElement, startIndex) {
     sourceElement.parentElement.children[startIndex].style.display = '';
     sourceElement.parentElement.children[startIndex+1].style.display = '';
     sourceElement.style.display = '';
-}
-
-function util_findModelAssetByDisplayName(label, modelAssets) {
-    for (modelAsset of modelAssets) {
-        if (modelAsset.displayName == label)
-            return modelAsset;
-    }
-    return null;
 }
 
 const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`

@@ -358,6 +358,24 @@ function charting_buildCashFlowDataSet(modelAssets, label, sign) {
   return cashFlowDataSet;
 }
 
+function charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAssets) {
+  let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
+  cashFlowDataSet.label = 'Federal Income Tax';
+
+  let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
+  let fills = (12 / monthsSpan.combineMonths) -1;
+
+  for (let c of activeTaxTable.yearlyTaxes) {
+    cashFlowDataSet.data.push(c);
+    for (let ii = 0; ii < fills; ++ii)
+      cashFlowDataSet.data.push(0.0);
+  }
+
+  cashFlowDataSet.backgroundColor = '#ffff00';
+  
+  return cashFlowDataSet;
+}
+
 function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets) {
   if (firstDateInt == null) {
     console.log('charting_buildDisplayCashFlowFromModelAssets - null firstDateInt provided');
@@ -377,10 +395,12 @@ function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt,
   let chartingCashFlowDataSet_credits = charting_buildCashFlowDataSet(reducedModelAssets, 'Credits', 1);
   let chartingCashFlowDataSet_debits = charting_buildCashFlowDataSet(reducedModelAssets, 'Debits', -1);
   let chartingCashFlowDataSet_cash = charting_buildCashFlowDataSet(reducedModelAssets, 'Cash', 0);
+  let chartingCashFlowDataSet_taxes = charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAssets);
     
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_credits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_debits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_cash);
+  chartingCashFlowData.datasets.push(chartingCashFlowDataSet_taxes);
 
   chartingCashFlowConfig.data = chartingCashFlowData;
   return chartingCashFlowConfig;
