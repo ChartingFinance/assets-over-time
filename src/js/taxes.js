@@ -203,8 +203,8 @@ class TaxTable {
         if (isHome(modelAsset.instrument)) {
             let oneMonthRate = global_propertyTaxRate / 12.0;
             let c = new Currency(modelAsset.finishCurrency.amount * oneMonthRate);
-            if (c.amount > (global_propertyTaxLimit / 12.0))
-                c.amount = global_propertyTaxLimit / 12.0;
+            if (c.amount > (global_propertyTaxDeductionMax / 12.0))
+                c.amount = global_propertyTaxDeductionMax / 12.0;
             return c;
         }
         return new Currency(0);

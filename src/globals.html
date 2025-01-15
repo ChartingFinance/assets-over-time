@@ -12,8 +12,7 @@
         <meta name="description" content="Charting financial simulations for saving, investment, retirement, and knowledge">
         <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large"/>
         <title>📈 Charting Financial Models and Projecting for Saving, Investing, Retiring, and Knowledge</title>
-        <script src="js/taxes.js"></script>
-        <script src="js/util.js"></script>
+        <script src="js/globals.js"></script>
         <link rel="stylesheet" href="index.css">
     </head>
     <body>
@@ -31,22 +30,22 @@
         <h1>Global Values for Simulation</h1>
         <h2>Annual Inflation Rate</h2>
         <p>The government began tracking inflation back in 1913. Over that time cumulative inflation has averaged 3.1%. <a href="https://inflationdata.com/Inflation/Inflation_Rate/Long_Term_Inflation.asp">Reference</a></p>
-        <label for="inflation">Default Inflation Rate</label><br />
-        <input id="inflation" type="number" value="3.1" step="0.01" readonly />
+        <label for="inflationRate">Default Inflation Rate</label><br />
+        <input id="inflationRate" type="number" value="3.1" step="0.01" onchange="inflationRate_onChange(ev)" />
         <br />
         <br />
         <br />
-        <p>Federal Income Tax -- First up is 2024 based on IRS tables.</p>
+        <p>Federal Income Tax -- First up is 2024 based on IRS tables. <a href="https://www.irs.gov/filing/federal-income-tax-rates-and-brackets" target="_blank">Income</a> and <a href="https://www.irs.gov/taxtopics/tc409" target="_blank">Capital Gains</a>.</p>
         <div>
             <div style="float: left; width: 200px">
                 <label for="taxYear">Tax Year</label><br />
-                <select id="taxYear">
+                <select id="taxYear" onchange="taxYear_onChange(ev)">
                     <option selected>2024</option>
                 </select>
             </div>    
             <div>
                 <label for="filingAs">Filing As</label><br />
-                <select id="filingAs">
+                <select id="filingAs" onchange="filingAs_onChange(ev)">
                     <option>Single</option>
                     <option>Head of Household</option>
                     <option>Married Filing Jointly</option>
@@ -61,15 +60,44 @@
         <div>
             <div style="float: left; width: 200px">
                 <label for="propertyTaxRate">Property Tax Rate</label><br />
-                <input id="propertyTaxRate" value="1.0" step="0.01" />
+                <input id="propertyTaxRate" value="1.0" step="0.01" onchange="propertyTaxRate_onChange(ev)" />
             </div>    
             <div>
                 <label for="propertyTaxDeductionMax">Property Tax Deduction Max</label><br />
-                <input id="propertyTaxDeductionMax" value="10000.0" step="1.0" />
+                <input id="propertyTaxDeductionMax" value="10000.0" step="1.0" onchange="propertyTaxDeductionMax_onChange(ev)" />
             </div>
         </div>
         <script>
-            activeTaxTable = new TaxTable();
+            function inflationRate_onChange(ev) {
+                let divBy100 = global_divBy100(ev.value);
+                global_setInflationRate(divBy100);
+            }
+
+            function taxYear_onChange(ev) {
+                global_setTaxYear(ev.value);
+            }
+
+            function filingAs_onChange(ev) {
+                global_setFilingAs(ev.value);
+            }
+
+            function propertyTaxRate_onChange(ev) {
+                let divBy100 = global_divBy100(ev.value);
+                global_setPropertyTaxRate(divBy100);
+            }
+
+            function propertyTaxDeductionMax_onChange(ev) {
+                global_setPropertyTaxDeductionMax(ev.value);
+            }
+
+            global_initialize();
+
+            document.getElementById('inflationRate').value = global_multBy100(global_inflationRate);
+            document.getElementById('taxYear').value = global_taxYear;
+            document.getElementById('filingAs').value = global_filingAs;
+            document.getElementById('propertyTaxRate').value = global_multBy100(global_propertyTaxRate);
+            document.getElementById('propertyTaxDeductionMax').value = global_propertyTaxDeductionMax;
+
         </script>
     </body>
 </html>
