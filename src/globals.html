@@ -31,27 +31,41 @@
         <h1>Global Values for Simulation</h1>
         <h2>Annual Inflation Rate</h2>
         <p>The government began tracking inflation back in 1913. Over that time cumulative inflation has averaged 3.1%. <a href="https://inflationdata.com/Inflation/Inflation_Rate/Long_Term_Inflation.asp">Reference</a></p>
-        <label for="inflation">Default Inflation Rate</label>
+        <label for="inflation">Default Inflation Rate</label><br />
         <input id="inflation" type="number" value="3.1" step="0.01" readonly />
         <br />
         <br />
         <br />
-        <p>Will add tax years as we go. First up is 2024 based on IRS tables.</p>
+        <p>Federal Income Tax -- First up is 2024 based on IRS tables.</p>
         <div>
             <div style="float: left; width: 200px">
-                <label for="taxYear">Tax Year</label>
+                <label for="taxYear">Tax Year</label><br />
                 <select id="taxYear">
                     <option selected>2024</option>
                 </select>
             </div>    
             <div>
-                <label for="filingAs">Filing As</label>
+                <label for="filingAs">Filing As</label><br />
                 <select id="filingAs">
                     <option>Single</option>
                     <option>Head of Household</option>
                     <option>Married Filing Jointly</option>
                     <option>Married Filing Separately</option>
                 </select>
+            </div>
+        </div>
+        <br />
+        <br />
+        <br />
+        <p>Federal Income Tax -- Property Tax Deduction</p>
+        <div>
+            <div style="float: left; width: 200px">
+                <label for="propertyTaxRate">Property Tax Rate</label><br />
+                <input id="propertyTaxRate" value="1.0" step="0.01" />
+            </div>    
+            <div>
+                <label for="propertyTaxDeductionMax">Property Tax Deduction Max</label><br />
+                <input id="propertyTaxDeductionMax" value="10000.0" step="1.0" />
             </div>
         </div>
         <script>
