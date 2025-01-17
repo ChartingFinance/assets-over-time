@@ -84,10 +84,10 @@ function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, model
     // first things first, compute last year's taxes in January
     // think about quarterly tax estimates
     if (currentDateInt.month == 1)
-        activeTaxTable.applyYearlyTaxes(modelAssets);           
+        activeTaxTable.applyYearlyTaxes(currentDateInt, modelAssets);           
 
     if (currentDateInt.month == 4)
-        activeTaxTable.payYearlyTaxes(modelAssets);
+        activeTaxTable.payYearlyTaxes(currentDateInt, modelAssets);
 }
 
 function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets) {
@@ -96,5 +96,5 @@ function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelA
         return;
     }
 
-    activeTaxTable.applyMonthlyTaxes(modelAssets);
+    activeTaxTable.applyMonthlyTaxes(currentDateInt, modelAssets);
 }

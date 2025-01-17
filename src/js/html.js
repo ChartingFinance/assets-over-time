@@ -51,7 +51,8 @@ const htmlAssetBody =
         <label for="accumulatedValue">Accumulated Value</label><br />
         <input type="number" class="width-full" name="accumulatedValue" step="0.01" value="$ACCUMULATEDVALUE$" placeholder="accumulated value" />
     </div>
-    <div style="flat: left; width: 45%:">
+    <div style="float: left; width: 45%; text-align: center">
+        $USEFORTAXESDISPLAY$
     </div>
 </div>
 <div class="width-full" style="float: left; padding-top: 10px">    
@@ -69,6 +70,14 @@ const htmlMonthsRemainingDisplay = `<label class="hidable" for="monthsRemaining"
 
 const htmlMonthsRemainingHidden = `<label class="hidable" for="monthsRemaining" style="display: none">Months Remaining</label><br class="hidable" style="display: none" />
     <input class="hidable" type="number" style="display: none; width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
+
+const htmlUseForTaxesDisplayUnchecked = `<label for="useForTaxes">Use for Taxes</label><br />
+        <input type="checkbox" name="useForTaxes" />`;
+
+const htmlUseForTaxesDisplayChecked = `<label for="useForTaxes">Use for Taxes</label><br />
+        <input type="checkbox" name="useForTaxes" checked />`;
+
+const htmlUseForTaxesHidden = '';
 
 const htmlFundingSourceDisplay = `<label for="fundingSource">Apply to Card</label><br />
     <select class="width-full" name="fundingSource">
@@ -156,7 +165,17 @@ function html_buildRemovableAssetElement(modelAssets, modelAsset) {
         html = html.replace('$MONTHSREMAININGDISPLAY$', htmlMonthsRemainingHidden);    
     }
 
-    html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);  
+    html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);
+    
+    if (isTaxableAccount(modelAsset.instrument)) {
+        if (modelAsset.useForTaxes)
+            html = html.replace('$USEFORTAXESDISPLAY$', htmlUseForTaxesDisplayChecked);
+        else
+            html = html.replace('$USEFORTAXESDISPLAY$', htmlUseForTaxesDisplayUnchecked);
+    }
+    else
+        html = html.replace('$USEFORTAXESDISPLAY$', htmlUseForTaxesHidden);
+
     html = html.replace('$FUNDINGSOURCEOPTIONS$', html_buildFundingSourceOptions(modelAssets, modelAsset.displayName, modelAsset.fundingSource));
 
     if (modelAsset.accumulatedCurrency.amount > 0)

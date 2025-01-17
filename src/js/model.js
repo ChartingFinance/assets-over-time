@@ -8,9 +8,10 @@ const sMonthsRemaining = 'monthsRemaining';
 const sFinishValue = 'finishValue';
 const sAnnualReturnRate = 'annualReturnRate';
 const sFundingSource = 'fundingSource';
+const sUseForTaxes = 'useForTaxes';
 
-const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash', 'federalIncomeTaxes'];
-const sIntrumentDisplayNames = ['💲💰 Monthly Income', '💸💰 Monthly Expense', '🏡 House', '💸🏡 Mortgage', '💳 Debt', '🧾📈 Taxable Account', '⏳📈 Tax Deferred Account', '📈 Tax Free Account', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '💰 Cash', 'Federal Income Taxes'];
+const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash'];
+const sIntrumentDisplayNames = ['💲💰 Monthly Income', '💸💰 Monthly Expense', '🏡 House', '💸🏡 Mortgage', '💳 Debt', '🧾📈 Taxable Account', '⏳📈 Tax Deferred Account', '📈 Tax Free Account', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '💰 Cash'];
 const sInstrumentsIDs = Object.freeze({
     monthlyIncome: 0,    
     monthlyExpense: 1,   
@@ -23,8 +24,7 @@ const sInstrumentsIDs = Object.freeze({
     usBond: 8,
     corpBond: 9,
     bank: 10,
-    cash: 11,
-    federalIncomeTaxes: 12
+    cash: 11
 });
 
 class ModelAsset {
@@ -45,6 +45,7 @@ class ModelAsset {
         this.monthlyEarning = [];
         this.monthlyValue = [];
         this.fundingSource = null;
+        this.useForTaxes = false;
         this.colorId = 0;
     }
 
@@ -70,6 +71,7 @@ class ModelAsset {
         let finishCurrency = new Currency(0.0);
         let annualReturnRate = null;
         let fundingSource = null;
+        let useForTaxes = false;
         
         for (const element of htmlElements) {
             if (element.name == sInstrument)
@@ -90,11 +92,14 @@ class ModelAsset {
                 annualReturnRate = ARR.parse(element.value);
             else if (element.name == sFundingSource)
                 fundingSource = element.value;
+            else if (element.name == sUseForTaxes)
+                useForTaxes = element.checked;
         }
 
         let modelAsset = new ModelAsset(instrument, displayName, startDateInt, startCurrency, finishDateInt, monthsRemaining, finishCurrency, annualReturnRate);
         // because fundingSource is usually null, let's set it outside the constructor in case we want to do anything interesting
         modelAsset.fundingSource = fundingSource;
+        modelAsset.useForTaxes = useForTaxes;
 
         if (colorElement) {
             let colorHex = rgb2hex(colorElement.style.backgroundColor)

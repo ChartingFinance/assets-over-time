@@ -112,7 +112,7 @@ class TaxTable {
         this.inflateTaxRows(this.activeTaxTables.capitalGains.tables);
     }
 
-    applyMonthlyTaxes(modelAssets) {
+    applyMonthlyTaxes(currentDateInt, modelAssets) {
         if (!this.startMonthCalls) {
             console.log('TaxTable.applyMonthlyTaxes called before TaxTable.startMonth initialization');
             return;
@@ -125,14 +125,14 @@ class TaxTable {
         // todo - qualified vs non-qualified dividends
 
         for (const modelAsset of modelAssets) {
-            this.yearlyTaxableIncomeAccumulator.add(activeTaxTable.calculateIncome(modelAsset, modelAssets));
-            this.yearlyLongTermCapitalGainsAccumulator.add(activeTaxTable.calculateLongTermCaptialGains(modelAsset));
-            this.yearlyMortgageDeductionAccumulator.add(activeTaxTable.calculateMortgageDeduction(modelAsset));
-            this.yearlyPropertyTaxDeductionAccumulator.add(activeTaxTable.calculatePropertyTaxDeduction(modelAsset));
+            this.yearlyTaxableIncomeAccumulator.add(activeTaxTable.calculateIncome(currentDateInt, modelAsset, modelAssets));
+            this.yearlyLongTermCapitalGainsAccumulator.add(activeTaxTable.calculateLongTermCaptialGains(currentDateInt, modelAsset));
+            this.yearlyMortgageDeductionAccumulator.add(activeTaxTable.calculateMortgageDeduction(currentDateInt, modelAsset));
+            this.yearlyPropertyTaxDeductionAccumulator.add(activeTaxTable.calculatePropertyTaxDeduction(currentDateInt, modelAsset));
         }   
     }
 
-    applyYearlyTaxes(modelAssets) {
+    applyYearlyTaxes(currentDateInt, modelAssets) {
         if (!modelAssets) {
             console.log('TaxTable.applyYearlyTaxes has null modelAssets');
             return;
@@ -144,13 +144,23 @@ class TaxTable {
         this.startYear();
     }
 
-    payYearlyTaxes(modelAssets) {
-        console.log('TaxTable.payYearlyTaxes - not implemented');
+    payYearlyTaxes(currentDateInt, modelAssets) {
+        // scan through model assets and check for 'useForTaxes' property
+        for (modelAsset of modelAssets) {
+            if (modelAsset.useForTaxes) {
+                let c = new Currency(this.yearlyTaxes[this.yearlyTaxes.length -1]);
+                modelAsset.finishCurrency.subtract(c);
+                return;
+            }
+        }
     }
 
-    calculateIncome(modelAsset, modelAssets) {
+    calculateIncome(currentDateInt, modelAsset, modelAssets) {
         if (isMonthlyIncome(modelAsset.instrument)) {
-            return modelAsset.finishCurrency;
+            if (modelAsset.startDateInt.toInt() <= currentDateInt.toInt() && modelAsset.finishDateInt.toInt() > currentDateInt.toInt())
+                return modelAsset.finishCurrency;
+            else
+                return new Currency(0);
         }
         else if (isMonthlyExpense(modelAsset.instrument)) {
             // find the funding model asset and determine income
@@ -165,13 +175,13 @@ class TaxTable {
             return new Currency(0);
         }
         else if (isTaxableAccount(modelAsset.instrument)) {
-            return this.calculateShortTermCapitalGains(modelAsset);            
+            return this.calculateShortTermCapitalGains(currentDateInt, modelAsset);            
         }
         else
             return new Currency(0);
     }
 
-    calculateShortTermCapitalGains(modelAsset) {
+    calculateShortTermCapitalGains(currentDateInt, modelAsset) {
         if (isTaxableAccount(modelAsset.instrument)) {
             let c = modelAsset.earningCurrency;
             // TODO: assume 20% short time for time being. Make it configurable
@@ -181,7 +191,7 @@ class TaxTable {
             return new Currency(0);
     }
 
-    calculateLongTermCaptialGains(modelAsset) {
+    calculateLongTermCaptialGains(currentDateInt, modelAsset) {
         if (isTaxableAccount(modelAsset.instrument)) {
             let c = modelAsset.earningCurrency;
             // TODO: assume 80% long time for time being. Make it configurable
@@ -191,7 +201,7 @@ class TaxTable {
             return new Currency(0);
     }
 
-    calculateMortgageDeduction(modelAsset) {
+    calculateMortgageDeduction(currentDateInt, modelAsset) {
         if (isMortgage(modelAsset.instrument)) {
             return modelAsset.earningCurrency;
         }
@@ -199,7 +209,7 @@ class TaxTable {
             return new Currency(0);
     }
 
-    calculatePropertyTaxDeduction(modelAsset) {
+    calculatePropertyTaxDeduction(currentDateInt, modelAsset) {
         if (isHome(modelAsset.instrument)) {
             let oneMonthRate = global_propertyTaxRate / 12.0;
             let c = new Currency(modelAsset.finishCurrency.amount * oneMonthRate);

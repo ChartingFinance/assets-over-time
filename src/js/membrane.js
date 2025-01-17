@@ -46,6 +46,7 @@ function membrane_rawModelDataToModelAsset(rawModelData) {
     let arr = new ARR(rawModelData.annualReturnRate.annualReturnRate);
     let modelAsset = new ModelAsset(rawModelData.instrument, rawModelData.displayName, startDateInt, startCurrency, finishDateInt, rawModelData.monthsRemaining, finishCurrency, arr);
     modelAsset.fundingSource = rawModelData.fundingSource;
+    modelAsset.useForTaxes = rawModelData.useForTaxes;
     return modelAsset;
 }
 
