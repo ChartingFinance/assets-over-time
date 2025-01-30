@@ -129,6 +129,24 @@ function html_buildFundingSourceOptions(modelAssets, currentDisplayName, funding
     return html;
 }
 
+function html_buildStoryNameOptionsFromLocalStorage() {
+    let storyArcNamesKey = util_buildStoryArcKey(activeStoryArc, storyNamesKey);
+    let storyNamesAsString = localStorage.getItem(storyArcNamesKey);
+    if (!storyNamesAsString)
+        storyNamesAsString = '[]';
+
+    let storyNames = JSON.parse(storyNamesAsString);
+    let html = '';
+    for (const storyName of storyNames) {
+        html += '<option value="' + storyName + '"';
+        if (storyName == activeStoryName)
+            html += ' selected';
+        html += '>' + storyName + '</option>';
+    }
+
+    return html;
+}
+
 function html_buildAssetHeader(modelAsset) {
     let html = htmlAssetHeader;
     html = html.replace("$BACKGROUNDCOLOR$", colorRange[modelAsset.colorId]);

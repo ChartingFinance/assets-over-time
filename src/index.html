@@ -37,11 +37,12 @@
         <h1 style="text-align: center;">
             Charting Financial Assets Over Time
         </h1>
-        <div style="text-align: center">
-            <button onclick="save()">Save</button>&nbsp;<button onclick="load()">Load</button>
-        </div>
         <div class="row" id="container">
             <div class="column left">
+                <div style="width: 66%; text-align: center">
+                    <select id="savedDataSets" style="width: 100%"><option>None</option></select><br />
+                    <button class="common-margin" onclick="remove()">Remove</button>
+                </div><br />
                 <h3>Enter Financial Data</h3>
                 <form id="asset" class="asset">
                     <div style="overflow: hidden; padding: 10px">
@@ -119,7 +120,11 @@
                 
             </div>
             <div class="column right">
-                <div style="float: right">            
+                <div style="float: right">
+                    <div style="width: 100%; text-align: center;">
+                        <select id="sharedDataSets" style="width: 100%"><option>None</option></select><br />
+                        <button class="common-margin" onclick="shareData()">Share</button>
+                    </div><br />            
                     <h3>Rolled Up Financial Data</h3>
                     <form id="rollup">
                         <div style="overflow: hidden; padding: 10px;">
@@ -169,7 +174,25 @@
         </div>
         <br />
         <div style="padding: 10px" class="scrollable-x" id="assets"></div>
-        <br />&nbsp;<br />
+        <br />&nbsp;<br />        
+
+        <!-- Popup Form -->
+        <div id="popupForm" class="popup">
+            <div class="popup-content">
+                <span class="closeBtn">&times;</span>
+                <h2 id="popupTitle"></h2><br />
+                <label for="datasetList">Datasets</label>
+                <select id="datasetList" style="width: 100%" size="4">
+                    <option>None</option>
+                </select><br /><br />
+                <form>
+                    <label for="datasetTitle">Name:</label><br />
+                    <input type="text" id="datasetTitle" name="datasetTitle" required><br /><br />
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+
         <script>
             <!-- these are dynamic functions -->
 
@@ -181,6 +204,8 @@
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
             var chartLiquidityCanvas = document.getElementById('chartLiquidityCanvas');
             var chartCashFlowCanvas = document.getElementById('chartCashFlowCanvas');
+            var activeStoryArc = null;
+            var activeStoryName = null;
             var activeAssetCanvas = null;
             var activeLiquidityCanvas = null;
             var activeCashFlowCanvas = null;
@@ -204,8 +229,22 @@
                 let di = DateInt.parse(new Date().toISOString());
                 startDateElement.value = di.toHTML();
 
+                activeStoryArc = localStorage.getItem('activeStoryArc');
+                if (!activeStoryArc)
+                    activeStoryArc = 'default';
+
+                activeStoryName = localStorage.getItem('activeStoryName');
+                if (!activeStoryName) {
+                    activeStoryName = util_YYYYmm();
+                    util_ensureStoryNames(activeStoryArc, activeStoryName);
+                }
+
+                let optionsHTML = html_buildStoryNameOptionsFromLocalStorage();
+                let selectSavedDatasets = document.getElementById('savedDataSets');
+                selectSavedDatasets.innerHTML = optionsHTML;
+
                 // Get the last working data set
-                loadWorkingData();
+                loadLocalData();
             }
 
             function hideElementsWithScope(scopeElement) {
@@ -430,7 +469,7 @@
                 charting_buildFromModelAssets(modelAssets, true)
                 innerCalculate();
 
-                saveWorkingData();
+                saveLocalData();
             };
 
             function innerCalculate() {              
@@ -448,33 +487,53 @@
                     activeCashFlowCanvas = new Chart(chartCashFlowCanvas, charting_jsonCashFlowChartData);
             }
 
-            function save() {
-                let modelAssets = membrane_htmlElementsToAssetModels();                
-                localStorage.setItem('savedModelAssets', JSON.stringify(modelAssets));
+            function saveLocalData() {                
+                let assetModels = membrane_htmlElementsToAssetModels();
+                util_saveLocalAssetModels(activeStoryArc, activeStoryName, assetModels);                                            
             }
 
-            function saveWorkingData() {
-                let modelAssets = membrane_htmlElementsToAssetModels();                
-                localStorage.setItem('workingModelAssets', JSON.stringify(modelAssets));
+            function loadLocalData() {                
+                let assetModelsRaw = util_loadLocalAssetModels(activeStoryArc, activeStoryName);
+                let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
+                assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
+                calculate();
+            }
+        </script>
+        <script>
+            const saveLocally = 'Save Locally';
+            const shareGlobally = 'Share Globally';
+            // popup routines
+            function saveData() {
+                loadPopupList(saveLocally);
+                doPopup(saveLocally);
             }
 
-            function load() {
-                let jsonData = localStorage.getItem('savedModelAssets');
-                if (jsonData != null && jsonData.length > 0) {
-                    let modelAssets = membrane_jsonDataToModelAssets(jsonData);                    
-                    assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(modelAssets);
-                    calculate();
+            function shareData() {
+                loadPopupList(shareGlobally);
+                doPopup(shareGlobally);
+            }
+
+            function loadPopupList(popupTitle) {
+                let popupDatasets = document.getElementById('popupDatasets');
+                let datasets = util_loadFromStorage(popupTitle);
+                if (datasets && datasets.length > 0) {
+                    popupDatasets.innertHTML = '';
+                    for (let dataset of datasets) {
+                        popupDatasets.innertHTML += '<option>' + dataset.displayName + '</option>';
+                    }
                 }
             }
 
-            function loadWorkingData() {
-                let jsonData = localStorage.getItem('workingModelAssets');
-                if (jsonData != null && jsonData.length > 0) {
-                    let modelAssets = membrane_jsonDataToModelAssets(jsonData);                    
-                    assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(modelAssets);
-                    calculate();
-                }
+            function doPopup(popupTitle) {
+                document.getElementById('popupForm').style.display = 'block';
+                document.getElementById('popupTitle').innerHTML = popupTitle;
+                let inputElement = document.getElementById('datasetTitle');
+                inputElement.value = util_getYYYYmm() + ' ';
             }
+
+            document.querySelector('.closeBtn').addEventListener('click', function() {
+                document.getElementById('popupForm').style.display = 'none';
+            });
         </script>
         <script>
             // initialization routines

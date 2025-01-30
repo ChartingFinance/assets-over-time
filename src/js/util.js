@@ -325,3 +325,92 @@ function displayElementSet(sourceElement, startIndex) {
 }
 
 const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`
+
+const storyArcsKey = 'storyArcs';
+function util_buildStoryArcKey(storyArc, storyName) {
+    if (!storyArc)
+        console.log('util_buildStoryArcKey - null storyArc');
+    if (!storyName)
+        console.log('util_buildStoryArcKey - null storyName');
+
+    if (storyName == 'default') {
+        console.log('util_buildStoryArcKey - default passed to function. Did you call util_ensureStoryNames first?');
+        storyName = util_YYYYmm();
+    }
+
+    return storyArc + '+' + storyName;
+}
+
+const storyNamesKey = 'storyNames';
+function util_removeStoryName(storyArc, storyName) {
+    let asString = localStorage.getItem(util_buildStoryKey(storyArc, storyNamesKey));
+    if (!asString)
+        asString = '[]';
+
+    let storyNames = JSON.parse(asString);
+
+    let ii = 0;
+    for (; ii < storyNames.length; ++ii) {
+        if (storyNames[ii] == storyName)
+            break;
+    }
+
+    if (ii < storyNames.length) {
+        storyNames = storyNames.splice(ii, 1);
+        asString = JSON.stringify(storyNames);
+        localStorage.setItem(storyNamesKey, asString);
+    }
+}
+
+// this function will ensure both the existence of a storyName key and, if necessary, copy the most recent associated dataset for the new key
+function util_ensureStoryNames(storyArc, storyName) {
+    let storyArcNamesKey = util_buildStoryArcKey(storyArc, storyNamesKey);
+    let asString = localStorage.getItem(storyArcNamesKey);
+    if (!asString)
+        asString = '[]';
+
+    let storyNames = JSON.parse(asString);
+
+    let ii = 0;
+    for (; ii < storyNames.length; ++ii) {
+        if (storyNames[ii] == storyName)
+            break;
+    }
+
+    if (ii == storyNames.length) {
+        storyNames.push(storyName);
+        localStorage.setItem(storyArcNamesKey, JSON.stringify(storyNames));
+
+        // copy the most recent dataset, if available
+        if (ii > 0) {
+            let storyArcNameKey = util_buildStoryArcNameKey(storyArc, storyName)
+            console.log('util-ensureStoryNames - copy most recent dataset to ' + storyArcNameKey);
+            let previousStoryArcNameKey = util_buildStoryArcKey(storyArc, storyNames[ii -1]);
+            console.log('util-ensureStoryNames - previous key to use ' + previousStoryArcNameKey);
+            let previousStoryArcNameData = localStorage.getItem(previousStoryArcNameKey);
+            localStory.setItem(storyArcNameKey, previousStoryArcNameData);
+        }
+    }
+}
+
+function util_saveLocalAssetModels(storyArc, storyName, assetModels) {
+    let key = util_buildStoryArcKey(storyArc, storyName);
+    localStorage.setItem(key, JSON.stringify(assetModels));
+}
+
+function util_loadLocalAssetModels(storyArc, storyName) {
+    let key = util_buildStoryArcKey(storyArc, storyName);
+    let assetModelsAsString = localStorage.getItem(key);
+    if (assetModelsAsString)
+        return JSON.parse(assetModelsAsString);
+    else
+        return null;
+}
+
+function util_YYYYmm() {
+    const date = new Date();
+    const formattedDate = date.toISOString().split('T')[0];
+    const segments = formattedDate.split('-');
+    const resultDate = segments[0] + '-' + segments[1];
+    return resultDate;
+}
