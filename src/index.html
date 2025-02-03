@@ -40,7 +40,7 @@
         <div class="row" id="container">
             <div class="column left">
                 <div style="width: 66%; text-align: center">
-                    <select id="savedDataSets" style="width: 100%"><option>None</option></select><br />
+                    <select id="savedDataSets" style="width: 100%" onchange="selectLocalData_changed()"><option>None</option></select><br />
                     <button class="common-margin" onclick="remove()">Remove</button>
                 </div><br />
                 <h3>Enter Financial Data</h3>
@@ -485,6 +485,12 @@
                     activeLiquidityCanvas = new Chart(chartLiquidityCanvas, charting_jsonLiquidityChartData);
                 if (charting_jsonCashFlowChartData != null)
                     activeCashFlowCanvas = new Chart(chartCashFlowCanvas, charting_jsonCashFlowChartData);
+            }
+
+            function selectLocalData_changed(ev) {
+                const selectElement = document.getElementById('savedDataSets');
+                activeStoryName = selectElement.value;
+                loadLocalData();
             }
 
             function saveLocalData() {                
