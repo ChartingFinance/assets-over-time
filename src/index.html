@@ -40,8 +40,8 @@
         <div class="row" id="container">
             <div class="column left">
                 <div style="width: 66%; text-align: center">
-                    <select id="savedDataSets" style="width: 100%" onchange="selectLocalData_changed()"><option>None</option></select><br />
-                    <button class="common-margin" onclick="remove()">Remove</button>
+                    <label for="savedDataSets">Monthly Datasets</label>
+                    <select id="savedDataSets" style="width: 100%" onchange="selectLocalData_changed()"><option>None</option></select>
                 </div><br />
                 <h3>Enter Financial Data</h3>
                 <form id="asset" class="asset">
@@ -122,7 +122,7 @@
             <div class="column right">
                 <div style="float: right">
                     <div style="width: 100%; text-align: center;">
-                        <select id="sharedDataSets" style="width: 100%"><option>None</option></select><br />
+                        <input id="sharedDataSets" style="width: 100%" placeholder="click 'share' to generate url"><br />
                         <button class="common-margin" onclick="shareData()">Share</button>
                     </div><br />            
                     <h3>Rolled Up Financial Data</h3>
