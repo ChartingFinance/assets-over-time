@@ -141,7 +141,7 @@ function html_buildStoryNameOptionsFromLocalStorage() {
         html += '<option value="' + storyName + '"';
         if (storyName == activeStoryName)
             html += ' selected';
-        html += '>' + storyName + '</option>';
+        html += '>' + util_YYYYmmToDisplay(storyName) + '</option>';
     }
 
     return html;

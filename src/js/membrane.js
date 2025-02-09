@@ -31,8 +31,10 @@ function membrane_modelAssetsToHTML(modelAssets) {
 /* This is required in order to turn data objects into object instances-- like Month-Year data to DateInt objects */
 function membrane_rawDataToModelAssets(rawModelAssets) {
     let result = [];
-    for (let ii = 0; ii < rawModelAssets.length; ii++) {
-        result.push(membrane_rawModelDataToModelAsset(rawModelAssets[ii]));
+    if (rawModelAssets) {
+        for (let ii = 0; ii < rawModelAssets.length; ii++) {
+            result.push(membrane_rawModelDataToModelAsset(rawModelAssets[ii]));
+        }
     }
     return result;
 }

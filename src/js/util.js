@@ -414,3 +414,10 @@ function util_YYYYmm() {
     const resultDate = segments[0] + '-' + segments[1];
     return resultDate;
 }
+
+function util_YYYYmmToDisplay(YYYYmm) {
+    // use '-02' so that the second day is used this avoiding local/utc time conversion
+    const date = new Date(YYYYmm + '-02');
+    let options = { year: 'numeric', month: 'long' };
+    return date.toLocaleDateString('en-US', options);
+}
