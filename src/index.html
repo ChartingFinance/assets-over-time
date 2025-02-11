@@ -149,7 +149,7 @@
 
         <br /><br />
 
-        <div class="row" id="bottomContainer">
+        <div class="row" style="padding-left: 24px; padding-right: 24px;" id="bottomContainer">
             <div class="tabs">
                 <div class="tab active" id="tab1" onclick="tab1_click()">
                     <span>Asset View</span>
@@ -197,7 +197,8 @@
         <script>
             <!-- these are dynamic functions -->
 
-            var topContainerElement = document.getElementById('topContainer');
+            var topRowContainerElement = document.getElementById('topRowContainer');
+            var bottomRowElement = document.getElementById('bottomRowContainer');
             var assetElement = document.getElementById('asset');
             var assetsContainerElement = document.getElementById('assets');
             var totalElement = document.getElementById('total');
@@ -312,6 +313,8 @@
                         let monthsElement = mostRecentAssetElement.querySelector('[name="monthsRemaining"]');
                         displayElementSet(monthsElement, 0);
                     }
+
+                    html_updateAssetElementFundingSources(assetElement);
                     
                     calculate();
                 });
@@ -330,6 +333,8 @@
                         while (removeContainerNode.parentNode.id != 'assets')
                             removeContainerNode = removeContainerNode.parentNode;
                         assetsContainerElement.removeChild(removeContainerNode);
+
+                        html_updateAssetElementFundingSources(assetElement);
 
                         calculate();
                     }

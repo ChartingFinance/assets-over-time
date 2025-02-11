@@ -129,6 +129,13 @@ function html_buildFundingSourceOptions(modelAssets, currentDisplayName, funding
     return html;
 }
 
+function html_updateAssetElementFundingSources(assetElement) {
+    // update the 'apply to' dropdown
+    let assetModels = membrane_htmlElementsToAssetModels();
+    let fundingSourceElement = assetElement.querySelector('[name="fundingSource"]');
+    fundingSourceElement.innerHTML = html_buildFundingSourceOptions(assetModels, null, null);
+}
+
 function html_buildStoryNameOptionsFromLocalStorage() {
     let storyArcNamesKey = util_buildStoryArcKey(activeStoryArc, storyNamesKey);
     let storyNamesAsString = localStorage.getItem(storyArcNamesKey);
