@@ -181,16 +181,9 @@
         <div id="popupForm" class="popup">
             <div class="popup-content">
                 <span class="closeBtn">&times;</span>
-                <h2 id="popupTitle"></h2><br />
-                <label for="datasetList">Datasets</label>
-                <select id="datasetList" style="width: 100%" size="4">
-                    <option>None</option>
-                </select><br /><br />
-                <form>
-                    <label for="datasetTitle">Name:</label><br />
-                    <input type="text" id="datasetTitle" name="datasetTitle" required><br /><br />
-                    <button type="submit">Submit</button>
-                </form>
+                <h2 id="popupTitle">I created a Patreon!</h2><br />
+                <p>This will help pay for server costs as this project grows-- like the sharing feature.</p>
+                <h2><a href='https://www.patreon.com/ChartingFinance' target="_blank">Visit my Patreon</a></h2>
             </div>
         </div>
 
@@ -521,7 +514,7 @@
             }
 
             function shareData() {
-                loadPopupList(shareGlobally);
+                // loadPopupList(shareGlobally);
                 doPopup(shareGlobally);
             }
 
@@ -538,9 +531,9 @@
 
             function doPopup(popupTitle) {
                 document.getElementById('popupForm').style.display = 'block';
-                document.getElementById('popupTitle').innerHTML = popupTitle;
-                let inputElement = document.getElementById('datasetTitle');
-                inputElement.value = util_getYYYYmm() + ' ';
+                //document.getElementById('popupTitle').innerHTML = popupTitle;
+                //let inputElement = document.getElementById('datasetTitle');
+                //inputElement.value = util_getYYYYmm() + ' ';
             }
 
             document.querySelector('.closeBtn').addEventListener('click', function() {
@@ -550,15 +543,16 @@
         <script>
             // initialization routines
             function initialize() {
+                global_initialize();
+                activeTaxTable = new TaxTable();
                 buildInstrumentOptions();
                 initiateActiveData();            
                 connectAssetSelect();
                 connectAssetsContainerSelects();
                 connectCreateAsset();
                 connectRemoveAsset();
-            }
-            
-            activeTaxTable = new TaxTable();
+            }            
+
             initialize();
         </script>
     </body>

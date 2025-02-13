@@ -31,7 +31,7 @@
         <h2>Annual Inflation Rate</h2>
         <p>The government began tracking inflation back in 1913. Over that time cumulative inflation has averaged 3.1%. <a href="https://inflationdata.com/Inflation/Inflation_Rate/Long_Term_Inflation.asp">Reference</a></p>
         <label for="inflationRate">Default Inflation Rate</label><br />
-        <input id="inflationRate" type="number" value="3.1" step="0.01" onchange="inflationRate_onChange(ev)" />
+        <input id="inflationRate" type="number" value="3.1" step="0.01" onchange="inflationRate_onChange()" />
         <br />
         <br />
         <br />
@@ -39,17 +39,17 @@
         <div>
             <div style="float: left; width: 200px">
                 <label for="taxYear">Tax Year</label><br />
-                <select id="taxYear" onchange="taxYear_onChange(ev)">
+                <select id="taxYear" onchange="taxYear_onChange()">
                     <option selected>2024</option>
                 </select>
             </div>    
             <div>
                 <label for="filingAs">Filing As</label><br />
-                <select id="filingAs" onchange="filingAs_onChange(ev)">
-                    <option>Single</option>
-                    <option>Head of Household</option>
-                    <option>Married Filing Jointly</option>
-                    <option>Married Filing Separately</option>
+                <select id="filingAs" onchange="filingAs_onChange()">
+                    <option value="Single">Single</option>
+                    <!--option value="HoH">Head of Household</option-->
+                    <option value="MFJ">Married Filing Jointly</option>
+                    <!--option value="MFS">Married Filing Separately</option-->
                 </select>
             </div>
         </div>
@@ -60,43 +60,61 @@
         <div>
             <div style="float: left; width: 200px">
                 <label for="propertyTaxRate">Property Tax Rate</label><br />
-                <input id="propertyTaxRate" value="1.0" step="0.01" onchange="propertyTaxRate_onChange(ev)" />
+                <input type="number" id="propertyTaxRate" value="1.0" step="0.01" onchange="propertyTaxRate_onChange()" />
             </div>    
             <div>
                 <label for="propertyTaxDeductionMax">Property Tax Deduction Max</label><br />
-                <input id="propertyTaxDeductionMax" value="10000.0" step="1.0" onchange="propertyTaxDeductionMax_onChange(ev)" />
+                <input type="number" id="propertyTaxDeductionMax" value="10000.0" step="1.0" onchange="propertyTaxDeductionMax_onChange()" />
             </div>
         </div>
+        <br /><br /><br /><br />
+        <div>
+            <button onclick="reset()">Reset to Defaults</button>
+        </div>
         <script>
-            function inflationRate_onChange(ev) {
-                let divBy100 = global_divBy100(ev.value);
+            function inflationRate_onChange() {
+                let inputElement = document.getElementById('inflationRate')
+                let divBy100 = global_divBy100(inputElement.value);
                 global_setInflationRate(divBy100);
             }
 
-            function taxYear_onChange(ev) {
-                global_setTaxYear(ev.value);
+            function taxYear_onChange() {
+                let selectElement = document.getElementById('taxYear');
+                global_setTaxYear(selectElement.value);
             }
 
-            function filingAs_onChange(ev) {
-                global_setFilingAs(ev.value);
+            function filingAs_onChange() {
+                let selectElement = document.getElementById('filingAs');
+                global_setFilingAs(selectElement.value);
             }
 
-            function propertyTaxRate_onChange(ev) {
-                let divBy100 = global_divBy100(ev.value);
+            function propertyTaxRate_onChange() {
+                let inputElement = document.getElementById('propertyTaxRate');
+                let divBy100 = global_divBy100(inputElement.value);
                 global_setPropertyTaxRate(divBy100);
             }
 
-            function propertyTaxDeductionMax_onChange(ev) {
-                global_setPropertyTaxDeductionMax(ev.value);
+            function propertyTaxDeductionMax_onChange() {
+                let inputElement = document.getElementById('propertyTaxDeductionMax');
+                global_setPropertyTaxDeductionMax(parseInt(inputElement.value));
+            }
+
+            function reset() {
+                global_reset();
+                valuesToElements();
+            }
+
+            function valuesToElements() {
+                document.getElementById('inflationRate').value = global_multBy100(global_inflationRate);
+                document.getElementById('taxYear').value = global_taxYear;
+                document.getElementById('filingAs').value = global_filingAs;
+                document.getElementById('propertyTaxRate').value = global_multBy100(global_propertyTaxRate);
+                document.getElementById('propertyTaxDeductionMax').value = global_propertyTaxDeductionMax;
             }
 
             global_initialize();
 
-            document.getElementById('inflationRate').value = global_multBy100(global_inflationRate);
-            document.getElementById('taxYear').value = global_taxYear;
-            document.getElementById('filingAs').value = global_filingAs;
-            document.getElementById('propertyTaxRate').value = global_multBy100(global_propertyTaxRate);
-            document.getElementById('propertyTaxDeductionMax').value = global_propertyTaxDeductionMax;
+            valuesToElements();
 
         </script>
     </body>

@@ -56,8 +56,15 @@ class TaxTable {
     constructor(year) {
         this.taxes = null;
         this.activeTaxTables = us_2024_taxtables;
-        this.activeIncomeTable = this.activeTaxTables.income.tables[0];
-        this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
+        if (global_filingAs == 'Single') {
+            this.activeIncomeTable = this.activeTaxTables.income.tables[0];
+            this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
+        }
+        else {
+            this.activeIncomeTable = this.activeTaxTables.income.tables[1];
+            this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[1];
+        }
+        
 
         /*
         fetch('/src/json/us_2024.json')

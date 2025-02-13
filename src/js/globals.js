@@ -1,12 +1,36 @@
-var global_inflationRate = 0.031;
+const global_default_inflationRate = 0.031;
 
-var global_taxYear = 2024;
+const global_default_taxYear = 2024;
 
-var global_filingAs = 'Single';
+const global_default_filingAs = 'Single';
 
-var global_propertyTaxRate = 0.01;
+const global_default_propertyTaxRate = 0.01;
 
-var global_propertyTaxDeductionMax = 10000.0;
+const global_default_propertyTaxDeductionMax = 10000.0;
+
+var global_inflationRate = global_default_inflationRate;
+
+var global_taxYear = global_default_taxYear;
+
+var global_filingAs = global_default_filingAs;
+
+var global_propertyTaxRate = global_default_propertyTaxRate;
+
+var global_propertyTaxDeductionMax = global_default_propertyTaxDeductionMax;
+
+function global_reset() {
+    global_inflationRate = global_default_inflationRate;
+    global_taxYear = global_default_taxYear;    
+    global_filingAs = global_default_filingAs;    
+    global_propertyTaxRate = global_default_propertyTaxRate;    
+    global_propertyTaxDeductionMax = global_default_propertyTaxDeductionMax;
+
+    global_setInflationRate(global_inflationRate);
+    global_setTaxYear(global_taxYear);
+    global_setFilingAs(global_filingAs);
+    global_setPropertyTaxRate(global_propertyTaxRate);
+    global_setPropertyTaxDeductionMax(global_propertyTaxDeductionMax);
+}
 
 function global_divBy100(strValue) {
     let asFloat = parseFloat(strValue);
@@ -71,11 +95,11 @@ function global_setPropertyTaxDeductionMax(value) {
 }
 
 function global_getPropertyTaxDeductionMax() {
-    let localPTDM = localStorage.getItem('properTaxDeductionMax');
+    let localPTDM = localStorage.getItem('propertyTaxDeductionMax');
     if (localPTDM == null)
         localPTDM = global_propertyTaxDeductionMax.toFixed(2);
 
-    global_getPropertyTaxDeductionMax = parseFloat(localPTDM);
+    global_propertyTaxDeductionMax = parseFloat(localPTDM);
 }
 
 function global_initialize() {
