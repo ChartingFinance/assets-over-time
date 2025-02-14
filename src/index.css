@@ -59,7 +59,7 @@ div.background-image {
     overflow: auto;
     white-space: nowrap;
     padding: 10px;
-    min-height: 200px;
+    min-height: 400px;
 }
 
 label {
