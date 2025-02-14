@@ -89,7 +89,7 @@ div > #asset {
     padding: 14px;
     border: 2px solid #000;
     border-radius: 10px;
-    width: 300px;
+    max-width: 300px;
 }
 
 div > #rollup {
@@ -98,7 +98,7 @@ div > #rollup {
     padding: 14px;
     border: 2px solid #000;
     border-radius: 10px;
-    width: 300px;
+    max-width: 300px;
 }
 
 div.scrollable-x > .asset {
@@ -107,7 +107,7 @@ div.scrollable-x > .asset {
     padding: 14px;
     border: 2px solid #000;
     border-radius: 10px;
-    width: 300px;
+    max-width: 300px;
 }
 
 .width-full {
