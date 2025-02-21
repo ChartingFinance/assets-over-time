@@ -182,7 +182,10 @@ class TaxTable {
             return new Currency(0);
         }
         else if (isTaxableAccount(modelAsset.instrument)) {
-            return this.calculateShortTermCapitalGains(currentDateInt, modelAsset);            
+            if (modelAsset.holdAllUntilFinish)
+                return new Currency(0);
+            else
+                return this.calculateShortTermCapitalGains(currentDateInt, modelAsset);
         }
         else
             return new Currency(0);

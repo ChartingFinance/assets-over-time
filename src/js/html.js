@@ -42,8 +42,8 @@ const htmlAssetBody =
         <label for="annualReturnRate">Annual Return %</label><br />
         <input type="number" class="width-full" name="annualReturnRate" step="0.01" value="$ANNUALRETURNRATE$" placeholder="annual return rate" required />        
     </div>
-    <div style="float: left; width: 45%">
-        $MONTHSREMAININGDISPLAY$
+    <div style="float: left; width: 45%; text-align: center">
+        $SLOT1$
     </div>
 </div>
 <div class="width-full" style="float: left; padding-top: 10px">
@@ -52,7 +52,7 @@ const htmlAssetBody =
         <input type="number" class="width-full" name="accumulatedValue" step="0.01" value="$ACCUMULATEDVALUE$" placeholder="accumulated value" />
     </div>
     <div style="float: left; width: 45%; text-align: center">
-        $USEFORTAXESDISPLAY$
+        $SLOT2$
     </div>
 </div>
 <div class="width-full" style="float: left; padding-top: 10px">    
@@ -68,16 +68,28 @@ const htmlInvisibleHidden = `<label class="invisible" style="display: none" for=
 const htmlMonthsRemainingDisplay = `<label class="hidable" for="monthsRemaining">Months Remaining</label><br class="hidable" />
     <input class="hidable" type="number" style="width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
 
+/*
 const htmlMonthsRemainingHidden = `<label class="hidable" for="monthsRemaining" style="display: none">Months Remaining</label><br class="hidable" style="display: none" />
     <input class="hidable" type="number" style="display: none; width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
+*/
 
 const htmlUseForTaxesDisplayUnchecked = `<label for="useForTaxes">Use for Taxes</label><br />
-        <input type="checkbox" name="useForTaxes" />`;
+        <input type="radio" name="useForTaxes" />`;
 
 const htmlUseForTaxesDisplayChecked = `<label for="useForTaxes">Use for Taxes</label><br />
-        <input type="checkbox" name="useForTaxes" checked />`;
+        <input type="radio" name="useForTaxes" checked />`;
 
+/*
 const htmlUseForTaxesHidden = '';
+*/
+
+const htmlSlotHidden = '';
+
+const htmlHoldAllUntilFinishDisplayUnchecked = `<label for="holdAllUntilFinish">Hold All Until Finish</label><br />
+        <input type="radio" name="useForTaxes" />`;
+
+const htmlHoldAllUntilFinishDisplayChecked = `<label for="useForTaxes">Hold All Until Finish</label><br />
+        <input type="radio" name="useForTaxes" checked />`;
 
 const htmlFundingSourceDisplay = `<label for="fundingSource">Apply to Card</label><br />
     <select class="width-full" name="fundingSource">
@@ -161,6 +173,38 @@ function html_buildAssetHeader(modelAsset) {
     return html;
 }
 
+function html_handleSlot1(modelAsset, html) {
+    if (isMortgage(modelAsset.instrument) || isDebt(modelAsset.instrument)) {
+        html = html.replace('$SLOT1$', htmlMonthsRemainingDisplay);
+        html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);
+    }
+    else if (isTaxableAccount(modelAsset.instrument)) {
+        if (modelAsset.holdAllUntilFinish)
+            html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayChecked);
+        else
+            html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayUnchecked);
+    }
+    else {
+        html = html.replace('$SLOT1$', htmlSlotHidden);    
+    }
+
+    return html;
+}
+
+function html_handleSlot2(modelAsset, html) {
+    if (isTaxableAccount(modelAsset.instrument)) {
+        if (modelAsset.useForTaxes)
+            html = html.replace('$SLOT2$', htmlUseForTaxesDisplayChecked);
+        else
+            html = html.replace('$SLOT2$', htmlUseForTaxesDisplayUnchecked);
+    }
+    else
+        html = html.replace('$SLOT2$', htmlSlotHidden);
+
+    return html;
+}
+
+
 function html_buildRemovableAssetElement(modelAssets, modelAsset) {
     let html = (html_buildAssetHeader(modelAsset)).slice();
     html = html.replace('$ASSETPROPERTIES$', htmlAssetBody); // html_buildAssetBody(modelAsset.fundingSource));
@@ -182,24 +226,9 @@ function html_buildRemovableAssetElement(modelAssets, modelAsset) {
         html = html.replace('$ACCUMULATEDVALUE$', '0.0');   
 
     html = html.replace('$FUNDINGSOURCEDISPLAY$', htmlFundingSourceDisplay);
-    
-    if (isMortgage(modelAsset.instrument) || isDebt(modelAsset.instrument)) {
-        html = html.replace('$MONTHSREMAININGDISPLAY$', htmlMonthsRemainingDisplay);
-    }
-    else {
-        html = html.replace('$MONTHSREMAININGDISPLAY$', htmlMonthsRemainingHidden);    
-    }
 
-    html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);
-    
-    if (isTaxableAccount(modelAsset.instrument)) {
-        if (modelAsset.useForTaxes)
-            html = html.replace('$USEFORTAXESDISPLAY$', htmlUseForTaxesDisplayChecked);
-        else
-            html = html.replace('$USEFORTAXESDISPLAY$', htmlUseForTaxesDisplayUnchecked);
-    }
-    else
-        html = html.replace('$USEFORTAXESDISPLAY$', htmlUseForTaxesHidden);
+    html = html_handleSlot1(modelAsset, html);
+    html = html_handleSlot2(modelAsset, html); 
 
     html = html.replace('$FUNDINGSOURCEOPTIONS$', html_buildFundingSourceOptions(modelAssets, modelAsset.displayName, modelAsset.fundingSource));
 

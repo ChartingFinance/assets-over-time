@@ -8,6 +8,7 @@ const sMonthsRemaining = 'monthsRemaining';
 const sFinishValue = 'finishValue';
 const sAnnualReturnRate = 'annualReturnRate';
 const sFundingSource = 'fundingSource';
+const sHoldAllUntilFinish = 'holdAllUntilFinish';
 const sUseForTaxes = 'useForTaxes';
 
 const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash'];
@@ -45,6 +46,7 @@ class ModelAsset {
         this.monthlyEarning = [];
         this.monthlyValue = [];
         this.fundingSource = null;
+        this.holdAllUntilFinish = true;
         this.useForTaxes = false;
         this.colorId = 0;
     }
@@ -71,6 +73,7 @@ class ModelAsset {
         let finishCurrency = new Currency(0.0);
         let annualReturnRate = null;
         let fundingSource = null;
+        let holdAllUntilFinish = true;
         let useForTaxes = false;
         
         for (const element of htmlElements) {
@@ -92,6 +95,8 @@ class ModelAsset {
                 annualReturnRate = ARR.parse(element.value);
             else if (element.name == sFundingSource)
                 fundingSource = element.value;
+            else if (element.name == sHoldAllUntilFinish)
+                holdAllUntilFinish = element.checked;
             else if (element.name == sUseForTaxes)
                 useForTaxes = element.checked;
         }
@@ -99,6 +104,7 @@ class ModelAsset {
         let modelAsset = new ModelAsset(instrument, displayName, startDateInt, startCurrency, finishDateInt, monthsRemaining, finishCurrency, annualReturnRate);
         // because fundingSource is usually null, let's set it outside the constructor in case we want to do anything interesting
         modelAsset.fundingSource = fundingSource;
+        modelAsset.holdAllUntilFinish = holdAllUntilFinish;
         modelAsset.useForTaxes = useForTaxes;
 
         if (colorElement) {
