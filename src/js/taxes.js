@@ -49,6 +49,11 @@ const us_2024_taxtables = {
                 ]
             }
         ]
+    },
+    "standardDeduction": {
+        "url": "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024",
+        "single": 14600.0,
+         "married": 29200.0        
     }
 }; 
 
@@ -59,27 +64,14 @@ class TaxTable {
         if (global_filingAs == 'Single') {
             this.activeIncomeTable = this.activeTaxTables.income.tables[0];
             this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
+            this.activeStandardDeduction = this.activeTaxTables.standardDeduction.single;
         }
         else {
             this.activeIncomeTable = this.activeTaxTables.income.tables[1];
             this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[1];
+            this.activeStandardDeduction = this.activeTaxTables.standardDeduction.married;
         }
         
-
-        /*
-        fetch('/src/json/us_2024.json')
-            .then(response => response.json())
-            .then(data => {
-                this.taxes = data;
-                this.activeTable = this.taxes.income.tables[0];
-                console.log(this.taxes);
-                initialize();
-            })
-            .catch(error => {
-                console.error('Error fetching data: ', error);
-            });
-        */
-
         this.yearlyTaxableIncomeAccumulator = new Currency();
         this.yearlyMortgageDeductionAccumulator = new Currency();
         this.yearyShortTermCapitalGainsAccumulator = new Currency();
@@ -187,12 +179,16 @@ class TaxTable {
             else
                 return this.calculateShortTermCapitalGains(currentDateInt, modelAsset);
         }
+        else if (isTaxDeferred(modelAsset.instrument)) {
+            // TODO: how to handle required minimum distributions (RMDs)
+            return new Currency(0);
+        }
         else
             return new Currency(0);
     }
 
     calculateShortTermCapitalGains(currentDateInt, modelAsset) {
-        if (isTaxableAccount(modelAsset.instrument)) {
+        if (isTaxableAccount(modelAsset.instrument) && !modelAsset.holdAllUntilFinish) {
             let c = modelAsset.earningCurrency;
             // TODO: assume 20% short time for time being. Make it configurable
             return c.multiply(0.2);
@@ -202,7 +198,7 @@ class TaxTable {
     }
 
     calculateLongTermCaptialGains(currentDateInt, modelAsset) {
-        if (isTaxableAccount(modelAsset.instrument)) {
+        if (isTaxableAccount(modelAsset.instrument) && !modelAsset.holdAllUntilFinish) {
             let c = modelAsset.earningCurrency;
             // TODO: assume 80% long time for time being. Make it configurable
             return c.multiply(0.8);
@@ -230,10 +226,20 @@ class TaxTable {
         return new Currency(0);
     }
 
+    applyDeductions() {
+        // deductions
+        if (this.yearlyMortgageDeductionAccumulator.amount < 0.0 && this.yearlyPropertyTaxDeductionAccumulator.amount > 0.0) {
+            this.yearlyTaxableIncomeAccumulator.add(this.yearlyMortgageDeductionAccumulator);
+            this.yearlyTaxableIncomeAccumulator.subtract(this.yearlyPropertyTaxDeductionAccumulator);
+        }
+        else {
+            let c = new Currency(this.activeStandardDeduction);;            
+            this.yearlyTaxableIncomeAccumulator.subtract(c);
+        }
+    }
+
     calculateIncomeTax() {
-        // quick deductions
-        this.yearlyTaxableIncomeAccumulator.add(this.yearlyMortgageDeductionAccumulator);
-        this.yearlyTaxableIncomeAccumulator.subtract(this.yearlyPropertyTaxDeductionAccumulator);
+        this.applyDeductions();        
 
         let tax = 0.0;
         for (const taxRow of this.activeIncomeTable.taxRows) {
