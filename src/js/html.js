@@ -73,11 +73,11 @@ const htmlMonthsRemainingHidden = `<label class="hidable" for="monthsRemaining" 
     <input class="hidable" type="number" style="display: none; width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
 */
 
-const htmlUseForTaxesDisplayUnchecked = `<label for="useForTaxes">Use for Taxes</label><br />
-        <input type="radio" name="useForTaxes" />`;
+const htmlUseForTaxesDisplayUnchecked = `<label for="taxChoice">Use for Taxes</label><br />
+        <input type="radio" name="taxChoice" value="useForTaxes" />`;
 
-const htmlUseForTaxesDisplayChecked = `<label for="useForTaxes">Use for Taxes</label><br />
-        <input type="radio" name="useForTaxes" checked />`;
+const htmlUseForTaxesDisplayChecked = `<label for="taxChoice">Use for Taxes</label><br />
+        <input type="radio" name="taxChoice" value="useForTaxes" checked />`;
 
 /*
 const htmlUseForTaxesHidden = '';
@@ -85,11 +85,11 @@ const htmlUseForTaxesHidden = '';
 
 const htmlSlotHidden = '';
 
-const htmlHoldAllUntilFinishDisplayUnchecked = `<label for="holdAllUntilFinish">Hold All Until Finish</label><br />
-        <input type="radio" name="useForTaxes" />`;
+const htmlHoldAllUntilFinishDisplayUnchecked = `<label for="taxChoice">Hold All Until Finish</label><br />
+        <input type="radio" name="taxChoice" value="holdAllUntilFinish" />`;
 
-const htmlHoldAllUntilFinishDisplayChecked = `<label for="useForTaxes">Hold All Until Finish</label><br />
-        <input type="radio" name="useForTaxes" checked />`;
+const htmlHoldAllUntilFinishDisplayChecked = `<label for="taxChoice">Hold All Until Finish</label><br />
+        <input type="radio" name="taxChoice" value="holdAllUntilFinish" checked />`;
 
 const htmlFundingSourceDisplay = `<label for="fundingSource">Apply to Card</label><br />
     <select class="width-full" name="fundingSource">

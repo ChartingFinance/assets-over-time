@@ -8,8 +8,10 @@ const sMonthsRemaining = 'monthsRemaining';
 const sFinishValue = 'finishValue';
 const sAnnualReturnRate = 'annualReturnRate';
 const sFundingSource = 'fundingSource';
-const sHoldAllUntilFinish = 'holdAllUntilFinish';
-const sUseForTaxes = 'useForTaxes';
+const sTaxChoice = 'taxChoice';
+    // taxChoice radio values
+    const sHoldAllUntilFinish = 'holdAllUntilFinish';
+    const sUseForTaxes = 'useForTaxes';
 
 const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash'];
 const sIntrumentDisplayNames = ['💲💰 Monthly Income', '💸💰 Monthly Expense', '🏡 House', '💸🏡 Mortgage', '💳 Debt', '🧾📈 Taxable Account', '⏳📈 Tax Deferred Account', '📈 Tax Free Account', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '💰 Cash'];
@@ -95,10 +97,16 @@ class ModelAsset {
                 annualReturnRate = ARR.parse(element.value);
             else if (element.name == sFundingSource)
                 fundingSource = element.value;
-            else if (element.name == sHoldAllUntilFinish)
-                holdAllUntilFinish = element.checked;
-            else if (element.name == sUseForTaxes)
-                useForTaxes = element.checked;
+            else if (element.name == sTaxChoice) {
+                if (element.checked) {
+                    holdAllUntilFinish = (element.value == sHoldAllUntilFinish);
+                    useForTaxes = (element.value == sUseForTaxes);
+                }
+                else {
+                    holdAllUntilFinish = (element.value != sHoldAllUntilFinish);
+                    useForTaxes = (element.value != sUseForTaxes);
+                }
+            }
         }
 
         let modelAsset = new ModelAsset(instrument, displayName, startDateInt, startCurrency, finishDateInt, monthsRemaining, finishCurrency, annualReturnRate);
