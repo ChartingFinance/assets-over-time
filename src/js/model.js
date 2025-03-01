@@ -143,11 +143,13 @@ class ModelAsset {
     }
 
     credit(currency) {
+        console.log('credit: ' + this.displayName + ' ' + currency.amount);
         this.finishCurrency.add(currency);
         this.accumulatedCurrency.add(currency);
     }
 
     debit(currency) {
+        console.log('debit: ' + this.displayName + ' ' + currency.amount);
         this.finishCurrency.subtract(currency);
         this.accumulatedCurrency.subtract(currency);
     }
@@ -167,7 +169,7 @@ class ModelAsset {
 
             if (this.hasMonthlyRate())
                 this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-
+            
             this.credit(this.earningCurrency);        
         }
 

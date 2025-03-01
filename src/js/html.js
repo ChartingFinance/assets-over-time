@@ -79,10 +79,6 @@ const htmlUseForTaxesDisplayUnchecked = `<label for="taxChoice">Use for Taxes</l
 const htmlUseForTaxesDisplayChecked = `<label for="taxChoice">Use for Taxes</label><br />
         <input type="radio" name="taxChoice" value="useForTaxes" checked />`;
 
-/*
-const htmlUseForTaxesHidden = '';
-*/
-
 const htmlSlotHidden = '';
 
 const htmlHoldAllUntilFinishDisplayUnchecked = `<label for="taxChoice">Hold All Until Finish</label><br />

@@ -26,6 +26,7 @@ function chronometer_applyMonths(modelAssets) {
 }
 
 function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets) {
+    console.log('chronometer_applyMonth');
 
     this.chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets);
 
@@ -50,6 +51,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
             if (modelAsset.inMonth(currentDateInt)) {
                 let fundingSourceAsset = findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
                 if (fundingSourceAsset) {
+                    console.log(modelAsset.displayName + ' ' + modelAsset.finishCurrency.toCurrency() + ' to ' + fundingSourceAsset.displayName);
                     fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);
                 }
             }
@@ -57,6 +59,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
         else if (modelAsset.isFinishDateInt(currentDateInt)) {
             let fundingSourceAsset = findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
             if (fundingSourceAsset) {
+                console.log(modelAsset.displayName + ' ' + modelAsset.finishCurrency.toCurrency() + ' to ' + fundingSourceAsset.displayName);
                 fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);
             }
         }
@@ -76,6 +79,8 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
 }
 
 function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets) {
+    console.log('chronometer_applyTaxesBeforeComputationsThisMonth');
+
     if (!activeTaxTable) {
         console.log('chronometer_applyTaxesBeforeComputationsThisMonth - activeTaxTable not set');
         return;
@@ -84,13 +89,18 @@ function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, model
     // first things first, compute last year's taxes in January
     // think about quarterly tax estimates
     if (currentDateInt.month == 1)
-        activeTaxTable.applyYearlyTaxes(currentDateInt, modelAssets);           
+        activeTaxTable.applyYearlyTaxes(currentDateInt, modelAssets);        
 
-    if (currentDateInt.month == 4)
+    if (activeTaxTable.isEstimatedTaxPaymentDue(currentDateInt))
+        activeTaxTable.payEstimatedTaxes(currentDateInt, modelAssets);
+
+    if (activeTaxTable.isYearlyTaxPaymentDue(currentDateInt))
         activeTaxTable.payYearlyTaxes(currentDateInt, modelAssets);
 }
 
 function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets) {
+    console.log('chronometer_applyTaxesAfterComputationsThisMonth');
+
     if (!activeTaxTable) {
         console.log('chronometer_applyTaxesAfterComputationsThisMonth - activeTaxTable not set');
         return;

@@ -421,3 +421,12 @@ function util_YYYYmmToDisplay(YYYYmm) {
     let options = { year: 'numeric', month: 'long' };
     return date.toLocaleDateString('en-US', options);
 }
+
+function util_findAssetModelsToUseForTaxes(assetModels) {
+    let result = [];
+    for (const modelAsset of assetModels) {
+        if (modelAsset.useForTaxes)
+            result.push(modelAsset);
+    }
+    return result;
+}

@@ -73,24 +73,31 @@ class TaxTable {
         }
         
         this.yearlyTaxableIncomeAccumulator = new Currency();
-        this.yearlyMortgageDeductionAccumulator = new Currency();
-        this.yearyShortTermCapitalGainsAccumulator = new Currency();
+        this.yearlyShortTermCapitalGainsAccumulator = new Currency();
         this.yearlyLongTermCapitalGainsAccumulator = new Currency();
+        this.yearlyMortgageDeductionAccumulator = new Currency();
         this.yearlyPropertyTaxDeductionAccumulator = new Currency();
+        
         this.yearlyTaxes = [];
+
+        this.estimatedTaxPayments = [];
+        this.yearlyPayments = [];
+
         this.startMonthCalls = 0;
     }
 
     startMonth() {
         this.startMonthCalls = 1;
         this.yearlyTaxes = [];
+        this.estimatedTaxPayments = [];
+        this.yearlyPayments = [];
     }
 
     startYear() {
         this.yearlyTaxableIncomeAccumulator = new Currency();
+        this.yearlyShortTermCapitalGainsAccumulator = new Currency();
+        this.yearlyLongTermCapitalGainsAccumulator = new Currency();    
         this.yearlyMortgageDeductionAccumulator = new Currency();
-        this.yearyShortTermCapitalGainsAccumulator = new Currency();
-        this.yearlyLongTermCapitalGainsAccumulator = new Currency();
         this.yearlyPropertyTaxDeductionAccumulator = new Currency();
 
         // apply inflation to the tax rows
@@ -111,7 +118,25 @@ class TaxTable {
         this.inflateTaxRows(this.activeTaxTables.capitalGains.tables);
     }
 
+    isEstimatedTaxPaymentDue(currentDateInt) {
+        return (currentDateInt.month == 1 || currentDateInt.month == 4 || currentDateInt.month == 6 || currentDateInt.month == 9);
+    }
+
+    isYearlyTaxPaymentDue(currentDateInt) {
+        return (currentDateInt.month == 4);
+    }
+
+    addEstimatedTaxPayment(amount) {
+        let mostRecent = this.estimatedTaxPayments.length -1;
+        if (mostRecent == -1)
+            this.estimatedTaxPayments.push(amount);            
+        else
+            this.estimatedTaxPayments[mostRecent] += amount;
+    }
+
     applyMonthlyTaxes(currentDateInt, modelAssets) {
+        console.log('TaxTable.applyMonthlyTaxes');
+
         if (!this.startMonthCalls) {
             console.log('TaxTable.applyMonthlyTaxes called before TaxTable.startMonth initialization');
             return;
@@ -125,13 +150,16 @@ class TaxTable {
 
         for (const modelAsset of modelAssets) {
             this.yearlyTaxableIncomeAccumulator.add(activeTaxTable.calculateIncome(currentDateInt, modelAsset, modelAssets));
+            this.yearlyShortTermCapitalGainsAccumulator.add(activeTaxTable.calculateShortTermCapitalGains(currentDateInt, modelAsset));
             this.yearlyLongTermCapitalGainsAccumulator.add(activeTaxTable.calculateLongTermCaptialGains(currentDateInt, modelAsset));
             this.yearlyMortgageDeductionAccumulator.add(activeTaxTable.calculateMortgageDeduction(currentDateInt, modelAsset));
             this.yearlyPropertyTaxDeductionAccumulator.add(activeTaxTable.calculatePropertyTaxDeduction(currentDateInt, modelAsset));
-        }   
+        }
     }
 
     applyYearlyTaxes(currentDateInt, modelAssets) {
+        console.log('TaxTable.applyYearlyTaxes');
+
         if (!modelAssets) {
             console.log('TaxTable.applyYearlyTaxes has null modelAssets');
             return;
@@ -139,17 +167,66 @@ class TaxTable {
 
         // todo - qualified vs non-qualified dividends
         this.calculateIncomeTax(modelAssets);
+        this.calculateCapitalGainsTax(modelAssets);
 
         this.startYear();
     }
 
+    payEstimatedTaxes(currentDateInt, modelAssets) {
+        // see what the estimated total is for this period
+        let totalEstimatedTax = new Currency(this.estimatedTaxPayments[this.estimatedTaxPayments.length -1]);
+
+        console.log('TaxTable.payEstimatedTaxes: ' + totalEstimatedTax.toCurrency());
+
+        // find the modelAssets to be used for the estimated tax payments
+        let modelAssetsForEstimatedTaxes = util_findAssetModelsToUseForTaxes(modelAssets);
+        
+        if (modelAssetsForEstimatedTaxes.length > 0) {
+            let partialEstimatedTax = new Currency(totalEstimatedTax.amount / modelAssetsForEstimatedTaxes.length);
+            for (modelAsset of modelAssetsForEstimatedTaxes) {
+                modelAsset.finishCurrency.subtract(partialEstimatedTax);
+            }
+        }
+
+        this.estimatedTaxPayments.push(0.0);
+    }
+
+    lastYearsEstimatedTaxPayments() {
+        // get the previous years 4 estimated tax payments. REMEMBER: the last two are the current year, so adjust the index
+        let total = 0.0;
+        let count = 0;
+        for (let ii = this.estimatedTaxPayments.length -3; ii >= 0 && count < 4 ; ii--) {
+            total += this.estimatedTaxPayments[ii];
+            ++count;
+        }
+        return total;
+    }
+
     payYearlyTaxes(currentDateInt, modelAssets) {
+        // see what the total is for this period
+        let totalTax = new Currency(this.yearlyTaxes[this.yearlyTaxes.length -1]);
+
+        // compute the estimated tax payments
+        let estimatedTaxesPaid = new Currency(this.lastYearsEstimatedTaxPayments());
+
+        // compute the difference
+        let difference = new Currency(totalTax.amount - estimatedTaxesPaid.amount);
+        this.yearlyPayments.push(difference.toCurrency());
+
+        console.log('TaxTable.payYearlyTaxes (totalToPay - estimatedPaid = remainderToPay): ' + totalTax.toCurrency() + ' - ' + estimatedTaxesPaid.toCurrency() + ' = ' + difference.toCurrency());
+
+        // find the modelAssets to be used for the tax payments
+        let modelAssetsForTaxes = util_findAssetModelsToUseForTaxes(modelAssets);
+
+        // TAX CALCULATION REMAINS THE SAME
         // scan through model assets and check for 'useForTaxes' property
-        for (modelAsset of modelAssets) {
-            if (modelAsset.useForTaxes) {
-                let c = new Currency(this.yearlyTaxes[this.yearlyTaxes.length -1]);
-                modelAsset.finishCurrency.subtract(c);
-                return;
+        if (modelAssetsForTaxes.length > 0) {
+            let partialTax = new Currency(difference.amount / modelAssetsForTaxes.length);
+            let count = 0;
+            for (modelAsset of modelAssetsForTaxes) {
+                let message = 'TaxTable.payYearlyTaxes (' + (++count).toString() + ' of ' + modelAssetsForTaxes.length.toString() + '): ' + modelAsset.displayName + ' ' + partialTax.toCurrency();
+                console.log(message);
+                modelAsset.finishCurrency.subtract(partialTax);
             }
         }
     }
@@ -167,22 +244,12 @@ class TaxTable {
             if (fundingAsset) {
                 if (isTaxDeferred(fundingAsset.instrument)) {
                     let asIncome = new Currency(modelAsset.finishCurrency.amount);
-                    asIncome.flipSign();                    
+                    asIncome.flipSign();
                     return asIncome;                    
                 }
             }
             return new Currency(0);
-        }
-        else if (isTaxableAccount(modelAsset.instrument)) {
-            if (modelAsset.holdAllUntilFinish)
-                return new Currency(0);
-            else
-                return this.calculateShortTermCapitalGains(currentDateInt, modelAsset);
-        }
-        else if (isTaxDeferred(modelAsset.instrument)) {
-            // TODO: how to handle required minimum distributions (RMDs)
-            return new Currency(0);
-        }
+        }        
         else
             return new Currency(0);
     }
@@ -191,7 +258,9 @@ class TaxTable {
         if (isTaxableAccount(modelAsset.instrument) && !modelAsset.holdAllUntilFinish) {
             let c = modelAsset.earningCurrency;
             // TODO: assume 20% short time for time being. Make it configurable
-            return c.multiply(0.2);
+            c.multiply(0.2);
+            this.addEstimatedTaxPayment(c.amount * 0.2);
+            return c;
         }
         else
             return new Currency(0);
@@ -201,7 +270,9 @@ class TaxTable {
         if (isTaxableAccount(modelAsset.instrument) && !modelAsset.holdAllUntilFinish) {
             let c = modelAsset.earningCurrency;
             // TODO: assume 80% long time for time being. Make it configurable
-            return c.multiply(0.8);
+            c.multiply(0.8);
+            this.addEstimatedTaxPayment(c.amount * 0.15);
+            return c;
         }
         else
             return new Currency(0);
@@ -239,6 +310,8 @@ class TaxTable {
     }
 
     calculateIncomeTax() {
+        this.yearlyTaxableIncomeAccumulator.add(this.yearlyShortTermCapitalGainsAccumulator);
+
         this.applyDeductions();        
 
         let tax = 0.0;
@@ -250,5 +323,17 @@ class TaxTable {
         }
         let c = new Currency(tax);
         this.yearlyTaxes.push(c.toCurrency());
+    }
+
+    calculateCapitalGainsTax() {          
+        let tax = 0.0;
+        for (const taxRow of this.activeCapitalGainsTable.taxRows) {
+            if (this.yearlyLongTermCapitalGainsAccumulator.amount >= taxRow.fromAmount && this.yearlyLongTermCapitalGainsAccumulator.amount >= taxRow.toAmount)
+                tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
+            else if (this.yearlyLongTermCapitalGainsAccumulator.amount >= taxRow.fromAmount && this.yearlyLongTermCapitalGainsAccumulator.amount < taxRow.toAmount)
+                tax += (this.yearlyLongTermCapitalGainsAccumulator.amount - taxRow.fromAmount) * taxRow.rate;
+        }
+        let c = new Currency(tax);
+        this.yearlyTaxes[this.yearlyTaxes.length -1] += c.toCurrency();
     }
 }
