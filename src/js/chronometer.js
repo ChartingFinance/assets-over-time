@@ -1,10 +1,10 @@
 function chronometer_applyMonths(modelAssets) {
     if (activeTaxTable != null)
-        activeTaxTable.startMonth();
+        activeTaxTable.initializeChron();
 
     if (modelAssets != null && modelAssets.length > 0) {
         for (modelAsset of modelAssets) {
-            modelAsset.startMonth();
+            modelAsset.initializeChron();
         }
 
         const firstDateInt = util_firstDateInt(modelAssets);

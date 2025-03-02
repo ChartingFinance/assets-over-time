@@ -80,7 +80,7 @@ function charting_buildMonthsSpan(firstDateInt, lastDateInt) {
     combineMonths = 6;
     if (firstDateInt.month > 1 && firstDateInt.month < 7)
       offsetMonths = 7 - firstDateInt.month;
-    else (firstDateInt.month > 7 && firstDateInt.month < 13)
+    else if (firstDateInt.month > 7 && firstDateInt.month < 13)
       offsetMonths = 13 - firstDateInt.month;
   }
   else if (totalMonths > 264) {
@@ -103,7 +103,7 @@ function charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets) {
 function charting_buildDisplayLabels(firstDateInt, lastDateInt) {
   let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
   let runnerDateInt = new DateInt(firstDateInt.toInt());
-  runnerDateInt.addMonths(monthsSpan.offsetMonths);
+  //runnerDateInt.addMonths(monthsSpan.offsetMonths);
   let labels = [];
   while (runnerDateInt.toInt() <= lastDateInt.toInt()) {
     let label = '';

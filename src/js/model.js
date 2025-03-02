@@ -154,7 +154,7 @@ class ModelAsset {
         this.accumulatedCurrency.subtract(currency);
     }
 
-    startMonth() {
+    initializeChron() {
         this.monthlyEarning = [];
         this.monthlyValue = [];
         this.monthsRemainingDynamic = this.monthsRemaining;

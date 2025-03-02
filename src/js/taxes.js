@@ -59,38 +59,33 @@ const us_2024_taxtables = {
 
 class TaxTable {
     constructor(year) {
-        this.taxes = null;
+        this.taxes = null;     
+        this.initializeChron();
+    }
+
+    initializeChron() {
         this.activeTaxTables = us_2024_taxtables;
         if (global_filingAs == 'Single') {
-            this.activeIncomeTable = this.activeTaxTables.income.tables[0];
-            this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
+            this.activeIncomeTable = Object.assign({}, this.activeTaxTables.income.tables[0]);
+            this.activeCapitalGainsTable = Object.assign({}, this.activeTaxTables.capitalGains.tables[0]);
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.single;
         }
         else {
-            this.activeIncomeTable = this.activeTaxTables.income.tables[1];
-            this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[1];
+            this.activeIncomeTable = Object.assign({}, this.activeTaxTables.income.tables[1]);
+            this.activeCapitalGainsTable = Object.assign({}, this.activeTaxTables.capitalGains.tables[1]);
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.married;
         }
-        
+
         this.yearlyTaxableIncomeAccumulator = new Currency();
         this.yearlyShortTermCapitalGainsAccumulator = new Currency();
-        this.yearlyLongTermCapitalGainsAccumulator = new Currency();
+        this.yearlyLongTermCapitalGainsAccumulator = new Currency();    
         this.yearlyMortgageDeductionAccumulator = new Currency();
         this.yearlyPropertyTaxDeductionAccumulator = new Currency();
-        
-        this.yearlyTaxes = [];
 
-        this.estimatedTaxPayments = [];
-        this.yearlyPayments = [];
-
-        this.startMonthCalls = 0;
-    }
-
-    startMonth() {
-        this.startMonthCalls = 1;
         this.yearlyTaxes = [];
         this.estimatedTaxPayments = [];
         this.yearlyPayments = [];
+    
     }
 
     startYear() {
@@ -136,11 +131,6 @@ class TaxTable {
 
     applyMonthlyTaxes(currentDateInt, modelAssets) {
         console.log('TaxTable.applyMonthlyTaxes');
-
-        if (!this.startMonthCalls) {
-            console.log('TaxTable.applyMonthlyTaxes called before TaxTable.startMonth initialization');
-            return;
-        }
 
         if (!modelAssets) {
             console.log('TaxTable.applyMonthlyTaxes has null modelAssets');
@@ -315,11 +305,12 @@ class TaxTable {
         this.applyDeductions();        
 
         let tax = 0.0;
+        let adjusted = this.yearlyTaxableIncomeAccumulator.amount;
         for (const taxRow of this.activeIncomeTable.taxRows) {
-            if (this.yearlyTaxableIncomeAccumulator.amount >= taxRow.fromAmount && this.yearlyTaxableIncomeAccumulator.amount >= taxRow.toAmount)
+            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (this.yearlyTaxableIncomeAccumulator.amount >= taxRow.fromAmount && this.yearlyTaxableIncomeAccumulator.amount < taxRow.toAmount)
-                tax += (this.yearlyTaxableIncomeAccumulator.amount - taxRow.fromAmount) * taxRow.rate;
+            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
+                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
         }
         let c = new Currency(tax);
         this.yearlyTaxes.push(c.toCurrency());
@@ -327,11 +318,12 @@ class TaxTable {
 
     calculateCapitalGainsTax() {          
         let tax = 0.0;
+        let adjusted = this.yearlyLongTermCapitalGainsAccumulator.amount; // + this.yearlyTaxableIncomeAccumulator.amount;
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
-            if (this.yearlyLongTermCapitalGainsAccumulator.amount >= taxRow.fromAmount && this.yearlyLongTermCapitalGainsAccumulator.amount >= taxRow.toAmount)
+            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (this.yearlyLongTermCapitalGainsAccumulator.amount >= taxRow.fromAmount && this.yearlyLongTermCapitalGainsAccumulator.amount < taxRow.toAmount)
-                tax += (this.yearlyLongTermCapitalGainsAccumulator.amount - taxRow.fromAmount) * taxRow.rate;
+            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
+                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
         }
         let c = new Currency(tax);
         this.yearlyTaxes[this.yearlyTaxes.length -1] += c.toCurrency();
