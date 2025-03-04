@@ -52,7 +52,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
                 let fundingSourceAsset = findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
                 if (fundingSourceAsset) {
                     console.log(modelAsset.displayName + ' ' + modelAsset.finishCurrency.toCurrency() + ' to ' + fundingSourceAsset.displayName);
-                    fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);
+                    fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);                    
                 }
             }
         }
@@ -61,6 +61,8 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
             if (fundingSourceAsset) {
                 console.log(modelAsset.displayName + ' ' + modelAsset.finishCurrency.toCurrency() + ' to ' + fundingSourceAsset.displayName);
                 fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);
+                // add the accumulated value to this year's capital gains
+                activeTaxTable.addLongTermCapitalGains(modelAsset.accumulatedCurrency);
             }
         }
     }
