@@ -103,42 +103,39 @@ function charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets) {
 function charting_buildDisplayLabels(firstDateInt, lastDateInt) {
   let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
   let runnerDateInt = new DateInt(firstDateInt.toInt());
-  //runnerDateInt.addMonths(monthsSpan.offsetMonths);
+  runnerDateInt.addMonths(monthsSpan.offsetMonths);
   let labels = [];
   while (runnerDateInt.toInt() <= lastDateInt.toInt()) {
     let label = '';
     
     if (monthsSpan.combineMonths == 3) {
-      if (runnerDateInt.month == 1) {
+      if (runnerDateInt.month >= 1 && runnerDateInt.month < 4) {
         label = 'Q1 ';
       }
-      else if (runnerDateInt.month == 4) {
+      else if (runnerDateInt.month >= 4 && runnerDateInt.month < 7) {
         label = 'Q2 ';
       }
-      else if (runnerDateInt.month == 7) {
+      else if (runnerDateInt.month >= 7 && runnerDateInt.month < 10) {
         label = 'Q3 '; 
       }
       else {
-        console.assert(runnerDateInt.month == 10, 'runnerDateInt.month != 10 for Q4');
         label = 'Q4 ';
       }
       label += runnerDateInt.year.toString();
     }
     
     else if (monthsSpan.combineMonths == 6) {
-      if (runnerDateInt.month == 1) {
+      if (runnerDateInt.month >= 1 && runnerDateInt.month < 7) {
         label = 'H1 ';
       }
       else {
-        console.assert(runnerDateInt.month == 7, 'runnerDateInt.month != 7 for H2');
         label = 'H2 ';
       }
       label += runnerDateInt.year.toString();
     }
     
     else if (monthsSpan.combineMonths == 12) {
-      console.assert(runnerDateInt.month == 1, 'runnerDateInt.month != 1 for Y');
-      label = (runnerDateInt.year -1).toString();
+      label = runnerDateInt.year.toString();
     }
 
     else { // monthsSpan.combineMonths == 1

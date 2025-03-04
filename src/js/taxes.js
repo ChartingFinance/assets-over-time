@@ -224,7 +224,13 @@ class TaxTable {
     calculateIncome(currentDateInt, modelAsset, modelAssets) {
         if (isMonthlyIncome(modelAsset.instrument)) {
             if (modelAsset.startDateInt.toInt() <= currentDateInt.toInt() && modelAsset.finishDateInt.toInt() > currentDateInt.toInt())
-                return modelAsset.finishCurrency;
+            {
+                // SSN is never more than 85% taxable
+                if (modelAsset.displayName == 'SSN')
+                    return new Currency(modelAsset.finishCurrency.amount * 0.85);
+                else
+                    return modelAsset.finishCurrency;
+            }
             else
                 return new Currency(0);
         }
