@@ -1,4 +1,6 @@
 function chronometer_applyMonths(modelAssets) {
+    let activeUser = new User(global_user_startAge);
+
     if (activeTaxTable != null)
         activeTaxTable.initializeChron();
 
@@ -16,7 +18,7 @@ function chronometer_applyMonths(modelAssets) {
 
         let currentDateInt = new DateInt(firstDateInt.toInt());
         while (currentDateInt.toInt() <= lastDateInt.toInt()) {
-            totalMonths += chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets);
+            totalMonths += chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
             currentDateInt.next();
         }
 
@@ -25,18 +27,14 @@ function chronometer_applyMonths(modelAssets) {
     }
 }
 
-function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets) {
-    console.log('chronometer_applyMonth');
-
-    this.chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets);
-
+function chronometer_applyMonths_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser) {
     let startTotal = new Currency(0.0);
     let finishTotal = new Currency(0.0);
     let accumulatedValue = new Currency(0.0);
     let totalMonths = 0;
 
     for (const modelAsset of modelAssets) {
-        if (modelAsset.applyMonth(currentDateInt)) {
+        if (modelAsset.applyMonth(currentDateInt, activeUser)) {
             if (firstDateInt.toInt() == currentDateInt.toInt())
                 startTotal.add(modelAsset.startCurrency);
             if (lastDateInt.toInt() == currentDateInt.toInt())
@@ -46,10 +44,22 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
         }
     };
 
+    let result = { startTotal: startTotal, finishTotal: finishTotal, totalMonths: totalMonths, accumulatedValue: accumulatedValue };
+    return result;
+}
+
+
+function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser) {
+    console.log('chronometer_applyMonth');
+
+    chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets, activeUser);
+
+    let result = chronometer_applyMonths_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
+
     for (const modelAsset of modelAssets) {
         if (isMonthlyExpense(modelAsset.instrument) || isMonthlyIncome(modelAsset.instrument)) {
             if (modelAsset.inMonth(currentDateInt)) {
-                let fundingSourceAsset = findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
+                let fundingSourceAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
                 if (fundingSourceAsset) {
                     console.log(modelAsset.displayName + ' ' + modelAsset.finishCurrency.toCurrency() + ' to ' + fundingSourceAsset.displayName);
                     fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);                    
@@ -57,7 +67,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
             }
         }
         else if (modelAsset.isFinishDateInt(currentDateInt)) {
-            let fundingSourceAsset = findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
+            let fundingSourceAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
             if (fundingSourceAsset) {
                 console.log(modelAsset.displayName + ' ' + modelAsset.finishCurrency.toCurrency() + ' to ' + fundingSourceAsset.displayName);
                 fundingSourceAsset.finishCurrency.add(modelAsset.finishCurrency);
@@ -65,22 +75,51 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
                 activeTaxTable.addLongTermCapitalGains(modelAsset.accumulatedCurrency);
             }
         }
+        else if (isTaxDeferred(modelAsset.instrument)) {
+            if (activeUser.getAge() >= 73) {
+                // if the user is 73 or older, then they must take RMDs
+                let rmd = activeTaxTable.calculateMonthlyRMD(null, modelAsset, activeUser);
+                console.log('RMD for ' + modelAsset.displayName + ' is ' + rmd.toCurrency());
+                modelAsset.monthlyRMDs.push(rmd.toCurrency());
+
+                // adjust the monthly expenses for the RMD, sending the remainder to the funding source
+                let monthlyExpenses = computeMonthlyExpensesFor(modelAssets, modelAsset.displayName);
+
+                rmd.add(monthlyExpenses);
+                
+                if (rmd.amount > 0) {
+                    let fundingSourceAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
+                    if (fundingSourceAsset) {
+                        console.log(modelAsset.displayName + ' depositing ' + rmd.toCurrency() + ' from RMD to ' + fundingSourceAsset.displayName);
+                        fundingSourceAsset.finishCurrency.add(rmd);                        
+                        modelAsset.finishCurrency.subtract(rmd);
+                    }
+                    else {
+                        console.log(modelAsset.displayName + ' needs a fundingSource in order to deposit RMD value');
+                    }
+                }
+            }
+            else
+                modelAsset.monthlyRMDs.push(0.0);
+        }       
     }
 
-    this.chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets);
+    this.chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets, activeUser);
 
     if (firstDateInt.toInt() == currentDateInt.toInt())
-        summary_setStartValue(startTotal);
+        summary_setStartValue(result.startTotal);
 
     if (lastDateInt.toInt() == currentDateInt.toInt())
-        summary_setFinishValue(finishTotal);  
+        summary_setFinishValue(result.finishTotal);  
     
-    summary_setAccumulatedValue(accumulatedValue);
+    summary_setAccumulatedValue(result.accumulatedValue);
 
-    return totalMonths;
+    activeUser.addMonths(1);
+
+    return result.totalMonths;
 }
 
-function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets) {
+function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets, activeUser) {
     console.log('chronometer_applyTaxesBeforeComputationsThisMonth');
 
     if (!activeTaxTable) {
@@ -100,7 +139,7 @@ function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, model
         activeTaxTable.payYearlyTaxes(currentDateInt, modelAssets);
 }
 
-function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets) {
+function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets, activeUser) {
     console.log('chronometer_applyTaxesAfterComputationsThisMonth');
 
     if (!activeTaxTable) {
@@ -108,5 +147,5 @@ function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelA
         return;
     }
 
-    activeTaxTable.applyMonthlyTaxes(currentDateInt, modelAssets);
+    activeTaxTable.applyMonthlyTaxes(currentDateInt, modelAssets, activeUser);
 }

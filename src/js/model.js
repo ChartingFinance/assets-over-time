@@ -157,6 +157,7 @@ class ModelAsset {
     initializeChron() {
         this.monthlyEarning = [];
         this.monthlyValue = [];
+        this.monthlyRMDs = [];
         this.monthsRemainingDynamic = this.monthsRemaining;
         this.earningCurrency.zero();
         this.finishCurrency.zero();
@@ -256,7 +257,7 @@ class ModelAsset {
         return (isStartDate && !isFinishDate);
     }
 
-    applyMonth(currentDateInt) {
+    applyMonth(currentDateInt, activeUser) {
         let isInMonth = this.inMonth(currentDateInt);
         
         if (currentDateInt.toInt() == this.startDateInt.toInt())
@@ -308,6 +309,13 @@ class ModelAsset {
         this.displayLiquidityData = [];
         for (let ii = monthsSpan.offsetMonths; ii < this.monthlyEarning.length; ii += monthsSpan.combineMonths) {
             this.displayLiquidityData.push(this.monthlyEarning[ii]);
+        }
+    }
+
+    monthlyRMDDataToDisplayRMDData(monthsSpan) {
+        this.displayRMDData = [];
+        for (let ii = monthsSpan.offsetMonths; ii < this.monthlyRMDs.length; ii += monthsSpan.combineMonths) {
+            this.displayRMDData.push(this.monthlyRMDs[ii]);
         }
     }
 

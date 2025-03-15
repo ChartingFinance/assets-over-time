@@ -57,6 +57,60 @@ const us_2024_taxtables = {
     }
 }; 
 
+const uniformLifetimeTable = [
+    { age: 70, divisor: 27.4 },
+    { age: 71, divisor: 26.5 },
+    { age: 72, divisor: 25.6 },
+    { age: 73, divisor: 24.7 },
+    { age: 74, divisor: 23.8 },
+    { age: 75, divisor: 22.9 },
+    { age: 76, divisor: 22.0 },
+    { age: 77, divisor: 21.2 },
+    { age: 78, divisor: 20.3 },
+    { age: 79, divisor: 19.5 },
+    { age: 80, divisor: 18.7 },
+    { age: 81, divisor: 17.9 },
+    { age: 82, divisor: 17.1 },
+    { age: 83, divisor: 16.3 },
+    { age: 84, divisor: 15.5 },
+    { age: 85, divisor: 14.8 },
+    { age: 86, divisor: 14.1 },
+    { age: 87, divisor: 13.4 },
+    { age: 88, divisor: 12.7 },
+    { age: 89, divisor: 12.0 },
+    { age: 90, divisor: 11.4 },
+    { age: 91, divisor: 10.8 },
+    { age: 92, divisor: 10.2 },
+    { age: 93, divisor: 9.6 },
+    { age: 94, divisor: 9.1 },
+    { age: 95, divisor: 8.6 },
+    { age: 96, divisor: 8.1 },
+    { age: 97, divisor: 7.6 },
+    { age: 98, divisor: 7.1 },
+    { age: 99, divisor: 6.7 },
+    { age: 100, divisor: 6.3 },
+    { age: 101, divisor: 5.9 },
+    { age: 102, divisor: 5.5 },
+    { age: 103, divisor: 5.2 },
+    { age: 104, divisor: 4.9 },
+    { age: 105, divisor: 4.5 },
+    { age: 106, divisor: 4.2 },
+    { age: 107, divisor: 3.9 },
+    { age: 108, divisor: 3.7 },
+    { age: 109, divisor: 3.4 },
+    { age: 110, divisor: 3.1 },
+    { age: 111, divisor: 2.9 },
+    { age: 112, divisor: 2.6 },
+    { age: 113, divisor: 2.4 },
+    { age: 114, divisor: 2.1 },
+    { age: 115, divisor: 1.9 },
+    { age: 116, divisor: 1.7 },
+    { age: 117, divisor: 1.5 },
+    { age: 118, divisor: 1.3 },
+    { age: 119, divisor: 1.1 },
+    { age: 120, divisor: 1.0 }
+];
+
 class TaxTable {
     constructor(year) {
         this.taxes = null;     
@@ -129,7 +183,7 @@ class TaxTable {
             this.estimatedTaxPayments[mostRecent] += amount;
     }
 
-    applyMonthlyTaxes(currentDateInt, modelAssets) {
+    applyMonthlyTaxes(currentDateInt, modelAssets, activeUser) {
         console.log('TaxTable.applyMonthlyTaxes');
 
         if (!modelAssets) {
@@ -139,7 +193,7 @@ class TaxTable {
         // todo - qualified vs non-qualified dividends
 
         for (const modelAsset of modelAssets) {
-            this.yearlyTaxableIncomeAccumulator.add(activeTaxTable.calculateIncome(currentDateInt, modelAsset, modelAssets));
+            this.yearlyTaxableIncomeAccumulator.add(activeTaxTable.calculateIncome(currentDateInt, modelAsset, modelAssets, activeUser));
             this.yearlyShortTermCapitalGainsAccumulator.add(activeTaxTable.calculateShortTermCapitalGains(currentDateInt, modelAsset));
             this.yearlyLongTermCapitalGainsAccumulator.add(activeTaxTable.calculateLongTermCaptialGains(currentDateInt, modelAsset));
             this.yearlyMortgageDeductionAccumulator.add(activeTaxTable.calculateMortgageDeduction(currentDateInt, modelAsset));
@@ -225,7 +279,7 @@ class TaxTable {
         }
     }
 
-    calculateIncome(currentDateInt, modelAsset, modelAssets) {
+    calculateIncome(currentDateInt, modelAsset, modelAssets, activeUser) {
         if (isMonthlyIncome(modelAsset.instrument)) {
             if (modelAsset.startDateInt.toInt() <= currentDateInt.toInt() && modelAsset.finishDateInt.toInt() > currentDateInt.toInt())
             {
@@ -235,23 +289,34 @@ class TaxTable {
                 else
                     return modelAsset.finishCurrency;
             }
-            else
-                return new Currency(0);
         }
         else if (isMonthlyExpense(modelAsset.instrument)) {
             // find the funding model asset and determine income
-            let fundingAsset = findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
+            let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
             if (fundingAsset) {
-                if (isTaxDeferred(fundingAsset.instrument)) {
+                if (isTaxDeferred(fundingAsset.instrument) && activeUser.getAge() < 73) { // if over 73 will be handled by RMD
                     let asIncome = new Currency(modelAsset.finishCurrency.amount);
                     asIncome.flipSign();
                     return asIncome;                    
                 }
             }
-            return new Currency(0);
+        }
+        else if (isTaxDeferred(modelAsset.instrument)) {
+            if (activeUser.getAge() >= 73) {
+                // if the user is 73 or older, then they must take RMDs
+                let rmd = activeTaxTable.calculateMonthlyRMD(null, modelAsset, activeUser);
+                console.log('RMD for ' + modelAsset.displayName + ' is ' + rmd.toCurrency());
+
+                let monthlyExpenses = computeMonthlyExpensesFor(modelAssets, modelAsset.displayName);
+                
+                if (rmd.amount > monthlyExpenses.amount)
+                    return rmd;
+                else
+                    return monthlyExpenses;
+            }
         }        
-        else
-            return new Currency(0);
+        
+        return new Currency(0);
     }
 
     calculateShortTermCapitalGains(currentDateInt, modelAsset) {
@@ -297,6 +362,27 @@ class TaxTable {
             if (c.amount > (global_propertyTaxDeductionMax / 12.0))
                 c.amount = global_propertyTaxDeductionMax / 12.0;
             return c;
+        }
+        return new Currency(0);
+    }
+
+    calculateMonthlyRMD(currentDateInt, modelAsset, activeUser) {
+        if (isTaxDeferred(modelAsset.instrument) && activeUser.age >= 73) {
+            let divisor = 0;
+            for (const table of uniformLifetimeTable) {
+                if (table.age == activeUser.age) {
+                    divisor = table.divisor;
+                    break;
+                }
+            }
+            if (divisor == 0) {
+                console.log('TaxTable.calculateRMD: could not find divisor for age ' + modelAsset.age);
+                return new Currency(0);
+            }
+
+            let rmd = modelAsset.finishCurrency.amount / divisor;
+            rmd /= 12.0;
+            return new Currency(rmd);
         }
         return new Currency(0);
     }

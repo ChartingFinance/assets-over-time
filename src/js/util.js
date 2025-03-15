@@ -255,12 +255,48 @@ function computeFinishDateFromMonthsRemainingChange(startDateValue, monthsRemain
     return finishDate.toISOString(true);
 }
 
-function findModelAssetByDisplayName(modelAssets, displayName) {    
+function computeMonthlyExpensesFor(modelAssets, displayName) {
+    let expenseSum = new Currency(0);
+    let expenseModelAssets = util_findModelAssetsByFundingSource(modelAssets, sInstrumentNames[sInstrumentsIDs.monthlyExpense], displayName);
+    for (let expenseModelAsset of expenseModelAssets) {
+        expenseSum.add(expenseModelAsset.finishCurrency);
+    }
+    return expenseSum;
+}
+
+function util_findModelAssetByDisplayName(modelAssets, displayName) {    
     for (const modelAsset of modelAssets) {
         if (modelAsset.displayName == displayName)
             return modelAsset;
     }
     return null;
+}
+
+function util_findModelAssetsByFundingSource(modelAssets, instrument, fundingSource) {
+    let results = [];
+    for (const modelAsset of util_findModelAssetsByInstrument(modelAssets, instrument)) {
+        if (modelAsset.fundingSource == fundingSource)
+            results.push(modelAsset);
+    }
+    return results;
+}
+
+function util_findExpenseModelAssetsTotal(modelAssets, sourceDisplayName) {
+    let total = 0.0;
+    for (const modelAsset of modelAssets) {
+        if (isMonthlyExpense(modelAsset.instrument) && modelAsset.fundingSource == sourceDisplayName)
+            total += modelAsset.finishCurrency.amount;
+    }
+    return total;
+}
+
+function util_findModelAssetsByInstrument(modelAssets, instrument) {
+    let results = [];
+    for (const modelAsset of modelAssets) {
+        if (modelAsset.instrument == instrument || instrument == null)
+            results.push(modelAsset);
+    }
+    return results;
 }
 
 function isHome(value) { // should be distinct from 2nd property and rentals
