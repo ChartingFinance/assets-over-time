@@ -157,7 +157,7 @@
                     <span>Asset View</span>
                 </div>
                 <div class="tab" id="tab2" onclick="tab2_click()">
-                    <span>Liquidity View</span>
+                    <span>Earnings View</span>
                 </div>
                 <div>
                     <div class="tab" id="tab3" onclick="tab3_click()">
@@ -170,7 +170,7 @@
                 <canvas id="chartAssetCanvas"></canvas>
             </div>
             <div style="width: 100%; display: none">
-                <canvas id="chartLiquidityCanvas"></canvas>
+                <canvas id="chartEarningsCanvas"></canvas>
             </div>
             <div style="width: 100%; display: none">
                 <canvas id="chartCashFlowCanvas"></canvas>
@@ -199,12 +199,12 @@
             var totalElement = document.getElementById('total');
             
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
-            var chartLiquidityCanvas = document.getElementById('chartLiquidityCanvas');
+            var chartEarningsCanvas = document.getElementById('chartEarningsCanvas');
             var chartCashFlowCanvas = document.getElementById('chartCashFlowCanvas');
             var activeStoryArc = null;
             var activeStoryName = null;
             var activeAssetCanvas = null;
-            var activeLiquidityCanvas = null;
+            var activeEarningsCanvas = null;
             var activeCashFlowCanvas = null;
             var activeTaxTable = null;
 
@@ -386,7 +386,7 @@
             function tab1_click() {
                 if (tab2.classList.contains('active')) {
                     tab2.classList.remove('active');
-                    chartLiquidityCanvas.parentElement.style.display = 'none';
+                    chartEarningsCanvas.parentElement.style.display = 'none';
                 }
                 else if (tab3.classList.contains('active')) {
                     tab3.classList.remove('active');
@@ -406,7 +406,7 @@
                     chartCashFlowCanvas.parentElement.style.display = 'none';                    
                 }
                 tab2.classList.add('active');
-                chartLiquidityCanvas.parentElement.style.display = '';                
+                chartEarningsCanvas.parentElement.style.display = '';                
             }
 
             function tab3_click() {
@@ -416,7 +416,7 @@
                 }
                 else if (tab2.classList.contains('active')) {
                     tab2.classList.remove('active');
-                    chartLiquidityCanvas.parentElement.style.display = 'none';                    
+                    chartEarningsCanvas.parentElement.style.display = 'none';                    
                 }
                 tab3.classList.add('active');
                 chartCashFlowCanvas.parentElement.style.display = '';                
@@ -446,7 +446,7 @@
                 let modelAssets = membrane_htmlElementsToAssetModels();
                 charting_buildFromModelAssets(modelAssets, false);
                 activeAssetCanvas.update(); 
-                activeLiquidityCanvas.update();
+                activeEarningsCanvas.update();
                 activeCashFlowCanvas.update();                
             }
 
@@ -476,14 +476,14 @@
             function innerCalculate() {              
                 if (activeAssetCanvas != null)
                     activeAssetCanvas.destroy();
-                if (activeLiquidityCanvas != null)
-                    activeLiquidityCanvas.destroy();
+                if (activeEarningsCanvas != null)
+                    activeEarningsCanvas.destroy();
                 if (activeCashFlowCanvas != null)
                     activeCashFlowCanvas.destroy();
                 if (charting_jsonAssetsChartData != null)
                     activeAssetCanvas = new Chart(chartAssetCanvas, charting_jsonAssetsChartData);
-                if (charting_jsonLiquidityChartData != null)
-                    activeLiquidityCanvas = new Chart(chartLiquidityCanvas, charting_jsonLiquidityChartData);
+                if (charting_jsonEarningsChartData != null)
+                    activeEarningsCanvas = new Chart(chartEarningsCanvas, charting_jsonEarningsChartData);
                 if (charting_jsonCashFlowChartData != null)
                     activeCashFlowCanvas = new Chart(chartCashFlowCanvas, charting_jsonCashFlowChartData);
             }
