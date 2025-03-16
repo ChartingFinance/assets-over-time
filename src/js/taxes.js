@@ -304,7 +304,7 @@ class TaxTable {
         else if (isTaxDeferred(modelAsset.instrument)) {
             if (activeUser.getAge() >= 73) {
                 // if the user is 73 or older, then they must take RMDs
-                let rmd = activeTaxTable.calculateMonthlyRMD(null, modelAsset, activeUser);
+                let rmd = activeTaxTable.calculateMonthlyRMD(currentDateInt, modelAsset, activeUser);
                 console.log('RMD for ' + modelAsset.displayName + ' is ' + rmd.toCurrency());
 
                 let monthlyExpenses = computeMonthlyExpensesFor(modelAssets, modelAsset.displayName);
@@ -380,7 +380,12 @@ class TaxTable {
                 return new Currency(0);
             }
 
-            let rmd = modelAsset.finishCurrency.amount / divisor;
+            let index = modelAsset.monthlyValue.length - currentDateInt.month;
+            if (index < 0)
+                index = 0;
+            let value = modelAsset.monthlyValue[index];
+            let rmd = value / divisor;
+
             rmd /= 12.0;
             return new Currency(rmd);
         }

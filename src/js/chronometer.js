@@ -78,7 +78,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
         else if (isTaxDeferred(modelAsset.instrument)) {
             if (activeUser.getAge() >= 73) {
                 // if the user is 73 or older, then they must take RMDs
-                let rmd = activeTaxTable.calculateMonthlyRMD(null, modelAsset, activeUser);
+                let rmd = activeTaxTable.calculateMonthlyRMD(currentDateInt, modelAsset, activeUser);
                 console.log('RMD for ' + modelAsset.displayName + ' is ' + rmd.toCurrency());
                 modelAsset.monthlyRMDs.push(rmd.toCurrency());
 
