@@ -27,7 +27,7 @@ function chronometer_applyMonths(modelAssets) {
     }
 }
 
-function chronometer_applyMonths_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser) {
+function chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser) {
     let startTotal = new Currency(0.0);
     let finishTotal = new Currency(0.0);
     let accumulatedValue = new Currency(0.0);
@@ -54,7 +54,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
 
     chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets, activeUser);
 
-    let result = chronometer_applyMonths_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
+    let result = chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
 
     for (const modelAsset of modelAssets) {
         if (isMonthlyExpense(modelAsset.instrument) || isMonthlyIncome(modelAsset.instrument)) {

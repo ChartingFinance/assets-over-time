@@ -174,7 +174,7 @@ function html_handleSlot1(modelAsset, html) {
         html = html.replace('$SLOT1$', htmlMonthsRemainingDisplay);
         html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);
     }
-    else if (isTaxableAccount(modelAsset.instrument)) {
+    else if (isLiquidAccount(modelAsset.instrument)) {
         if (modelAsset.holdAllUntilFinish)
             html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayChecked);
         else
@@ -188,7 +188,7 @@ function html_handleSlot1(modelAsset, html) {
 }
 
 function html_handleSlot2(modelAsset, html) {
-    if (isTaxableAccount(modelAsset.instrument)) {
+    if (isLiquidAccount(modelAsset.instrument)) {
         if (modelAsset.useForTaxes)
             html = html.replace('$SLOT2$', htmlUseForTaxesDisplayChecked);
         else

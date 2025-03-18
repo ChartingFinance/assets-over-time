@@ -436,15 +436,18 @@ function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt,
 function charting_buildFromModelAssets(modelAssets, buildNewDataSet) {
   if (modelAssets == null || modelAssets.length == 0) {
     console.log('charting_buildFromModelAssets - null or zero length array provided');
-    return null;
+    charting_jsonAssetsChartData = null;
+    charting_jsonEarningsChartData = null;
+    charting_jsonCashFlowChartData = null;
   }
- 
-  let firstDateInt = util_firstDateInt(modelAssets);
-  let lastDateInt = util_lastDateInt(modelAssets);
+  else {
+    let firstDateInt = util_firstDateInt(modelAssets);
+    let lastDateInt = util_lastDateInt(modelAssets);
 
-  charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets);
+    charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets);
 
-  charting_jsonAssetsChartData = charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
-  charting_jsonEarningsChartData = charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
-  charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+    charting_jsonAssetsChartData = charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+    charting_jsonEarningsChartData = charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+    charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+  }
 }

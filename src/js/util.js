@@ -323,6 +323,10 @@ function isTaxableAccount(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxableEquity];
 }
 
+function isLiquidAccount(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.taxableEquity] || value == sInstrumentNames[sInstrumentsIDs.cash] || value == sInstrumentNames[sInstrumentsIDs.bank];
+}
+
 function isTaxDeferred(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity];
 }

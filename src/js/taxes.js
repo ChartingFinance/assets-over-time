@@ -118,15 +118,15 @@ class TaxTable {
     }
 
     initializeChron() {
-        this.activeTaxTables = us_2024_taxtables;
+        this.activeTaxTables = JSON.parse(JSON.stringify(us_2024_taxtables));
         if (global_filingAs == 'Single') {
-            this.activeIncomeTable = Object.assign({}, this.activeTaxTables.income.tables[0]);
-            this.activeCapitalGainsTable = Object.assign({}, this.activeTaxTables.capitalGains.tables[0]);
+            this.activeIncomeTable = this.activeTaxTables.income.tables[0];
+            this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.single;
         }
         else {
-            this.activeIncomeTable = Object.assign({}, this.activeTaxTables.income.tables[1]);
-            this.activeCapitalGainsTable = Object.assign({}, this.activeTaxTables.capitalGains.tables[1]);
+            this.activeIncomeTable = this.activeTaxTables.income.tables[1];
+            this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[1];
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.married;
         }
 
@@ -138,8 +138,7 @@ class TaxTable {
 
         this.yearlyTaxes = [];
         this.estimatedTaxPayments = [];
-        this.yearlyPayments = [];
-    
+        this.yearlyPayments = [];    
     }
 
     startYear() {
