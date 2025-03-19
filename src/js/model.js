@@ -161,6 +161,13 @@ class ModelAsset {
         this.monthsRemainingDynamic = this.monthsRemaining;
         this.earningCurrency.zero();
         this.finishCurrency.zero();
+        
+        // seed the first month with the start currency
+
+        if (isMonthlyIncome(this.instrument) || isMonthlyExpense(this.instrument)) {
+            this.monthlyValue.push(this.startCurrency.toCurrency());
+            this.monthlyEarning.push(this.startCurrency.toCurrency());    
+        }
     }
 
     applyMonth_common(isInMonth) {
@@ -262,10 +269,6 @@ class ModelAsset {
         
         if (currentDateInt.toInt() == this.startDateInt.toInt())
             this.finishCurrency = new Currency(this.startCurrency.amount);
-
-        let preFinishCurrency = null;
-        if (isInMonth)
-            preFinishCurrency = new Currency(this.finishCurrency.amount);
 
         if (isMortgage(this.instrument) || isDebt(this.instrument)) {
             this.applyMonth_mortgageOrDebt(isInMonth);

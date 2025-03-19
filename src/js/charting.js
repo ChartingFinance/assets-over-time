@@ -4,8 +4,8 @@ const stackedBarChartConfig = {
     options: {
       plugins: {
         title: {
-          display: true,
-          text: 'Financial Simulation Charted'
+          display: false,
+          text: null
         },
       },
       responsive: true,
@@ -69,21 +69,21 @@ function charting_buildMonthsSpan(firstDateInt, lastDateInt) {
   let totalMonths = util_totalMonths(firstDateInt, lastDateInt);
   let combineMonths = 1;
   let offsetMonths = 0;
-  if (totalMonths > 36 && totalMonths <= 96) {
+  if (totalMonths > 36 && totalMonths <= 84) {
     combineMonths = 3;
     if (firstDateInt.month == 2 || firstDateInt.month == 5 || firstDateInt.month == 8 || firstDateInt.month == 11)
       offsetMonths = 2;
     else if (firstDateInt.month == 3 || firstDateInt.month == 6 || firstDateInt.month == 9 || firstDateInt.month == 12)
       offsetMonths = 1;
   }
-  else if (totalMonths > 96 && totalMonths <= 264) {
+  else if (totalMonths > 84 && totalMonths <= 216) {
     combineMonths = 6;
     if (firstDateInt.month > 1 && firstDateInt.month < 7)
       offsetMonths = 7 - firstDateInt.month;
     else if (firstDateInt.month > 7 && firstDateInt.month < 13)
       offsetMonths = 13 - firstDateInt.month;
   }
-  else if (totalMonths > 264) {
+  else if (totalMonths > 216) {
     combineMonths = 12;
     if (firstDateInt.month > 1)
       offsetMonths = 13 - firstDateInt.month;
@@ -388,17 +388,77 @@ function charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAss
   cashFlowDataSet.label = 'Federal Income Tax';
 
   let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
-  let fills = (12 / monthsSpan.combineMonths) -1;
 
-  for (let c of activeTaxTable.yearlyTaxes) {
-    cashFlowDataSet.data.push(c);
-    for (let ii = 0; ii < fills; ++ii)
+  // taxes are paid out in April every year. So make we position the payment properly for the scale of the chart.
+  let ignore = false;
+  if (monthsSpan.combineMonths == 1) {
+    let count = 0;
+    if (firstDateInt.month < 5) {
+      while (firstDateInt.month + count < 4) {
+        cashFlowDataSet.data.push(0.0);
+        ++count;
+      }
+    }
+    else {
+      while (firstDateInt.month + count < 16) {
+        cashFlowDataSet.data.push(0.0);
+        ++count;
+      }
+    }
+  }
+  else if (monthsSpan.combineMonths == 3) {
+    if (firstDateInt.month == 1) {
+      cashFlowDataSet.data.push(0.0);
+    }
+    if (firstDateInt.month >= 2 && firstDateInt.month < 5) {
+
+    }
+    if (firstDateInt.month >= 5 && firstDateInt.month < 8) {
+      cashFlowDataSet.data.push(0.0);
+      cashFlowDataSet.data.push(0.0);
+      cashFlowDataSet.data.push(0.0);
+    }
+    if (firstDateInt.month >= 8 && firstDateInt.month < 11) {
+      cashFlowDataSet.data.push(0.0);
+      cashFlowDataSet.data.push(0.0);
+    }
+    if (firstDateInt.month >= 11 && firstDateInt.month < 13) {
+      cashFlowDataSet.data.push(0.0);
+    }
+  }
+  else if (monthsSpan.combineMonths == 6) {    
+    if (firstDateInt.month >= 2 && firstDateInt.month <= 4)
+      ignore = true;
+  }
+  else if (monthsSpan.combineMonths == 12) {
+    // nothing to do
+  }
+  else {
+    console.log('charting_buildCashFlowDataSet_taxes - unknown monthsSpan.combineMonths');
+    return null;
+  }
+
+  let postFills = (12 / monthsSpan.combineMonths) -1;
+
+  for (let c of activeTaxTable.yearlyPayments) {
+    if (!ignore) {
+      cashFlowDataSet.data.push(c);
+    }
+    ignore= false;
+    for (let ii = 0; ii < postFills; ++ii)
       cashFlowDataSet.data.push(0.0);
   }
 
   cashFlowDataSet.backgroundColor = '#ffff00';
   
   return cashFlowDataSet;
+}
+
+function charting_applyTaxesToCashFlowDataSet(cashFlowDataSet, taxDataSet) {
+  for (let ii = 0; ii < cashFlowDataSet.data.length; ii++) {
+    let taxData = taxDataSet.data[ii];
+    cashFlowDataSet.data[ii] -= taxData;
+  }
 }
 
 function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets) {
@@ -422,6 +482,8 @@ function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt,
   let chartingCashFlowDataSet_cash = charting_buildCashFlowDataSet(reducedModelAssets, 'Cash', 0);
   let chartingCashFlowDataSet_rmds = charting_buildCashFlowDataSet_rmds(firstDateInt, lastDateInt, modelAssets);
   let chartingCashFlowDataSet_taxes = charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAssets);
+
+  charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_taxes);
     
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_credits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_debits);

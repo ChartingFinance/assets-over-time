@@ -246,10 +246,6 @@ class TaxTable {
     }
 
     payYearlyTaxes(currentDateInt, modelAssets) {
-        if (this.yearlyTaxes.length == 0) { // means we are at a payment date, but no data. So pay $0
-            this.yearlyTaxes.push(0);
-        }
-
         // see what the total is for this period
         let totalTax = new Currency(this.yearlyTaxes[this.yearlyTaxes.length -1]);
 
