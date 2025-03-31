@@ -43,12 +43,10 @@ function membrane_rawModelDataToModelAsset(rawModelData) {
     let startDateInt = new DateInt((rawModelData.startDateInt.year * 100) + rawModelData.startDateInt.month);
     let startCurrency = new Currency(rawModelData.startCurrency.amount);
     let finishDateInt = new DateInt((rawModelData.finishDateInt.year * 100) + rawModelData.finishDateInt.month);
-    let finishCurrency = new Currency(rawModelData.finishCurrency.amount);
+    //let finishCurrency = new Currency(rawModelData.finishCurrency.amount);
     let arr = new ARR(rawModelData.annualReturnRate.annualReturnRate);
-    let modelAsset = new ModelAsset(rawModelData.instrument, rawModelData.displayName, startDateInt, startCurrency, finishDateInt, rawModelData.monthsRemaining, finishCurrency, arr);
+    let modelAsset = new ModelAsset(rawModelData.instrument, rawModelData.displayName, startDateInt, startCurrency, finishDateInt, rawModelData.monthsRemaining, arr);
     modelAsset.fundingSource = rawModelData.fundingSource;
-    modelAsset.holdAllUntilFinish = rawModelData.holdAllUntilFinish;
-    modelAsset.useForTaxes = rawModelData.useForTaxes;
     return modelAsset;
 }
 

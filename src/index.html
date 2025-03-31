@@ -20,6 +20,7 @@
         <script src="js/html.js"></script>
         <script src="js/membrane.js"></script>
         <script src="js/model.js"></script>
+        <script src="js/portfolio.js"></script>
         <script src="js/summary.js"></script>
         <script src="js/taxes.js"></script>
         <script src="js/user.js"></script>
@@ -42,8 +43,11 @@
         
         <div class="row" id="topContainer">
             <div class="column left" style="text-align: center;">
-                <div style="width: 100%">                    
+                <div style="width: 100%">
+                    <!--                    
                     <select id="savedDataSets" style="height: 30px; width: 100%; max-width: 300px;" onchange="selectLocalData_changed()"><option>None</option></select>
+                    -->
+                    <button onclick="aplus_save()" title="Save the current financial cards in the A spot">A+</button>&nbsp;<button onclick="aplus_recall()" title="Recall financial cards from the A spot">AR</button>&nbsp;&nbsp; | &nbsp;&nbsp;<button onclick="bplus_click()" title="Save the current financial cards in the B spot">B+</button>&nbsp;<button onclick="bplus_recall()" title="Recall financial cards from the B spot">BR</button>
                 </div><br />
                 <h3>Enter Financial Data</h3>
                 <form id="asset" class="asset">
@@ -92,12 +96,12 @@
                             </select>
                         </div>
                     </div>
-                    <input type="submit" value="Create" />
+                    <input type="submit" value="Create" title="Add this 'card' of financial data to the active set of financial cards to the right" />
                 </form>
             </div>
             <div class="column middle">
                 <div style="text-align: center; clear: both">
-                    <button onclick="calculate()">Recalculate</button>
+                    <button onclick="calculate()" title="Incorporate any changes made to the financial cards and recalculate">Recalculate</button>
                 </div>
                 <br />
                 <div style="padding: 10px" class="scrollable-x" id="assets"></div>                
@@ -106,13 +110,13 @@
                 <div style="width: 100%;">
                     <input id="sharedDataSets" style="height: 30px; width: 100%; max-width: 300px;" placeholder="click 'share' to generate url"><br />
                     <button class="common-margin" onclick="shareData()">Share</button>
-                </div><br />            
+                </div>            
                 <h3>Rolled Up Financial Data</h3>
                 <form id="rollup">
                     <div style="overflow: hidden;">
                         <div class="width-full" style="float: left;">
                             <label for="instrument">Financial Instrument</label><br />
-                            <input type="text" class="width-full" name="instrument" value="All Instruments"/><br />
+                            <input type="text" class="width-full" name="instrument" value="All Instruments" /><br />
                             <label for="displayName" class="invisible">Familiar Name</label><br />
                             <input type="text" class="invisible width-full" name="displayName" placeholder="familiar name" />
                         </div>
@@ -179,13 +183,44 @@
          
         </div>   
 
-        <!-- Popup Form -->
-        <div id="popupForm" class="popup">
+        <!-- Popup Forms -->
+        <div id="popupFormShare" class="popup">
             <div class="popup-content">
                 <span class="closeBtn">&times;</span>
                 <h2 id="popupTitle">Buy me a Coffee!</h2><br />
                 <p>This will help pay for server costs as this project grows-- like the sharing feature.</p>
                 <h2><a href='https://buymeacoffee.com/charting.finance' target="_blank">Visit my Coffee</a></h2>
+            </div>
+        </div>
+
+        <div id="popupFormCardSelection" class="popup">
+            <div class="popup-content">
+                <span class="closeBtn">&times;</span>
+                <h2>Select Cards to apply with percentages</h2><br />
+                <div style="width: 100%">
+                    <label for="cardSelection1">Apply to Card</label>
+                    <div style="width:75%">
+                        <select id="cardSelection1">
+                            <option>None</option>
+                        </select>
+                    </div>
+                    <div style="width:20%">
+                        <label for="percentage1">Percentage</label>
+                        <input type="number" step=1 id="percentage1" />
+                    </div>
+                </div><br />
+                <div style="width: 100%">
+                    <label for="cardSelection1">Apply to Card</label>
+                    <div style="width:75%">
+                        <select id="cardSelection1">
+                            <option>None</option>
+                        </select>
+                    </div>
+                    <div style="width:20%">
+                        <label for="percentage1">Percentage</label>
+                        <input type="number" step=1 id="percentage1" />
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -236,9 +271,11 @@
                     util_ensureStoryNames(activeStoryArc, activeStoryName);
                 }
 
+                /* dropdown commented out right now 
                 let optionsHTML = html_buildStoryNameOptionsFromLocalStorage();
                 let selectSavedDatasets = document.getElementById('savedDataSets');
                 selectSavedDatasets.innerHTML = optionsHTML;
+                */
 
                 // Get the last working data set
                 loadLocalData();
@@ -423,6 +460,33 @@
             }
         </script>
         <script>
+            <!-- A B save and recall -->
+
+            function aplus_save() {
+                let assetModels = membrane_htmlElementsToAssetModels();
+                util_saveLocalAssetModels(activeStoryArc, 'APlus', assetModels);
+            }
+
+            function aplus_recall() {
+                let assetModelsRaw = util_loadLocalAssetModels(activeStoryArc, 'APlus');
+                let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
+                assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
+                calculate();
+            }
+
+            function bplus_click() {
+                let assetModels = membrane_htmlElementsToAssetModels();
+                util_saveLocalAssetModels(activeStoryArc, 'BPlus', assetModels);
+            }
+
+            function bplus_recall() {
+                let assetModelsRaw = util_loadLocalAssetModels(activeStoryArc, 'BPlus');
+                let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
+                assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
+                calculate();
+            }
+        </script>
+        <script>
             <!-- charting -->
 
             function ensureHighlightDisplayName() {
@@ -452,22 +516,27 @@
 
             function calculate() {
                 let modelAssets = membrane_htmlElementsToAssetModels();
-                chronometer_applyMonths(modelAssets);
+                let portfolio = new Portfolio(modelAssets);
+                chronometer_run(portfolio);
+                //chronometer_applyMonths(modelAssets);
 
                 // unhook mouse events
                 clearMouseEvents();
 
                 // use the updated modelAssets to produce the updated html
-                assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(modelAssets);
+                assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
 
                 // hook mouse events
                 attachMouseEvents();
+
+                // prepare the chart data
+                portfolio.buildChartingDisplayData();
 
                 // if there is a highlightDisplayName, make sure it's selected
                 ensureHighlightDisplayName();
 
                 // then build the charts
-                charting_buildFromModelAssets(modelAssets, true)
+                charting_buildFromPortfolio(portfolio, true)
                 innerCalculate();
 
                 saveLocalData();
@@ -517,7 +586,11 @@
 
             function shareData() {
                 // loadPopupList(shareGlobally);
-                doPopup(shareGlobally);
+                doPopupShare(shareGlobally);
+            }
+
+            function cardSelection() {
+                doPopupCardSelection();
             }
 
             function loadPopupList(popupTitle) {
@@ -531,16 +604,22 @@
                 }
             }
 
-            function doPopup(popupTitle) {
-                document.getElementById('popupForm').style.display = 'block';
+            function doPopupShare(popupTitle) {
+                document.getElementById('popupFormShare').style.display = 'block';
                 //document.getElementById('popupTitle').innerHTML = popupTitle;
                 //let inputElement = document.getElementById('datasetTitle');
                 //inputElement.value = util_getYYYYmm() + ' ';
             }
 
+            function doPopupCardSelection() {
+                document.getElementById('popupFormCardSelection').style.display = 'block';
+            }
+
             document.querySelector('.closeBtn').addEventListener('click', function() {
-                document.getElementById('popupForm').style.display = 'none';
+                document.getElementById('popupFormShare').style.display = 'none';
+                document.getElementById('popupFormCardSelection').style.display = 'none';
             });
+
         </script>
         <script>
             // initialization routines

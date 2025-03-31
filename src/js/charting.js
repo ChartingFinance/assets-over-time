@@ -65,44 +65,8 @@ var charting_jsonAssetsChartData = null;
 var charting_jsonEarningsChartData = null;
 var charting_jsonCashFlowChartData = null;
 
-function charting_buildMonthsSpan(firstDateInt, lastDateInt) {
-  let totalMonths = util_totalMonths(firstDateInt, lastDateInt);
-  let combineMonths = 1;
-  let offsetMonths = 0;
-  if (totalMonths > 36 && totalMonths <= 84) {
-    combineMonths = 3;
-    if (firstDateInt.month == 2 || firstDateInt.month == 5 || firstDateInt.month == 8 || firstDateInt.month == 11)
-      offsetMonths = 2;
-    else if (firstDateInt.month == 3 || firstDateInt.month == 6 || firstDateInt.month == 9 || firstDateInt.month == 12)
-      offsetMonths = 1;
-  }
-  else if (totalMonths > 84 && totalMonths <= 216) {
-    combineMonths = 6;
-    if (firstDateInt.month > 1 && firstDateInt.month < 7)
-      offsetMonths = 7 - firstDateInt.month;
-    else if (firstDateInt.month > 7 && firstDateInt.month < 13)
-      offsetMonths = 13 - firstDateInt.month;
-  }
-  else if (totalMonths > 216) {
-    combineMonths = 12;
-    if (firstDateInt.month > 1)
-      offsetMonths = 13 - firstDateInt.month;
-  }
-
-  return new MonthsSpan(totalMonths, combineMonths, offsetMonths);
-}
-
-function charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets) {
-    let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
-    for (modelAsset of modelAssets) {
-      modelAsset.monthlyAssetDataToDisplayAssetData(monthsSpan);
-      modelAsset.monthlyEarningsDataToDisplayEarningsData(monthsSpan);
-      modelAsset.monthlyRMDDataToDisplayRMDData(monthsSpan);
-    }    
-}
-
 function charting_buildDisplayLabels(firstDateInt, lastDateInt) {
-  let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
+  let monthsSpan = MonthsSpan.build(firstDateInt, lastDateInt);
   let runnerDateInt = new DateInt(firstDateInt.toInt());
   runnerDateInt.addMonths(monthsSpan.offsetMonths);
   let labels = [];
@@ -164,15 +128,7 @@ function charting_reducedModelAssetsForAssets(modelAssets) {
   return results;
 }
 
-function charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet) {
-  if (firstDateInt == null) {
-    console.log('charting_buildDisplayAssetsFromModelAssets - null firstDateInt provided');
-    return null;
-  }  
-  else if (lastDateInt == null) {
-    console.log('charting_buildDisplayAssetsFromModelAssets - null lastDateInt provided');
-    return null;
-  }
+function charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet) {
   
   let chartingAssetConfig = null;
   let chartingAssetData = null;
@@ -186,7 +142,7 @@ function charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, m
     chartingAssetConfig = JSON.parse(JSON.stringify(stackedBarChartConfig));
     chartingAssetData = JSON.parse(JSON.stringify(stackedBarChartData));
 
-    let labels = charting_buildDisplayLabels(firstDateInt, lastDateInt);
+    let labels = charting_buildDisplayLabels(portfolio.firstDateInt, portfolio.lastDateInt);
     chartingAssetData.labels = labels;  
   }
   else {    
@@ -194,7 +150,7 @@ function charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, m
     chartingAssetData = chartingAssetConfig.data;    
   }
 
-  let reducedModelAssets = charting_reducedModelAssetsForAssets(modelAssets);
+  let reducedModelAssets = charting_reducedModelAssetsForAssets(portfolio.modelAssets);
   let colorId = -1;
   let dataIndex = -1;
 
@@ -356,38 +312,39 @@ function charting_buildCashFlowDataSet(modelAssets, label, sign) {
   return cashFlowDataSet;
 }
 
-function charting_buildCashFlowDataSet_rmds(firstDateInt, lastDateInt, modelAssets) {
+function charting_buildCashFlowDataSet_rmds(portfolio) {
+
   let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
   cashFlowDataSet.label = 'RMDs';
-
-  let firstModelAsset = true;
-  for (const modelAsset of util_findModelAssetsByInstrument(modelAssets, sInstrumentNames[sInstrumentsIDs.taxDeferredEquity])) {
-    
-    for (let ii = 0; ii < modelAsset.displayRMDData.length; ii++) {
-
-      if (firstModelAsset)
-        cashFlowDataSet.data.push(0.0);
-
-      let displayData = modelAsset.displayRMDData[ii];
-      if (displayData == null)
-        displayData = 0.0;
-
-      cashFlowDataSet.data[ii] += displayData;      
-    }
-
-    firstModelAsset = false;
-  }
-
-  cashFlowDataSet.backgroundColor = '#0000ff';
-  
+  cashFlowDataSet.data = portfolio.displayRMDs;
+  cashFlowDataSet.backgroundColor = '#0000ff';  
   return cashFlowDataSet;
+
 }
 
-function charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAssets) {
+function charting_buildCashFlowDataSet_fica(portfolio) {
+  
+  let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
+  cashFlowDataSet.label = 'FICA';  
+  cashFlowDataSet.data = portfolio.displayFICA;
+  cashFlowDataSet.backgroundColor = '#00ff00';  
+  return cashFlowDataSet;
+
+}
+
+function charting_buildCashFlowDataSet_taxes(portfolio) {
+
+  let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
+  cashFlowDataSet.label = 'Federal Income Tax';  
+  cashFlowDataSet.data = portfolio.displayIncomeTax;
+  cashFlowDataSet.backgroundColor = '#ffff00';  
+  return cashFlowDataSet;
+
+  /*
   let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
   cashFlowDataSet.label = 'Federal Income Tax';
 
-  let monthsSpan = charting_buildMonthsSpan(firstDateInt, lastDateInt);
+  let monthsSpan = MonthsSpan.build(firstDateInt, lastDateInt);
 
   // taxes are paid out in April every year. So make we position the payment properly for the scale of the chart.
   let ignore = false;
@@ -452,42 +409,37 @@ function charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAss
   cashFlowDataSet.backgroundColor = '#ffff00';
   
   return cashFlowDataSet;
+  */
 }
 
-function charting_applyTaxesToCashFlowDataSet(cashFlowDataSet, taxDataSet) {
+function charting_applyTaxesToCashFlowDataSet(cashFlowDataSet, ficaDataSet, taxDataSet) {
   for (let ii = 0; ii < cashFlowDataSet.data.length; ii++) {
-    let taxData = taxDataSet.data[ii];
+    let taxData = ficaDataSet.data[ii] + taxDataSet.data[ii];
     cashFlowDataSet.data[ii] -= taxData;
   }
 }
 
-function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets) {
-  if (firstDateInt == null) {
-    console.log('charting_buildDisplayCashFlowFromModelAssets - null firstDateInt provided');
-    return null;
-  }  
-  else if (lastDateInt == null) {
-    console.log('charting_buildDisplayCashFlowFromModelAssets - null lastDateInt provided');
-    return null;
-  }
+function charting_buildDisplayCashFlowFromPortfolio(portfolio) {
   
   let chartingCashFlowConfig = JSON.parse(JSON.stringify(lineChartConfig));
   let chartingCashFlowData = JSON.parse(JSON.stringify(lineChartData));
-  chartingCashFlowData.labels = charting_buildDisplayLabels(firstDateInt, lastDateInt);
+  chartingCashFlowData.labels = charting_buildDisplayLabels(portfolio.firstDateInt, portfolio.lastDateInt);
 
-  let reducedModelAssets = charting_reducedModelAssetsForEarnings(modelAssets);
+  let reducedModelAssets = charting_reducedModelAssetsForEarnings(portfolio.modelAssets);
 
   let chartingCashFlowDataSet_credits = charting_buildCashFlowDataSet(reducedModelAssets, 'Credits', 1);
   let chartingCashFlowDataSet_debits = charting_buildCashFlowDataSet(reducedModelAssets, 'Debits', -1);
   let chartingCashFlowDataSet_cash = charting_buildCashFlowDataSet(reducedModelAssets, 'Cash', 0);
-  let chartingCashFlowDataSet_rmds = charting_buildCashFlowDataSet_rmds(firstDateInt, lastDateInt, modelAssets);
-  let chartingCashFlowDataSet_taxes = charting_buildCashFlowDataSet_taxes(firstDateInt, lastDateInt, modelAssets);
+  let chartingCashFlowDataSet_fica = charting_buildCashFlowDataSet_fica(portfolio);
+  let chartingCashFlowDataSet_rmds = charting_buildCashFlowDataSet_rmds(portfolio);
+  let chartingCashFlowDataSet_taxes = charting_buildCashFlowDataSet_taxes(portfolio);
 
-  charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_taxes);
+  charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_fica, chartingCashFlowDataSet_taxes);
     
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_credits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_debits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_cash);
+  chartingCashFlowData.datasets.push(chartingCashFlowDataSet_fica);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_rmds);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_taxes);
 
@@ -495,21 +447,18 @@ function charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt,
   return chartingCashFlowConfig;
 }
 
-function charting_buildFromModelAssets(modelAssets, buildNewDataSet) {
-  if (modelAssets == null || modelAssets.length == 0) {
+function charting_buildFromPortfolio(portfolio, buildNewDataSet) {
+  if (portfolio == null || portfolio.modelAssets == null || portfolio.modelAssets.length == 0) {
     console.log('charting_buildFromModelAssets - null or zero length array provided');
     charting_jsonAssetsChartData = null;
     charting_jsonEarningsChartData = null;
     charting_jsonCashFlowChartData = null;
   }
-  else {
-    let firstDateInt = util_firstDateInt(modelAssets);
-    let lastDateInt = util_lastDateInt(modelAssets);
+  else {  
+    portfolio.buildChartingDisplayData();
 
-    charting_buildDisplayData(firstDateInt, lastDateInt, modelAssets);
-
-    charting_jsonAssetsChartData = charting_buildDisplayAssetsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
-    charting_jsonEarningsChartData = charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
-    charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet);
+    charting_jsonAssetsChartData = charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet);
+    charting_jsonEarningsChartData = charting_buildDisplayEarningsFromModelAssets(portfolio.firstDateInt, portfolio.lastDateInt, portfolio.modelAssets, buildNewDataSet);
+    charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromPortfolio(portfolio, buildNewDataSet);
   }
 }

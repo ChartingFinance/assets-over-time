@@ -12,6 +12,8 @@ const global_default_user_startAge = 30;
 const gobal_default_user_retirementAge = 67;
 const global_default_user_finishAge = 85;
 
+const global_default_fica = 7.65;
+
 var global_inflationRate = global_default_inflationRate;
 
 var global_taxYear = global_default_taxYear;

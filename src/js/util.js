@@ -2,6 +2,7 @@ class DateInt {
     constructor(yyyyMM) {
         this.year = parseInt(yyyyMM / 100);
         this.month = yyyyMM - (this.year * 100);
+        this.day = 1;
     }
 
     static parse(yyyyMM) {
@@ -47,28 +48,64 @@ class DateInt {
     }
 
     prev() {
-        if (this.month == 1) {
-            this.year--;
-            this.month = 12;
-        }
+        if (this.day == 5)
+            this.day -= 4;
         else
-            this.month--;
+            this.day -= 5;
+
+        if (this.day < 1) {
+            this.day = 30;
+            --this.month;
+        }
+
+        if (this.month < 1) {
+            this.month = 12;
+            --this.year;
+        }
     }
 
     next() {
-        if (this.month == 12) {
-            this.year++;
-            this.month = 1;
-        }
+        if (this.day == 1)
+            this.day += 4;
         else
-            this.month++;
+            this.day += 5;
+
+        if (this.day > 30) {
+            this.day = 1;
+            ++this.month;
+        }
+
+        if (this.month > 12) {
+            this.month = 1;
+            ++this.year;
+        }
+    }
+
+    prevMonth() {
+        --this.month;
+        if (this.month < 1) {
+            this.month = 12;
+            --this.year;
+        }
+    }
+
+    nextMonth() {
+        ++this.month;
+        if (this.month > 12) {
+            this.month = 1;
+            ++this.year;
+        }
     }
 
     addMonths(num) {
         while (num > 0) {
-            this.next();
+            this.nextMonth();
             --num;
         }
+    }
+
+    isNewYearsDay() {
+        return this.month == 1 && this.day == 1;
     }
 }
 
@@ -78,12 +115,42 @@ class MonthsSpan {
         this.combineMonths = combineMonths;
         this.offsetMonths = offsetMonths;
     }
+
+    static build(firstDateInt, lastDateInt) {
+
+        let totalMonths = util_totalMonths(firstDateInt, lastDateInt);
+        let combineMonths = 1;
+        let offsetMonths = 0;
+        if (totalMonths > 36 && totalMonths <= 84) {
+          combineMonths = 3;
+          if (firstDateInt.month == 2 || firstDateInt.month == 5 || firstDateInt.month == 8 || firstDateInt.month == 11)
+            offsetMonths = 2;
+          else if (firstDateInt.month == 3 || firstDateInt.month == 6 || firstDateInt.month == 9 || firstDateInt.month == 12)
+            offsetMonths = 1;
+        }
+        else if (totalMonths > 84 && totalMonths <= 216) {
+          combineMonths = 6;
+          if (firstDateInt.month > 1 && firstDateInt.month < 7)
+            offsetMonths = 7 - firstDateInt.month;
+          else if (firstDateInt.month > 7 && firstDateInt.month < 13)
+            offsetMonths = 13 - firstDateInt.month;
+        }
+        else if (totalMonths > 216) {
+          combineMonths = 12;
+          if (firstDateInt.month > 1)
+            offsetMonths = 13 - firstDateInt.month;
+        }
+      
+        return new MonthsSpan(totalMonths, combineMonths, offsetMonths);
+    }
+
 }
 
 class Currency {
     constructor(amount) {
-        if (amount)
-            this.amount = amount;
+        if (amount) {
+            this.amount = parseFloat(amount.toFixed(2));
+        }
         else
             this.amount = 0.0;
     }
@@ -203,7 +270,7 @@ function util_totalMonths(startDateInt, finishDateInt) {
     let totalMonths = 0;
     while (runnerDateInt.toInt() <= finishDateInt.toInt()) {
         ++totalMonths;
-        runnerDateInt.next();
+        runnerDateInt.nextMonth();
     }
     return totalMonths;
 }
@@ -233,7 +300,7 @@ function computeMonthsRemainingFromStartDateToFinishDate(startDateValue, finishD
     let finishDate = DateInt.parse(finishDateValue);
     let monthsRemaining = 0;
     while (startDate.toInt() <= finishDate.toInt()) {
-        startDate.next();
+        startDate.nextMonth();
         ++monthsRemaining;
     }
     return monthsRemaining;
@@ -248,7 +315,7 @@ function computeFinishDateFromMonthsRemainingChange(startDateValue, monthsRemain
 
     let finishDate = DateInt.parse(startDateValue);
     while (monthsRemainingValue > 0) {
-        finishDate.next();
+        finishDate.nextMonth();
         --monthsRemainingValue;
     }
 
@@ -316,11 +383,29 @@ function isMonthlyExpense(value) {
 }
 
 function isMonthlyIncome(value) {
-    return value == sInstrumentNames[sInstrumentsIDs.monthlyIncome];
+    if (value == sInstrumentNames[sInstrumentsIDs.monthlyIncome])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.bank])
+        return true;
+    else
+        return false;
 }
 
 function isTaxableAccount(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxableEquity];
+}
+
+function isCapital(value) {
+    if (value == sInstrumentNames[sInstrumentsIDs.taxableEquity])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.taxFreeEquity])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.home])
+        return true;
+    else
+        return false;
 }
 
 function isLiquidAccount(value) {
@@ -329,6 +414,10 @@ function isLiquidAccount(value) {
 
 function isTaxDeferred(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity];
+}
+
+function isSavingsAccount(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.bank];
 }
 
 function isFundableAsset(value) {
@@ -465,8 +554,15 @@ function util_YYYYmmToDisplay(YYYYmm) {
 function util_findAssetModelsToUseForTaxes(assetModels) {
     let result = [];
     for (const modelAsset of assetModels) {
-        if (modelAsset.useForTaxes)
+        if (isMonthlyExpense(modelAsset.instrument) && modelAsset.fundingSource)
+        {
+            let fundingSourceModelAsset = util_findModelAssetByDisplayName(assetModels, modelAsset.fundingSource);
+            if (fundingSourceModelAsset)
+                result.push(fundingSourceModelAsset);
+        }
+        else if (isSavingsAccount(modelAsset.instrument)) {
             result.push(modelAsset);
+        }
     }
     return result;
 }

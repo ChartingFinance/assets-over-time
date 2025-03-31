@@ -1,72 +1,71 @@
+function chronometer_run(portfolio) {
+    
+    summary_setStartDate(portfolio.firstDateInt);
+    summary_setFinishDate(portfolio.lastDateInt);
+
+    let totalMonths = 0;
+    let totalYears = 0;
+
+    activeTaxTable.initializeChron();
+    portfolio.initializeChron();
+
+    let currentDateInt = new DateInt(portfolio.firstDateInt.toInt());
+    while (currentDateInt.toInt() <= portfolio.lastDateInt.toInt()) {
+
+        portfolio.applyMonth(currentDateInt);
+
+        currentDateInt.next();
+
+        if (currentDateInt.day == 1) {
+            portfolio.monthlyChron();
+            activeTaxTable.monthlyChron();
+        }
+
+        if (currentDateInt.isNewYearsDay()) {
+            portfolio.applyYear(currentDateInt);
+            activeTaxTable.applyYear(currentDateInt);
+            
+            portfolio.yearlyChron();
+            activeTaxTable.yearlyChron();
+        }
+    }
+
+    //summary_setAccruedMonths(totalMonths);
+    summary_setAccumulatedValue(portfolio.accumulatedValue());
+
+    portfolio.finalizeChron();
+    activeTaxTable.finalizeChron();
+
+}
+
 function chronometer_applyMonths(modelAssets) {
     if (modelAssets == null || modelAssets.length == 0) {
         console.log('chronometer_applyMonths - no modelAssets');
         return;
-    }
-
-    modelAssets = chronometer_sortModelAssets(modelAssets);
-
-    let activeUser = new User(global_user_startAge);
+    }    
 
     if (activeTaxTable != null)
         activeTaxTable.initializeChron();
 
-    if (modelAssets != null && modelAssets.length > 0) {
-        for (modelAsset of modelAssets) {
-            modelAsset.initializeChron();
-        }
-
-        const firstDateInt = util_firstDateInt(modelAssets);
-        const lastDateInt = util_lastDateInt(modelAssets);
-
-        summary_setStartDate(firstDateInt);
-        summary_setFinishDate(lastDateInt);
-        let totalMonths = 0;
-
-        let currentDateInt = new DateInt(firstDateInt.toInt());
-        while (currentDateInt.toInt() <= lastDateInt.toInt()) {
-            totalMonths += chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
-            currentDateInt.next();
-        }
-
-        summary_setAccruedMonths(totalMonths);
-        summary_computeCAGR()
+    for (modelAsset of modelAssets) {
+        modelAsset.initializeChron();
     }
-}
 
-function chronometer_sortModelAssets(modelAssets) {
-    console.log('chronometer_sortModelAssets');
+    const firstDateInt = util_firstDateInt(modelAssets);
+    const lastDateInt = util_lastDateInt(modelAssets);
 
-    modelAssets.sort(function (a, b) {
-        if (isMonthlyIncome(a.instrument)) {
-            if (isMonthlyIncome(b.instrument))
-                return a.displayName.localeCompare(b.displayName);
-            else
-                return -1;
-        }
-        else if (isMonthlyIncome(b.instrument)) {
-            if (isMonthlyIncome(a.instrument))
-                return a.displayName.localeCompare(b.displayName);
-            else
-                return 1;
-        }
-        else if (isMonthlyExpense(a.instrument)) {
-            if (isMonthlyExpense(b.instrument))
-                return a.displayName.localeCompare(b.displayName);
-            else
-                return 1;
-        }
-        else if (isMonthlyExpense(b.instrument)) {
-            if (isMonthlyExpense(a.instrument))
-                return a.displayName.localeCompare(b.displayName);
-            else
-                return -1;
-        }
-        else
-            return a.displayName.localeCompare(b.displayName);
-    });
+    summary_setStartDate(firstDateInt);
+    summary_setFinishDate(lastDateInt);
+    let totalMonths = 0;
 
-    return modelAssets;
+    let currentDateInt = new DateInt(firstDateInt.toInt());
+    while (currentDateInt.toInt() <= lastDateInt.toInt()) {
+        totalMonths += chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
+        currentDateInt.next();
+    }
+
+    summary_setAccruedMonths(totalMonths);
+    summary_computeCAGR()    
 }
 
 function chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAsset, activeUser) {
@@ -74,38 +73,45 @@ function chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDat
     let finishTotal = new Currency(0.0);
     let accumulatedValue = new Currency(0.0);
 
-    //for (const modelAsset of modelAssets) {
-        if (modelAsset.applyMonth(currentDateInt, activeUser)) {
-            if (firstDateInt.toInt() == currentDateInt.toInt())
-                startTotal.add(modelAsset.startCurrency);
-            if (lastDateInt.toInt() == currentDateInt.toInt())
-                finishTotal.add(modelAsset.finishCurrency);
-            accumulatedValue.add(modelAsset.accumulatedCurrency);
-        }
-    //};
-
+    if (modelAsset.applyMonth(currentDateInt, activeUser)) {
+        if (firstDateInt.toInt() == currentDateInt.toInt())
+            startTotal.add(modelAsset.startCurrency);
+        if (lastDateInt.toInt() == currentDateInt.toInt())
+            finishTotal.add(modelAsset.finishCurrency);
+        accumulatedValue.add(modelAsset.accumulatedCurrency);
+    }
+    
     let result = { startTotal: startTotal, finishTotal: finishTotal, accumulatedValue: accumulatedValue };
     return result;
 }
 
+/*
+function chronometer_applyMonth_income(currentDateInt, modelAsset, activeUser) {
+    activeTaxTable.applyMonthlyTaxes(currentDateInt, modelAssets, modelAsset, activeUser);
+}
+
+function chronometer_applyMonth_expense(currentDateInt, modelAsset, activeUser) {
+
+}
 
 function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser) {
     console.log('chronometer_applyMonth');
 
     chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets, activeUser);
 
-    //let result = chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAssets, activeUser);
-    let summary = { startTotal: new Currency(0.0), finishTotal: new Currency(0.0), totalMonths: 0, accumulatedValue: new Currency(0.0) };
-
     for (const modelAsset of modelAssets) {
 
+        modelAsset.applyMonth(currentDateInt, activeUser);
         let result = chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDateInt, modelAsset, activeUser);
         summary.startTotal.add(result.startTotal);
         summary.finishTotal.add(result.finishTotal);
         summary.totalMonths += 1;
         summary.accumulatedValue.add(result.accumulatedValue);
 
-        if (isMonthlyExpense(modelAsset.instrument) || isMonthlyIncome(modelAsset.instrument)) {
+        if (isMonthlyIncome(modelAsset.instrument)) {
+            chronometer_applyMonth_income(first)
+        }
+        else if (isMonthlyExpense(modelAsset.instrument)) {
             if (modelAsset.inMonth(currentDateInt)) {
                 let fundingSourceAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
                 if (fundingSourceAsset) {
@@ -166,6 +172,7 @@ function chronometer_applyMonth(firstDateInt, lastDateInt, currentDateInt, model
 
     return summary.totalMonths;
 }
+*/
 
 function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets, activeUser) {
     console.log('chronometer_applyTaxesBeforeComputationsThisMonth');

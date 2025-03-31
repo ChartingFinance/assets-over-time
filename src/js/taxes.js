@@ -1,5 +1,13 @@
 const us_2024_taxtables = {
     "year": 2024,
+    "fica": {
+        "url": "https://www.irs.gov/taxtopics/tc751",
+        "ssHalfRate": 0.062,
+        "ssFullRate": 0.124,
+        "medicareHalfRate": 0.0145,
+        "medicareFullRate": 0.0290,
+        "maxSSEarnings": 168600.0
+    },
     "income": {
         "url": "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024",
         "tables": [
@@ -53,7 +61,7 @@ const us_2024_taxtables = {
     "standardDeduction": {
         "url": "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024",
         "single": 14600.0,
-         "married": 29200.0        
+        "married": 29200.0        
     }
 }; 
 
@@ -112,9 +120,10 @@ const uniformLifetimeTable = [
 ];
 
 class TaxTable {
-    constructor(year) {
+    constructor() {
         this.taxes = null;     
         this.initializeChron();
+        this.singleContributionLimitBelow50
     }
 
     initializeChron() {
@@ -123,33 +132,67 @@ class TaxTable {
             this.activeIncomeTable = this.activeTaxTables.income.tables[0];
             this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.single;
+            this.iraContributionLimitBelow50 = 7000;
+            this.iraContributionLimit50AndOver = 8000;
         }
         else {
             this.activeIncomeTable = this.activeTaxTables.income.tables[1];
             this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[1];
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.married;
-        }
+            this.iraContributionLimitBelow50 = 14000;
+            this.iraContributionLimit50AndOver = 16000;        }
 
+        this.yearlySocialSecurityAccumulator = new Currency();
+        this.yearlyMedicareAccumulator = new Currency();
+        this.yearlyFICAAccumulator = new Currency();
+        this.yearlyIncomeTaxAccumulator = new Currency();
         this.yearlyTaxableIncomeAccumulator = new Currency();
+        this.yearlyRMDsAccumulator = new Currency();
+        this.yearlyWithholdingsAccumulator = new Currency();
         this.yearlyShortTermCapitalGainsAccumulator = new Currency();
         this.yearlyLongTermCapitalGainsAccumulator = new Currency();    
         this.yearlyMortgageDeductionAccumulator = new Currency();
         this.yearlyPropertyTaxDeductionAccumulator = new Currency();
 
-        this.yearlyTaxes = [];
-        this.estimatedTaxPayments = [];
-        this.yearlyPayments = [];    
+        this.yearlyFICATaxes = [];
+        this.yearlyWithholding = [];
+        this.yearlyFederalTaxes = [];
+        this.yearlyPayments = [];
+
     }
 
-    startYear() {
-        this.yearlyTaxableIncomeAccumulator = new Currency();
-        this.yearlyShortTermCapitalGainsAccumulator = new Currency();
-        this.yearlyLongTermCapitalGainsAccumulator = new Currency();    
-        this.yearlyMortgageDeductionAccumulator = new Currency();
-        this.yearlyPropertyTaxDeductionAccumulator = new Currency();
+    monthlyChron() {
+
+    }
+
+    yearlyChron() {
+
+        this.yearlySocialSecurityAccumulator.zero();
+        this.yearlyMedicareAccumulator.zero();
+        this.yearlyIncomeTaxAccumulator.zero();
+        this.yearlyTaxableIncomeAccumulator.zero();
+        this.yearlyRMDsAccumulator.zero();
+        this.yearlyShortTermCapitalGainsAccumulator.zero();
+        this.yearlyLongTermCapitalGainsAccumulator.zero();    
+        this.yearlyMortgageDeductionAccumulator.zero();
+        this.yearlyPropertyTaxDeductionAccumulator.zero();
 
         // apply inflation to the tax rows
         this.inflateTaxes();
+
+    }
+
+    finalizeChron() {
+
+    }
+
+    funcYearlyWithholding() {
+
+        let withholding = this.yearlySocialSecurityAccumulator.amount;
+        withholding += this.yearlyMedicareAccumulator.amount;
+        withholding += this.yearlyIncomeTaxAccumulator.amount;
+        return withholding;
+        
     }
 
     inflateTaxRows(taxTables) {
@@ -162,6 +205,10 @@ class TaxTable {
     }
 
     inflateTaxes() {
+        this.activeTaxTables.fica.ssHalfRate *= (1.0 + global_inflationRate);
+        this.activeTaxTables.fica.ssfFullRate *= (1.0 + global_inflationRate);
+        this.activeTaxTables.fica.maxSSEarnings *= (1.0 + global_inflationRate);
+
         this.inflateTaxRows(this.activeTaxTables.income.tables);
         this.inflateTaxRows(this.activeTaxTables.capitalGains.tables);
     }
@@ -172,66 +219,23 @@ class TaxTable {
 
     isYearlyTaxPaymentDue(currentDateInt) {
         return (currentDateInt.month == 4);
-    }
+    }    
 
-    addEstimatedTaxPayment(amount) {
-        let mostRecent = this.estimatedTaxPayments.length -1;
-        if (mostRecent == -1)
-            this.estimatedTaxPayments.push(amount);            
-        else
-            this.estimatedTaxPayments[mostRecent] += amount;
-    }
+    /*
+    payEstimatedTaxes(currentDateInt, modelAssets) {        
 
-    applyMonthlyTaxes(currentDateInt, modelAssets, activeUser) {
-        console.log('TaxTable.applyMonthlyTaxes');
+        let estimatedTaxesPaid = new Currency(0.0);
 
-        if (!modelAssets) {
-            console.log('TaxTable.applyMonthlyTaxes has null modelAssets');
-            return;
-        }
-        // todo - qualified vs non-qualified dividends
-
-        for (const modelAsset of modelAssets) {
-            this.yearlyTaxableIncomeAccumulator.add(activeTaxTable.calculateIncome(currentDateInt, modelAsset, modelAssets, activeUser));
-            this.yearlyShortTermCapitalGainsAccumulator.add(activeTaxTable.calculateShortTermCapitalGains(currentDateInt, modelAsset));
-            this.yearlyLongTermCapitalGainsAccumulator.add(activeTaxTable.calculateLongTermCaptialGains(currentDateInt, modelAsset));
-            this.yearlyMortgageDeductionAccumulator.add(activeTaxTable.calculateMortgageDeduction(currentDateInt, modelAsset));
-            this.yearlyPropertyTaxDeductionAccumulator.add(activeTaxTable.calculatePropertyTaxDeduction(currentDateInt, modelAsset));
-        }
-    }
-
-    applyYearlyTaxes(currentDateInt, modelAssets) {
-        console.log('TaxTable.applyYearlyTaxes');
-
-        if (!modelAssets) {
-            console.log('TaxTable.applyYearlyTaxes has null modelAssets');
-            return;
-        }
-
-        // todo - qualified vs non-qualified dividends
-        this.calculateIncomeTax(modelAssets);
-        this.calculateCapitalGainsTax(modelAssets);
-
-        this.startYear();
-    }
-
-    payEstimatedTaxes(currentDateInt, modelAssets) {
-        // see what the estimated total is for this period
-        let totalEstimatedTax = new Currency(this.estimatedTaxPayments[this.estimatedTaxPayments.length -1]);
-
-        console.log('TaxTable.payEstimatedTaxes: ' + totalEstimatedTax.toCurrency());
-
-        // find the modelAssets to be used for the estimated tax payments
-        let modelAssetsForEstimatedTaxes = util_findAssetModelsToUseForTaxes(modelAssets);
-        
-        if (modelAssetsForEstimatedTaxes.length > 0) {
-            let partialEstimatedTax = new Currency(totalEstimatedTax.amount / modelAssetsForEstimatedTaxes.length);
-            for (modelAsset of modelAssetsForEstimatedTaxes) {
-                modelAsset.finishCurrency.subtract(partialEstimatedTax);
+        for (let modelAsset of modelAssets) {
+            if (modelAsset.hasEstimatedTax()) {
+                estimatedTaxesPaid.add(new Currency(modelAsset.getEstimatedTax()));
+                modelAsset.debitAndClearEstimatedTax();
             }
         }
 
-        this.estimatedTaxPayments.push(0.0);
+        console.log('TaxTable.payEstimatedTaxes: ' + estimatedTaxesPaid.toCurrency());
+
+        this.estimatedTaxPayments.push(estimatedTaxesPaid.amount);
     }
 
     lastYearsEstimatedTaxPayments() {
@@ -247,7 +251,7 @@ class TaxTable {
 
     payYearlyTaxes(currentDateInt, modelAssets) {
         // see what the total is for this period
-        let totalTax = new Currency(this.yearlyTaxes[this.yearlyTaxes.length -1]);
+        let totalTax = new Currency(this.yearlyFederalTaxes[this.yearlyFederalTaxes.length -1]);
 
         // compute the estimated tax payments
         let estimatedTaxesPaid = new Currency(this.lastYearsEstimatedTaxPayments());
@@ -273,8 +277,91 @@ class TaxTable {
             }
         }
     }
+    */
 
-    calculateIncome(currentDateInt, modelAsset, modelAssets, activeUser) {
+    calculateMonthlyWithholding(modelAsset) {
+
+        let amount = new Currency();
+        if (isMonthlyIncome(modelAsset.instrument)) {
+            amount.add(this.calculateMonthlyFICAWithholding(modelAsset));
+            amount.add(this.calculateMonthlyIncomeWithholding(modelAsset.finishCurrency));                
+        }        
+        return amount;
+
+    }
+
+    calculateMonthlyFICAWithholding(modelAsset) {
+
+        if (modelAsset.displayName == 'SSN') {
+            // social security is not taxed for FICA
+            console.log('TaxTable.calculateMonthlyFICAWithholding - SSN is not taxed for FICA');
+            return;
+        }
+
+        let amount = new Currency();
+        amount.add(this.calculateMonthlySocialSecurityWithholding(modelAsset));
+        amount.add(this.calculateMonthlyMedicareWithholding(modelAsset));
+        return amount;
+
+    }
+
+    calculateMonthlySocialSecurityWithholding(modelAsset) {
+
+        let c = null;
+        let maxC = null;
+        if (modelAsset.isSelfEmployed) {
+            c = new Currency(modelAsset.finishCurrency.amount * this.activeTaxTables.fica.ssFullRate);
+            maxC = new Currency(this.activeTaxTables.fica.maxSSEarnings * this.activeTaxTables.fica.ssFullRate);
+        }
+        else {
+            c = new Currency(modelAsset.finishCurrency.amount * this.activeTaxTables.fica.ssHalfRate);
+            maxC = new Currency(this.activeTaxTables.fica.maxSSEarnings * this.activeTaxTables.fica.ssHalfRate);
+        }
+            
+        if (this.yearlySocialSecurityAccumulator.amount + c.amount > maxC.amount) {
+            c.amount = maxC.amount - this.yearlySocialSecurityAccumulator.amount;
+        }
+
+        modelAsset.addMonthlySocialSecurity(c);
+        return c;
+
+    }
+
+    calculateMonthlyMedicareWithholding(modelAsset) {        
+
+        let c = new Currency();
+        if (modelAsset.isSelfEmployed)
+            c = new Currency(modelAsset.finishCurrency.amount * this.activeTaxTables.fica.medicareFullRate);
+        else
+            c = new Currency(modelAsset.finishCurrency.amount * this.activeTaxTables.fica.medicareHalfRate);
+
+        modelAsset.addMonthlyMedicare(c);
+        return c;
+
+    }
+
+    calculateMonthlyIncomeWithholding(modelAsset, income) {
+
+        let yearlyIncome = income.amount * 12;
+        let adjusted = yearlyIncome - this.activeStandardDeduction;
+        let tax = 0.0;
+
+        for (const taxRow of this.activeIncomeTable.taxRows) {
+            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
+                tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
+            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
+                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
+        }
+
+        let monthlyIncomeTax = new Currency(tax / 12);
+        if (modelAsset)
+            modelAsset.addMonthlyIncomeTax(monthlyIncomeTax);
+        return monthlyIncomeTax;        
+
+    }
+
+    /*
+    calculateMonthlyIncome(currentDateInt, modelAsset, modelAssets, activeUser) {
         if (isMonthlyIncome(modelAsset.instrument)) {
             if (modelAsset.startDateInt.toInt() <= currentDateInt.toInt() && modelAsset.finishDateInt.toInt() > currentDateInt.toInt())
             {
@@ -287,6 +374,7 @@ class TaxTable {
         }
         else if (isMonthlyExpense(modelAsset.instrument)) {
             // find the funding model asset and determine income
+            let monthlyExpense = new Currency(modelAsset.finishCurrency.amount);
             let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
             if (fundingAsset) {
                 if (isTaxDeferred(fundingAsset.instrument) && activeUser.getAge() < 73) { // if over 73 will be handled by RMD
@@ -309,60 +397,95 @@ class TaxTable {
                 else
                     return monthlyExpenses;
             }
-        }        
+        }
+        else if (isSavingsAccount(modelAsset.instrument)) {
+            return modelAsset.earningCurrency;
+        }       
+        
+        return new Currency(0);
+    }
+    */
+
+    calculateMonthlyShortTermCapitalGains(currentDateInt, modelAssets, modelAsset) { 
+        
+        // TODO: add in qualified and non qualified dividends
+
+        if (isMonthlyExpense(modelAsset.instrument)) {
+            let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
+            if (fundingAsset) {
+                if (isTaxableAccount(fundingAsset.instrument)) {
+                    fundingAsset.creditsThisMonth.subtract(modelAsset.finishCurrency);
+                    if (fundingAsset.creditsThisMonth.amount < 0) {
+                        // we will assume that 20% of money drawn from a taxable account is short term capital gains
+                        let asShortTermCapitalGains = new Currency(fundingAsset.creditsThisMonth.amount * 0.2);
+                        asShortTermCapitalGains.flipSign();
+                        // estimate an income tax payment of 10%
+                        let estimatedTax = new Currency(asShortTermCapitalGains.toCurrency() * 0.1);
+                        fundingAsset.addEstimatedTax(estimatedTax.amount);
+                        return asShortTermCapitalGains;
+                    }
+                }
+            }
+        }
         
         return new Currency(0);
     }
 
-    calculateShortTermCapitalGains(currentDateInt, modelAsset) {
-        if (isTaxableAccount(modelAsset.instrument) && !modelAsset.holdAllUntilFinish) {
-            let c = modelAsset.earningCurrency;
-            // TODO: assume 20% short time for time being. Make it configurable
-            c.multiply(0.2);
-            this.addEstimatedTaxPayment(c.amount * 0.2);
-            return c;
+    calculateMonthlyLongTermCaptialGains(modelAsset) {
+
+        // TODO: add in qualified and non qualified dividends
+
+        if (isMonthlyExpense(modelAsset.instrument)) {
+            let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
+            if (fundingAsset) {
+                if (isTaxableAccount(fundingAsset.instrument)) {
+                    // fundingAsset.creditsThisMonth was subtracted in calculatedMonthlyShortTermCapitalGains. Must guarantee this call is next
+                    // we will assume that 80% of money drawn from a taxable account is long term capital gains
+                    let asLongTermCapitalGains = new Currency(fundingAsset.creditsThisMonth.amount * 0.8);
+                    asLongTermCapitalGains.flipSign();
+                    // estimate a long term capital gains tax payment of 10%
+                    let estimatedTax = new Currency(asLongTermCapitalGains.toCurrency() * 0.1);
+                    fundingAsset.addEstimatedTax(estimatedTax.amount);
+
+                    // zero out the creditsThisMonth so that the next pass will catch another expense drawing from this asset
+                    fundingAsset.creditsThisMonth.zero();
+
+                    return asLongTermCapitalGains;                    
+                }
+            }
         }
-        else
-            return new Currency(0);
+        
+        return new Currency(0);
     }
 
-    calculateLongTermCaptialGains(currentDateInt, modelAsset) {
-        if (isTaxableAccount(modelAsset.instrument) && !modelAsset.holdAllUntilFinish) {
-            let c = modelAsset.earningCurrency;
-            // TODO: assume 80% long time for time being. Make it configurable
-            c.multiply(0.8);
-            this.addEstimatedTaxPayment(c.amount * 0.15);
-            return c;
-        }
-        else
-            return new Currency(0);
+    calculateMonthlyEstimatedTaxes(modelAsset) {
+        return new Currency();
     }
 
     addLongTermCapitalGains(currency) {
         this.yearlyLongTermCapitalGainsAccumulator.add(currency);
     }
 
-    calculateMortgageDeduction(currentDateInt, modelAsset) {
+    calculateMonthlyMortgageDeduction(currentDateInt, modelAsset) {
         if (isMortgage(modelAsset.instrument)) {
-            return modelAsset.earningCurrency;
+            let c = new Currency(modelAsset.earningCurrency.amount * -1.0);
+            return c;
         }
         else
             return new Currency(0);
     }
 
-    calculatePropertyTaxDeduction(currentDateInt, modelAsset) {
+    calculateMonthlyPropertyTaxDeduction(currentDateInt, modelAsset) {
         if (isHome(modelAsset.instrument)) {
             let oneMonthRate = global_propertyTaxRate / 12.0;
-            let c = new Currency(modelAsset.finishCurrency.amount * oneMonthRate);
-            if (c.amount > (global_propertyTaxDeductionMax / 12.0))
-                c.amount = global_propertyTaxDeductionMax / 12.0;
+            let c = new Currency(modelAsset.finishCurrency.amount * oneMonthRate);            
             return c;
         }
         return new Currency(0);
     }
 
-    calculateMonthlyRMD(currentDateInt, modelAsset, activeUser) {
-        if (isTaxDeferred(modelAsset.instrument) && activeUser.age >= 73) {
+    calculateMonthlyRMD(currentDateInt, activeUser, modelAsset) {
+        if (isTaxDeferred(modelAsset.instrument)) {
             let divisor = 0;
             for (const table of uniformLifetimeTable) {
                 if (table.age == activeUser.age) {
@@ -371,7 +494,7 @@ class TaxTable {
                 }
             }
             if (divisor == 0) {
-                console.log('TaxTable.calculateRMD: could not find divisor for age ' + modelAsset.age);
+                console.log('TaxTable.calculateRMD: could not find divisor for age ' + activeUser.age);
                 return new Currency(0);
             }
 
@@ -387,10 +510,13 @@ class TaxTable {
         return new Currency(0);
     }
 
-    applyDeductions() {
+    applyYearlyDeductions() {
         // deductions
-        if (this.yearlyMortgageDeductionAccumulator.amount < 0.0 && this.yearlyPropertyTaxDeductionAccumulator.amount > 0.0) {
-            this.yearlyTaxableIncomeAccumulator.add(this.yearlyMortgageDeductionAccumulator);
+        if (this.yearlyPropertyTaxDeductionAccumulator.amount > global_propertyTaxDeductionMax)
+            this.yearlyPropertyTaxDeductionAccumulator.amount = global_propertyTaxDeductionMax;
+
+        if (this.yearlyMortgageDeductionAccumulator.amount + this.yearlyPropertyTaxDeductionAccumulator.amount > this.activeStandardDeduction) {
+            this.yearlyTaxableIncomeAccumulator.subtract(this.yearlyMortgageDeductionAccumulator);
             this.yearlyTaxableIncomeAccumulator.subtract(this.yearlyPropertyTaxDeductionAccumulator);
         }
         else {
@@ -399,33 +525,66 @@ class TaxTable {
         }
     }
 
-    calculateIncomeTax() {
-        this.yearlyTaxableIncomeAccumulator.add(this.yearlyShortTermCapitalGainsAccumulator);
+    calculateYearlyTax(financialPackage) {
 
-        this.applyDeductions();        
+        /*
+        let yearlyFICATaxes = new Currency(0.0);
+        yearlyFICATaxes += this.calculateFICATax();
+        this.yearlyFICATaxes.push(yearlyFICATaxes);
 
-        let tax = 0.0;
-        let adjusted = this.yearlyTaxableIncomeAccumulator.amount;
+        let yearlyFederalTax = 0.0;
+        this.applyYearlyDeductions();
+        yearlyFederalTax += this.calculateIncomeTax();
+        yearlyFederalTax += this.calculateCapitalGainsTax();
+        yearlyFederalTax += this.lastYearsEstimatedTaxPayments();
+        this.yearlyFederalTaxes.push(yearlyFederalTax);
+        return yearlyFederalTax;
+        */
+
+        return new Currency();
+
+    }
+
+    calculateFICATax() {
+        let ficaTax = this.yearlyFICAAccumulator.amount;        
+        return ficaTax;
+    }
+
+    calculateIncomeTax(taxableIncome, shortTermCapitalGains) {
+        let yearlyTaxableIncome = new Currency(taxableIncome);
+        yearlyTaxableIncome.add(shortTermCapitalGains);   
+
+        let tax = 0.0;        
         for (const taxRow of this.activeIncomeTable.taxRows) {
-            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
+            if (yearlyTaxableIncome.amount >= taxRow.fromAmount && yearlyTaxableIncome.amount >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
-                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
+            else if (yearlyTaxableIncome.amount >= taxRow.fromAmount && yearlyTaxableIncome.amount < taxRow.toAmount)
+                tax += (yearlyTaxableIncome.amount - taxRow.fromAmount) * taxRow.rate;
         }
-        let c = new Currency(tax);
-        this.yearlyTaxes.push(c.toCurrency());
+        return new Currency(tax);
     }
 
     calculateCapitalGainsTax() {          
         let tax = 0.0;
-        let adjusted = this.yearlyLongTermCapitalGainsAccumulator.amount; // + this.yearlyTaxableIncomeAccumulator.amount;
+        let adjusted = this.yearlyLongTermCapitalGainsAccumulator.amount + this.yearlyTaxableIncomeAccumulator.amount;
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
             if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
             else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
                 tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
         }
-        let c = new Currency(tax);
-        this.yearlyTaxes[this.yearlyTaxes.length -1] += c.toCurrency();
+        return tax;
+    }
+
+    applyYear(portfolio) {
+        this.calculateIncomeTax();
+        this.calculateCapitalGainsTax();
+    }
+
+    iraContributionLimit(activeUser) {
+        if (activeUser.age < 50)
+            return new Currency(this.iraContributionLimitBelow50);
+        else
+            return new Currency(this.iraContributionLimit50AndOver);
     }
 }

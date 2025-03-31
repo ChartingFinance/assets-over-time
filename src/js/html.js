@@ -13,7 +13,7 @@ const htmlAssetHeader =
         $ASSETPROPERTIES$
     </div>
     <br />
-    <input type="submit" class="remove" value="Remove" />
+    <input type="submit" class="remove" value="Remove" title="Remove this card from the active card set and recalculate" />
 </form>`;
 
 const htmlAssetBody = 
@@ -169,25 +169,27 @@ function html_buildAssetHeader(modelAsset) {
     return html;
 }
 
-function html_handleSlot1(modelAsset, html) {
+function html_handleSlot1(modelAsset, html) {    
     if (isMortgage(modelAsset.instrument) || isDebt(modelAsset.instrument)) {
         html = html.replace('$SLOT1$', htmlMonthsRemainingDisplay);
         html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);
     }
+    /*
     else if (isLiquidAccount(modelAsset.instrument)) {
         if (modelAsset.holdAllUntilFinish)
             html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayChecked);
         else
             html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayUnchecked);
     }
+    */
     else {
         html = html.replace('$SLOT1$', htmlSlotHidden);    
     }
-
     return html;
 }
 
 function html_handleSlot2(modelAsset, html) {
+    /*
     if (isLiquidAccount(modelAsset.instrument)) {
         if (modelAsset.useForTaxes)
             html = html.replace('$SLOT2$', htmlUseForTaxesDisplayChecked);
@@ -195,6 +197,7 @@ function html_handleSlot2(modelAsset, html) {
             html = html.replace('$SLOT2$', htmlUseForTaxesDisplayUnchecked);
     }
     else
+    */
         html = html.replace('$SLOT2$', htmlSlotHidden);
 
     return html;
@@ -228,10 +231,12 @@ function html_buildRemovableAssetElement(modelAssets, modelAsset) {
 
     html = html.replace('$FUNDINGSOURCEOPTIONS$', html_buildFundingSourceOptions(modelAssets, modelAsset.displayName, modelAsset.fundingSource));
 
-    if (modelAsset.accumulatedCurrency.amount > 0)
-        html = html.replace('$BACKGROUND-COLOR$', positiveBackgroundColor + ';');
-    else if (modelAsset.accumulatedCurrency.amount < 0)
-        html = html.replace('$BACKGROUND-COLOR$', negativeBackgroundColor + ';');
+    if ('accumulatedCurrency' in modelAsset && modelAsset.accumulatedCurrency.amount != 0) {
+        if (modelAsset.accumulatedCurrency.amount > 0)
+            html = html.replace('$BACKGROUND-COLOR$', positiveBackgroundColor + ';');
+        else if (modelAsset.accumulatedCurrency.amount < 0)
+            html = html.replace('$BACKGROUND-COLOR$', negativeBackgroundColor + ';');
+    }
     else
         html = html.replace('$BACKGROUND-COLOR$', 'white');
 
