@@ -1,39 +1,59 @@
 function summary_setStartDate(startDateInt) {
     let summaryStartDateElement = document.getElementById("summaryStartDate");
-    summaryStartDateElement.value = startDateInt.toHTML();
+    if (startDateInt)
+        summaryStartDateElement.value = startDateInt.toHTML();
+    else
+    summaryStartDateElement.value = '';
 }
 
 function summary_setStartValue(startCurrency) {
     let summaryStartValueElement = document.getElementById("summaryStartValue");
-    summaryStartValueElement.value = startCurrency.toHTML();
+    if (startCurrency)
+        summaryStartValueElement.value = startCurrency.toHTML();
+    else
+        summaryStartValueElement.value = '';
 }
 
 function summary_setFinishDate(finishDateInt) {
     let summaryFinishDateElement = document.getElementById("summaryFinishDate");
-    summaryFinishDateElement.value = finishDateInt.toHTML();
+    if (finishDateInt)
+        summaryFinishDateElement.value = finishDateInt.toHTML();
+    else
+        summaryFinishDateElement.value = '';
 }
 
 function summary_setAccruedMonths(accruedMonths) {
     let summaryAccruedMonthsElement = document.getElementById("summaryAccruedMonths");
-    summaryAccruedMonthsElement.value = accruedMonths.toString();
+    if (accruedMonths)
+        summaryAccruedMonthsElement.value = accruedMonths.toString();
+    else
+        summaryAccruedMonthsElement.value = '';
 }
 
 function summary_setFinishValue(finishCurrency) {
     let summaryFinishValueElement = document.getElementById("summaryFinishValue");
-    summaryFinishValueElement.value = finishCurrency.toHTML();
+    if (finishCurrency)
+        summaryFinishValueElement.value = finishCurrency.toHTML();
+    else
+        summaryFinishValueElement.value = '';
 }
 
 function summary_setAccumulatedValue(accumulatedCurrency) {
     let summaryAccumulatedValueElement = document.getElementById("summaryAccumulatedValue");
-    summaryAccumulatedValueElement.value = accumulatedCurrency.toHTML();
+    if (accumulatedCurrency) {
+        summaryAccumulatedValueElement.value = accumulatedCurrency.toHTML();
+    }
+    else {
+        summaryAccumulatedValueElement.value = '';
+    }
     summary_setBackgroundColor(accumulatedCurrency);
 }
 
 function summary_setBackgroundColor(accumulatedCurrency) {
     let summaryFormElement = document.getElementById('rollup');
-    if (accumulatedCurrency.amount > 0)
+    if (accumulatedCurrency && accumulatedCurrency.amount > 0)
         summaryFormElement.style.backgroundColor = positiveBackgroundColor;
-    else if (accumulatedCurrency.amount < 0)
+    else if (accumulatedCurrency && accumulatedCurrency.amount < 0)
         summaryFormElement.style.backgroundColor = negativeBackgroundColor;
     else
         summaryFormElement.style.backdropFilter = 'white';

@@ -173,33 +173,39 @@ class ModelAsset {
     initializeChron() {
         
         // earningCurrency
-        this.earningCurrency = new Currency(0.0);
+        this.earningCurrency = new Currency();
         this.monthlyEarning = [];
         
         // finishCurrency
-        this.finishCurrency = new Currency(0.0);
+        this.finishCurrency = new Currency();
         this.monthlyValue = [];
 
-        this.accumulatedCurrency = new Currency(0.0);
+        this.accumulatedCurrency = new Currency();
         this.monthlyAccumulated = [];
 
+        this.shortTermCapitalGainsCurrency = new Currency();
+        this.monthlyShortTermCapitalGains = [];
+
+        this.longTermCapitalGainsCurrency = new Currency();
+        this.monthlyLongTermCapitalGains = [];
+
         // charting
-        this.rmdCurrency = new Currency(0.0);
+        this.rmdCurrency = new Currency();
         this.monthlyRMDs = [];
 
         this.monthlyWithholding = [];
         this.monthlyFICA = [];
 
-        this.socialSecurityCurrency = new Currency(0.0);
+        this.socialSecurityCurrency = new Currency();
         this.monthlySocialSecurity = [];
 
-        this.medicareCurrency = new Currency(0.0);
+        this.medicareCurrency = new Currency();
         this.monthlyMedicare = [];
 
-        this.incomeTaxCurrency = new Currency(0.0);
+        this.incomeTaxCurrency = new Currency();
         this.monthlyIncomeTax = [];
 
-        this.estimatedTaxCurrency = new Currency(0.0);
+        this.estimatedTaxCurrency = new Currency();
         this.monthlyEstimatedTax = [];
 
         this.monthsRemainingDynamic = this.monthsRemaining;   
@@ -219,6 +225,12 @@ class ModelAsset {
 
         this.monthlyValue.push(this.finishCurrency.toCurrency());
         // DO NOT ZERO FINISH CURRENCY!
+
+        this.monthlyShortTermCapitalGains.push(this.shortTermCapitalGainsCurrency.toCurrency());
+        this.shortTermCapitalGainsCurrency.zero();
+
+        this.monthlyLongTermCapitalGains.push(this.longTermCapitalGainsCurrency.toCurrency());
+        this.longTermCapitalGainsCurrency.zero();
 
         // charting
         this.monthlyRMDs.push(this.rmdCurrency.toCurrency());
@@ -260,6 +272,16 @@ class ModelAsset {
         amount.add(this.medicareCurrency);
         return amount;
 
+    }
+
+    addMonthlyShortTermCapitalGains(amount) {
+        this.shortTermCapitalGainsCurrency.add(amount);
+        return new Currency(this.shortTermCapitalGainsCurrency.amount);
+    }
+
+    addMonthlyLongTermCapitalGains(amount) {
+        this.longTermCapitalGainsCurrency.add(amount);
+        return new Currency(this.longTermCapitalGainsCurrency.amount);
     }
 
     addMonthlySocialSecurity(amount) {
@@ -461,12 +483,19 @@ class ModelAsset {
 
         if (amount) {
             fundingAsset.credit(amount);
-            return amount;
+            return new Currency(amount.amount);
         }
         else {
             fundingAsset.credit(this.earningCurrency);
             return new Currency(this.earningCurrency.amount);
         }
+
+    }
+
+    close() {
+
+        this.earningCurrency.zero();
+        this.finishCurrency.zero();
 
     }
 

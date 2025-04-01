@@ -477,6 +477,21 @@ class TaxTable {
         return new Currency(0);
     }
 
+    calculateYearlyLongTermCapitalGainsTax(yearly) {          
+        
+        let taxableIncome = this.calculateNonFICATaxableIncome(yearly);
+        let adjusted = new Currency(taxableIncome.amount + yearly.longTermCapitalGains.amount);
+        
+        for (const taxRow of this.activeCapitalGainsTable.taxRows) {
+            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
+                tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
+            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
+                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
+        }
+        return tax;
+
+    }
+
     calculateMonthlyEstimatedTaxes(modelAsset) {
         return new Currency();
     }
@@ -557,15 +572,6 @@ class TaxTable {
 
     }
 
-    calculateNonFICATaxableIncome(yearly) {
-
-        let nonFICATaxableIncome = new Currency(yearly.selfIncome.amount + yearly.employedIncome.amount);
-        nonFICATaxableIncome.add(yearly.shortTermCapitalGains);   
-        nonFICATaxableIncome.add(yearly.interest);
-        return this.applyYearlyDeductions(yearly, nonFICATaxableIncome);
-
-    }
-
     reconcileYearlyTax(yearly) {
 
         let yearlyFICA = this.calculateYearlyFICATax(yearly);
@@ -574,13 +580,13 @@ class TaxTable {
         else
             console.log('computed yearly FICA check PASSED');
 
-        let yearlyNONFICATaxableIncome = this.calculateNonFICATaxableIncome(yearly);
-        if (yearlyNONFICATaxableIncome.amount != (yearly.selfIncome.amount + yearly.employedIncome.amount))
+        let yearlyNonFICATaxableIncome = this.calculateYearlyNonFICATaxableIncome(yearly);
+        if (yearlyNonFICATaxableIncome.amount != (yearly.selfIncome.amount + yearly.employedIncome.amount))
             console.log('computed yearly non FICA taxable income != portfolio yearly non FICA taxable income');
         else
             console.log('computed yearly non FICA taxable income check PASSED');
 
-        let yearlyIncomeTax = this.calculateYearlyIncomeTax(yearlyNONFICATaxableIncome, new Currency());
+        let yearlyIncomeTax = this.calculateYearlyIncomeTax(yearlyNonFICATaxableIncome, new Currency());
         if (yearlyIncomeTax.amount != yearly.incomeTax.amount)
             console.log('computed yearly income tax != portfolio yearly income tax');
         else
@@ -598,41 +604,22 @@ class TaxTable {
 
     }
 
-    /*
-    calculateYearlyIncomeTax(yearly) {
+    calculateYearlyNonFICATaxableIncome(yearly) {
 
-        let taxableIncome = this.calculateNonFICATaxableIncome(yearly);        
-
-        let tax = 0.0;        
-        for (const taxRow of this.activeIncomeTable.taxRows) {
-            if (taxableIncome.amount >= taxRow.fromAmount && taxableIncome.amount >= taxRow.toAmount)
-                tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (taxableIncome.amount >= taxRow.fromAmount && taxableIncome.amount < taxRow.toAmount)
-                tax += (taxableIncome.amount - taxRow.fromAmount) * taxRow.rate;
-        }
-        return new Currency(tax);
-
-    }
-    */
-
-    calculateYearlyLongTermCapitalGainsTax(yearly) {          
-        
-        let taxableIncome = this.calculateNonFICATaxableIncome(yearly);
-        let adjusted = new Currency(taxableIncome.amount + yearly.longTermCapitalGains.amount);
-        
-        for (const taxRow of this.activeCapitalGainsTable.taxRows) {
-            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
-                tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
-                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
-        }
-        return tax;
+        let nonFICATaxableIncome = new Currency(yearly.selfIncome.amount + yearly.employedIncome.amount);
+        nonFICATaxableIncome.add(yearly.iraDistribution);
+        nonFICATaxableIncome.add(yearly.shortTermCapitalGains);   
+        nonFICATaxableIncome.add(yearly.interest);
+        return this.applyYearlyDeductions(yearly, nonFICATaxableIncome);
 
     }
 
     applyYear(yearly) {
         this.reconcileYearlyTax(yearly);
-        //this.calculateIncomeTax();
+
+        let yearlyIncomeTaxWithFICA = this.calculateYearlyFICATax(yearly);
+        let yearlyIncomeTaxSansFICA = this.calculateYearlyIncomeTax(this.calculateYearlyNonFICATaxableIncome(yearly), new Currency());
+        
         //this.calculateCapitalGainsTax();
     }
 

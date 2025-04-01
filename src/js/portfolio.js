@@ -2,6 +2,7 @@ class FinancialPackage {
     constructor() {
         this.employedIncome = new Currency();
         this.selfIncome = new Currency();
+        this.iraDistribution = new Currency();
         this.taxableEarning = new Currency();
         this.nontaxableEarning = new Currency();
         this.expense = new Currency();
@@ -21,6 +22,7 @@ class FinancialPackage {
     add(financialPackage) {
         this.employedIncome.add(financialPackage.employedIncome);
         this.selfIncome.add(financialPackage.selfIncome);
+        this.iraDistribution.add(financialPackage.iraDistribution);
         this.taxableEarning.add(financialPackage.taxableEarning);
         this.nontaxableEarning.add(financialPackage.nontaxableEarning);
         this.expense.add(financialPackage.expense);
@@ -40,6 +42,7 @@ class FinancialPackage {
     subtract(financialPackage) {
         this.employedIncome.subtract(financialPackage.employedIncome);
         this.selfEmployedIncome.subtract(financialPackage.selfIncome);
+        this.iraDistribution.subtract(financialPackage.iraDistribution);
         this.taxableEarning.subtract(financialPackage.taxableEarning);
         this.nontaxableEarning.subtract(financialPackage.nontaxableEarning);
         this.expense.subtract(financialPackage.expense);
@@ -59,6 +62,7 @@ class FinancialPackage {
     zero() {
         this.employedIncome.zero();
         this.selfIncome.zero();
+        this.iraDistribution.zero();
         this.taxableEarning.zero();
         this.nontaxableEarning.zero();
         this.expense.zero();
@@ -79,6 +83,7 @@ class FinancialPackage {
 
         console.log('  employedIncome:        ' + this.employedIncome.toString());
         console.log('  selfIncome:            ' + this.selfIncome.toString());
+        console.log('  iraDistribution:       ' + this.iraDistribution.toString());
         console.log('  taxableEarning:        ' + this.taxableEarning.toString());
         console.log('  nontaxableEarning:     ' + this.nontaxableEarning.toString());
         console.log('  expense:               ' + this.expense.toString());
@@ -265,17 +270,19 @@ class Portfolio {
 
         }
 
-        /*
-        else if (currentDateInt.day == 15) {
-            
+        
+        else if (currentDateInt.day == 15) {       
+
+            /*
             // potentially pay taxes
             for (modelAsset of this.modelAssets) {
                 if (modelAsset.inMonth(currentDateInt))
                     this.totalTaxesPaid.add(modelAsset.applyMonthlyTaxPayments());
             }
+            */
 
         }
-        */
+        
 
         else if (currentDateInt.day == 30) {
 
@@ -295,12 +302,7 @@ class Portfolio {
 
                     this.applyFirstDayOfMonthIncome(modelAsset);
                     
-                }
-                else if (isTaxDeferred(modelAsset.instrument)) {
-
-                    this.applyFirstDayOfMonthTaxDeferred(modelAsset);
-                    
-                }          
+                }         
                 else if (isMortgage(modelAsset.instrument)) {
 
                     this.monthly.addMortgageResult(modelAsset.applyMonthlyMortgage());
@@ -374,59 +376,6 @@ class Portfolio {
 
     }
 
-    applyFirstDayOfMonthTaxDeferred(modelAsset) {
-        
-        let income = new Currency();
-        let expense = new Currency();  
-
-        if (this.activeUser.age >= 73) {
-            income = activeTaxTable.calculateMonthlyRMD(modelAsset);                        
-        }
-        
-        let expenseAssets = util_findModelAssetsByFundingSource(this.modelAssets, sInstrumentNames[sInstrumentsIDs.taxDeferredEquity], modelAsset.displayName);
-        if (expenseAssets.length > 0) {
-            for (expenseAsset of expenseAssets) {
-                expense.add(potentialExpenseAsset.finishCurrency);
-            }
-            this.monthly.expense.add(expense);            
-        }
-
-        expense.flipSign();
-        if (income.amount < expense.amount) {
-            // take additional from modelAsset
-            let extraWithdrawn = new Currency(expense.amount - income.amount);
-            income.amount.add(extraWithdrawn);
-        }
-        else if (income.amount > expense.amount) {
-            // send excess to the first taxable account
-            let excessAvailable = new Currency(income.amount - expense.amount);
-            this.creditToFirstTaxableAccount(excessAvailable)
-        }
-
-        if (income.amount > 0) {
-            modelAsset.debit(income);
-            this.monthly.income.add(income);               
-
-            let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(income);
-
-            let penalty = 0.0; 
-            if (income.amount > 0 && this.activeUser.age < 60)
-                penalty = 0.1; // 10%                                        
-
-            if (penalty > 0.0) {
-                console.log('Portfolio.applyFirstMonth|TaxDeferred - 10% penalty for withdrawing ' + income.toString() + ' before age of 60');
-                incomeTax.add(income.multiply(1 + penalty)); 
-            }
-
-            this.monthly.incomeTax.add(incomeTax);
-            
-            if (incomeTax.amount > 0) {
-                this.deductFromFirstTaxableAccount(incomeTax);
-            }
-        }
-
-    }
-
     applyLastDayOfMonth(currentDateInt) {
 
         // apply expenses
@@ -445,6 +394,11 @@ class Portfolio {
                         propertyTaxes.flipSign();
                         this.monthly.propertyTaxes.add(propertyTaxes);
                     }
+
+                    // if it's taxDeferred, see if we need to take a distribution or if an expense is tied to it
+                    if (isTaxDeferred(modelAsset.instrument)) {
+                        this.applyLastDayOfMonthTaxDeferred(modelAsset);
+                    }
                 }
                 else if (isIncomeAccount(modelAsset.instrument)) {
                     let taxableIncome = this.applyMonthlyIncome(modelAsset);
@@ -460,12 +414,80 @@ class Portfolio {
                             skip = true;
                     }
 
+                    this.monthly.expense.add(modelAsset.applyMonthlyExpense());
+
                     if (!skip) {
-                        this.monthly.expense.add(modelAsset.applyMonthlyExpense());
                         this.applyFundingSource(modelAsset);
                     }
                 }
             }
+        }
+
+        // sale of assets and proceeds transferred to fundingSource
+        for (modelAsset of this.modelAssets) {
+            if (modelAsset.finishDateInt.year == currentDateInt.year && modelAsset.finishDateInt.month == currentDateInt.month) {
+                if (modelAsset.fundingSource) {
+                    console.log('close asset position: ' + modelAsset.displayName);
+                    let result = this.applyFundingSource(modelAsset, modelAsset.finishCurrency);
+
+                    modelAsset.addMonthlyLongTermCapitalGains(result);
+                    this.monthly.longTermCapitalGains.add(result);
+                }
+            }
+        }
+
+    }
+
+    applyLastDayOfMonthTaxDeferred(modelAsset) {
+
+        let income = new Currency();
+        let expense = new Currency();  
+
+        if (this.activeUser.age >= 73) {
+            income = activeTaxTable.calculateMonthlyRMD(modelAsset);                        
+        }
+        
+        let expenseAssets = util_findModelAssetsByFundingSource(this.modelAssets, sInstrumentNames[sInstrumentsIDs.monthlyExpense], modelAsset.displayName);
+        if (expenseAssets.length > 0) {
+            for (let expenseAsset of expenseAssets) {
+                expense.add(expenseAsset.finishCurrency);
+            }
+            this.monthly.expense.add(expense);            
+        }
+
+        expense.flipSign();
+        if (income.amount < expense.amount) {
+            // take additional from modelAsset
+            let extraWithdrawn = new Currency(expense.amount - income.amount);
+            income.add(extraWithdrawn);
+        }
+        else if (income.amount > expense.amount) {
+            // send excess to the first taxable account
+            let excessAvailable = new Currency(income.amount - expense.amount);
+            this.creditToFirstTaxableAccount(excessAvailable)
+        }
+
+        if (income.amount > 0) {
+            modelAsset.debit(income);
+            this.monthly.iraDistribution.add(income);               
+
+            let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(income, new Currency());
+
+            // TODO: inherited IRA exclusion
+            let penalty = 0.0; 
+            //if (income.amount > 0 && this.activeUser.age < 60)
+            //    penalty = 0.1; // 10%                                        
+
+            if (penalty > 0.0) {
+                console.log('Portfolio.applyFirstMonth|TaxDeferred - 10% penalty for withdrawing ' + income.toString() + ' before age of 60');
+                incomeTax.add(income.multiply(penalty)); 
+            }
+
+            this.monthly.incomeTax.add(incomeTax);
+            
+            let withholding = new WithholdingResult( new Currency(), new Currency(), incomeTax);
+            modelAsset.deductWithholding(withholding);
+
         }
 
     }
@@ -507,7 +529,10 @@ class Portfolio {
         if (modelAsset.fundingSource) {
             let fundingAsset = util_findModelAssetByDisplayName(this.modelAssets, modelAsset.fundingSource);
             if (fundingAsset) {
-                return modelAsset.applyFundingSource(fundingAsset, amount);
+                let result = modelAsset.applyFundingSource(fundingAsset, amount);
+                if (result.amount == modelAsset.finishCurrency.amount)
+                    modelAsset.close();
+                return result;
             }
         }
         return new Currency();
