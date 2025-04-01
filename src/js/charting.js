@@ -194,9 +194,9 @@ function charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet) {
 function charting_reducedModelAssetsForEarnings(modelAssets) {
   let results = [];
   for (const modelAsset of modelAssets) {
-      if (flowLineChartExclusions.includes(modelAsset.instrument))
-          results.push(null);
-      else
+      //if (flowLineChartExclusions.includes(modelAsset.instrument))
+      //    results.push(null);
+      //else
           results.push(modelAsset);
   }
   return results;
@@ -339,77 +339,7 @@ function charting_buildCashFlowDataSet_taxes(portfolio) {
   cashFlowDataSet.data = portfolio.displayIncomeTax;
   cashFlowDataSet.backgroundColor = '#ffff00';  
   return cashFlowDataSet;
-
-  /*
-  let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
-  cashFlowDataSet.label = 'Federal Income Tax';
-
-  let monthsSpan = MonthsSpan.build(firstDateInt, lastDateInt);
-
-  // taxes are paid out in April every year. So make we position the payment properly for the scale of the chart.
-  let ignore = false;
-  if (monthsSpan.combineMonths == 1) {
-    let count = 0;
-    if (firstDateInt.month < 5) {
-      while (firstDateInt.month + count < 4) {
-        cashFlowDataSet.data.push(0.0);
-        ++count;
-      }
-    }
-    else {
-      while (firstDateInt.month + count < 16) {
-        cashFlowDataSet.data.push(0.0);
-        ++count;
-      }
-    }
-  }
-  else if (monthsSpan.combineMonths == 3) {
-    if (firstDateInt.month == 1) {
-      cashFlowDataSet.data.push(0.0);
-    }
-    if (firstDateInt.month >= 2 && firstDateInt.month < 5) {
-
-    }
-    if (firstDateInt.month >= 5 && firstDateInt.month < 8) {
-      cashFlowDataSet.data.push(0.0);
-      cashFlowDataSet.data.push(0.0);
-      cashFlowDataSet.data.push(0.0);
-    }
-    if (firstDateInt.month >= 8 && firstDateInt.month < 11) {
-      cashFlowDataSet.data.push(0.0);
-      cashFlowDataSet.data.push(0.0);
-    }
-    if (firstDateInt.month >= 11 && firstDateInt.month < 13) {
-      cashFlowDataSet.data.push(0.0);
-    }
-  }
-  else if (monthsSpan.combineMonths == 6) {    
-    if (firstDateInt.month >= 2 && firstDateInt.month <= 4)
-      ignore = true;
-  }
-  else if (monthsSpan.combineMonths == 12) {
-    // nothing to do
-  }
-  else {
-    console.log('charting_buildCashFlowDataSet_taxes - unknown monthsSpan.combineMonths');
-    return null;
-  }
-
-  let postFills = (12 / monthsSpan.combineMonths) -1;
-
-  for (let c of activeTaxTable.yearlyPayments) {
-    if (!ignore) {
-      cashFlowDataSet.data.push(c);
-    }
-    ignore= false;
-    for (let ii = 0; ii < postFills; ++ii)
-      cashFlowDataSet.data.push(0.0);
-  }
-
-  cashFlowDataSet.backgroundColor = '#ffff00';
   
-  return cashFlowDataSet;
-  */
 }
 
 function charting_applyTaxesToCashFlowDataSet(cashFlowDataSet, ficaDataSet, taxDataSet) {
@@ -434,7 +364,8 @@ function charting_buildDisplayCashFlowFromPortfolio(portfolio) {
   let chartingCashFlowDataSet_rmds = charting_buildCashFlowDataSet_rmds(portfolio);
   let chartingCashFlowDataSet_taxes = charting_buildCashFlowDataSet_taxes(portfolio);
 
-  charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_fica, chartingCashFlowDataSet_taxes);
+  // because we are displaying Earnings we don't need to take taxes off (earnings = value - taxes)
+  //charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_fica, chartingCashFlowDataSet_taxes);
     
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_credits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_debits);
@@ -449,16 +380,18 @@ function charting_buildDisplayCashFlowFromPortfolio(portfolio) {
 
 function charting_buildFromPortfolio(portfolio, buildNewDataSet) {
   if (portfolio == null || portfolio.modelAssets == null || portfolio.modelAssets.length == 0) {
+    
     console.log('charting_buildFromModelAssets - null or zero length array provided');
     charting_jsonAssetsChartData = null;
     charting_jsonEarningsChartData = null;
     charting_jsonCashFlowChartData = null;
+
   }
-  else {  
-    portfolio.buildChartingDisplayData();
+  else {
 
     charting_jsonAssetsChartData = charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet);
     charting_jsonEarningsChartData = charting_buildDisplayEarningsFromModelAssets(portfolio.firstDateInt, portfolio.lastDateInt, portfolio.modelAssets, buildNewDataSet);
     charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromPortfolio(portfolio, buildNewDataSet);
+
   }
 }

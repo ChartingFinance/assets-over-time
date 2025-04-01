@@ -126,7 +126,7 @@
                                 <input type="month" class="width-full" id="summaryStartDate" name="startDate" readonly />
                             </div>
                             <div style="float: left; width: 45%">
-                                <label for="startValue">Start Value</label><br />
+                                <label for="startValue">Start Asset Value</label><br />
                                 <input type="number" class="width-full" id="summaryStartValue" name="startValue" step="0.01" placeholder="computed" readonly />
                             </div>
                         </div>
@@ -136,16 +136,16 @@
                                 <input type="month" class="width-full" id="summaryFinishDate" name="finishDate" readonly />
                             </div>
                             <div style="float: left; width: 45%">
-                                <label for="finishValue">Finish Value</label><br />
+                                <label for="finishValue">Finish Asset Value</label><br />
                                 <input type="number" class="width-full" id="summaryFinishValue" name="finishValue" step="0.01" placeholder="computed" readonly />                                
                             </div>
                         </div>
                         <div class="width-full" style="float: left; padding-top: 10px">
                             <label for="monthsRemaining">Accrued Months</label><br />
                             <input type="number" style="width: 125px" id="summaryAccruedMonths" name="monthsRemaining" placeholder="total months accrued" readonly /><br />
-                            <label for="accumulatedValue">Accumulated Value</label><br />                                
+                            <label for="accumulatedValue">Earned Asset Value</label><br />                                
                             <input type="number" id="summaryAccumulatedValue" name="accumulatedValue" step="0.01" placeholder="accumulated value" readonly /><br />
-                            <label for="annualReturnRate">Annual Return %</label><br />
+                            <label for="annualReturnRate">Annual Growth %</label><br />
                             <input type="number" id="summaryAnnualReturnRate" name="annualReturnRate" step="0.01" placeholder="annual return rate" readonly /><br />
                         </div>
                     </div>
@@ -508,7 +508,11 @@
          
             function updateCharts() {
                 let modelAssets = membrane_htmlElementsToAssetModels();
-                charting_buildFromModelAssets(modelAssets, false);
+                let portfolio = new Portfolio(modelAssets);
+                chronometer_run(portfolio);
+                portfolio.buildChartingDisplayData();
+                ensureHighlightDisplayName();
+                charting_buildFromPortfolio(portfolio, false);
                 activeAssetCanvas.update(); 
                 activeEarningsCanvas.update();
                 activeCashFlowCanvas.update();                

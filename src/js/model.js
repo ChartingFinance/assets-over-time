@@ -31,9 +31,9 @@ const sInstrumentsIDs = Object.freeze({
 });
 
 class CapitalGainsResult {
-    constructor(shortTerm, longTerm) {
-        this.shortTerm = shortTerm;
-        this.longTerm = longTerm;
+    constructor(principal, earnings) {
+        this.principal = principal;
+        this.earnings = earnings;
     }
 }
 
@@ -43,6 +43,24 @@ class MortgageResult {
         this.principal = principal;
         this.interest = interest;
         this.escrow = escrow;
+    }
+}
+
+class WithholdingResult {
+    constructor(medicare, socialSecurity, income) {
+        this.medicare = medicare;
+        this.socialSecurity = socialSecurity;
+        this.income = income;
+    }
+
+    fica() {
+        return new Currency(this.medicare.amount + this.socialSecurity.amount);
+    }
+
+    flipSigns() {
+        this.medicare.flipSign();
+        this.socialSecurity.flipSign();
+        this.income.flipSign();
     }
 }
 
@@ -231,7 +249,7 @@ class ModelAsset {
 
         let amount = new Currency();
         amount.add(this.funcMonthlyFICA());
-        amount.add(this.incomeTaxCurrency);
+        amount.add(this.incomeTaxWithholdingCurrency);
         return amount;
     }
 
@@ -273,6 +291,27 @@ class ModelAsset {
         this.finishCurrency.add(amount);
         return new Currency(this.finishCurrency.amount);
 	}
+
+    deductWithholding(withholdingIn) {
+
+        let withholding = new WithholdingResult(withholdingIn.medicare, withholdingIn.socialSecurity, withholdingIn.income);
+        withholding.flipSigns();
+
+        console.log(this.displayName + ' add socialSecurity: ' + withholding.socialSecurity.toString());
+        this.addMonthlySocialSecurity(withholding.socialSecurity);
+        this.earningCurrency.add(withholding.socialSecurity);
+
+        console.log(this.displayName + ' add medicare: ' + withholding.medicare.toString());
+        this.addMonthlyMedicare(withholding.medicare);
+        this.earningCurrency.add(withholding.medicare);
+
+        console.log(this.displayName + ' add income withholding: ' + withholding.income.toString());
+        this.addMonthlyIncomeTax(withholding.income);
+        this.earningCurrency.add(withholding.income);
+
+        return new Currency(this.earningCurrency.amount);
+
+    }
 
     finalizeChron() {
 
@@ -344,12 +383,12 @@ class ModelAsset {
 
         let monthlyMortgagePayment = (this.finishCurrency.amount * this.annualReturnRate.asMonthly()) * Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic);
 	    monthlyMortgagePayment /= Math.pow(1.0 + this.annualReturnRate.asMonthly(), this.monthsRemainingDynamic) - 1.0
-        this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-	    let monthlyMortgagePrincipal = new Currency(monthlyMortgagePayment - this.earningCurrency.amount);            
+        let monthlyMortgageInterest = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
+	    let monthlyMortgagePrincipal = new Currency(monthlyMortgagePayment - monthlyMortgageInterest.amount);            
         --this.monthsRemainingDynamic;
 
         let c = new Currency(monthlyMortgagePayment);
-        let monthlyMortgageInterest = new Currency(monthlyMortgagePayment - monthlyMortgagePrincipal.amount);
+        this.earningCurrency = new Currency(monthlyMortgageInterest.amount - monthlyMortgagePrincipal.amount);
         console.log('mortgage payment: ' + this.displayName + ' ' + c.toString() + ', interest payment: ' + monthlyMortgageInterest.toString() + ' principal payment: ' + monthlyMortgagePrincipal.toString());
 
         this.finishCurrency.subtract(monthlyMortgagePrincipal);
@@ -370,10 +409,8 @@ class ModelAsset {
 
         this.finishCurrency.add(this.earningCurrency);
 
-        if (isTaxableAccount(this.instrument))
-            return new CapitalGainsResult(new Currency(this.earningCurrency.amount * 0.2), new Currency(this.earningCurrency.amount * 0.8));
-        else
-            return new CapitalGainsResult(new Currency(), new Currency(this.earningCurrency.amount));
+        // principal, earnings
+        return new CapitalGainsResult(new Currency(this.finishCurrency.amount), new Currency(this.earningCurrency.amount));
 
     }
 
@@ -446,13 +483,6 @@ class ModelAsset {
         }
         
         return (isStartDate && !isFinishDate);
-    }
-
-
-    deductWithholding() {
-        if (isMonthlyIncome(this.instrument)) {
-            this.earningCurrency.subtract(this.funcMonthlyWithholding);
-        }
     }
 
     hasEstimatedTax() {

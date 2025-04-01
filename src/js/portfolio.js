@@ -1,63 +1,75 @@
 class FinancialPackage {
     constructor() {
-        this.income = new Currency();
-        this.earning = new Currency();
+        this.employedIncome = new Currency();
+        this.selfIncome = new Currency();
+        this.taxableEarning = new Currency();
+        this.nontaxableEarning = new Currency();
         this.expense = new Currency();
         this.fica = new Currency();
-        this.incomeWithholding = new Currency();
+        this.incomeTax = new Currency();
         this.estimatedTaxes = new Currency();
         this.iraContribution = new Currency();
         this.mortgage = new Currency();
         this.mortgageInterest = new Currency();
-        this.mortgagePricipal = new Currency();
+        this.mortgagePrincipal = new Currency();
+        this.propertyTaxes = new Currency();
         this.shortTermCapitalGains = new Currency();
         this.longTermCapitalGains = new Currency();
         this.interest = new Currency();
     }
 
     add(financialPackage) {
-        this.income.add(financialPackage.income);
-        this.earning.add(financialPackage.earning);
+        this.employedIncome.add(financialPackage.employedIncome);
+        this.selfIncome.add(financialPackage.selfIncome);
+        this.taxableEarning.add(financialPackage.taxableEarning);
+        this.nontaxableEarning.add(financialPackage.nontaxableEarning);
         this.expense.add(financialPackage.expense);
         this.fica.add(financialPackage.fica);
-        this.incomeWithholding.add(financialPackage.incomeWithholding);
+        this.incomeTax.add(financialPackage.incomeTax);
         this.estimatedTaxes.add(financialPackage.estimatedTaxes);
         this.iraContribution.add(financialPackage.iraContribution);
         this.mortgage.add(financialPackage.mortgage);
         this.mortgageInterest.add(financialPackage.mortgageInterest);
-        this.mortgagePricipal.add(financialPackage.mortgagePricipal);
+        this.mortgagePrincipal.add(financialPackage.mortgagePrincipal);
+        this.propertyTaxes.add(financialPackage.propertyTaxes);
         this.shortTermCapitalGains.add(financialPackage.shortTermCapitalGains);
         this.longTermCapitalGains.add(financialPackage.longTermCapitalGains);
         this.interest.add(financialPackage.interest);
     }
 
     subtract(financialPackage) {
-        this.income.subtract(financialPackage.income);
-        this.earning.subtract(financialPackage.earning);
+        this.employedIncome.subtract(financialPackage.employedIncome);
+        this.selfEmployedIncome.subtract(financialPackage.selfIncome);
+        this.taxableEarning.subtract(financialPackage.taxableEarning);
+        this.nontaxableEarning.subtract(financialPackage.nontaxableEarning);
         this.expense.subtract(financialPackage.expense);
         this.fica.subtract(financialPackage.fica);
-        this.incomeWithholding.subtract(financialPackage.incomeWithholding);
+        this.incomeTax.subtract(financialPackage.incomeTax);
         this.estimatedTaxes.subtract(financialPackage.estimatedTaxes);
         this.iraContribution.subtract(financialPackage.iraContribution);
         this.mortgage.subtract(financialPackage.mortgage);
         this.mortgageInterest.subtract(financialPackage.mortgageInterest);
-        this.mortgagePricipal.subtract(financialPackage.mortgagePricipal);
+        this.mortgagePrincipal.subtract(financialPackage.mortgagePrincipal);
+        this.propertyTaxes.subtract(financialPackage.propertyTaxes);
         this.shortTermCapitalGains.subtract(financialPackage.shortTermCapitalGains);
         this.longTermCapitalGains.subtract(financialPackage.longTermCapitalGains);
         this.interest.subtract(financialPackage.interest);
     }
 
     zero() {
-        this.income.zero();
-        this.earning.zero();
+        this.employedIncome.zero();
+        this.selfIncome.zero();
+        this.taxableEarning.zero();
+        this.nontaxableEarning.zero();
         this.expense.zero();
         this.fica.zero();
-        this.incomeWithholding.zero();
+        this.incomeTax.zero();
         this.estimatedTaxes.zero();
         this.iraContribution.zero();
         this.mortgage.zero();
         this.mortgageInterest.zero();
-        this.mortgagePricipal.zero();
+        this.mortgagePrincipal.zero();
+        this.propertyTaxes.zero();
         this.shortTermCapitalGains.zero();
         this.longTermCapitalGains.zero();
         this.interest.zero();
@@ -65,16 +77,19 @@ class FinancialPackage {
 
     report() {
 
-        console.log('  income:                ' + this.income.toString());
-        console.log('  earning:               ' + this.earning.toString());
+        console.log('  employedIncome:        ' + this.employedIncome.toString());
+        console.log('  selfIncome:            ' + this.selfIncome.toString());
+        console.log('  taxableEarning:        ' + this.taxableEarning.toString());
+        console.log('  nontaxableEarning:     ' + this.nontaxableEarning.toString());
         console.log('  expense:               ' + this.expense.toString());
         console.log('  fica:                  ' + this.fica.toString());
-        console.log('  incomeWhithholding:    ' + this.incomeWithholding.toString());
+        console.log('  incomeTax:             ' + this.incomeTax.toString());
         console.log('  estimatedTaxes:        ' + this.estimatedTaxes.toString());
         console.log('  iraContribution:       ' + this.iraContribution.toString());
         console.log('  mortgage:              ' + this.mortgage.toString());
         console.log('  mortgageInterest:      ' + this.mortgageInterest.toString());
-        console.log('  mortgagePrincipal:     ' + this.mortgagePricipal.toString());
+        console.log('  mortgagePrincipal:     ' + this.mortgagePrincipal.toString());
+        console.log('  propertyTaxes:         ' + this.propertyTaxes.toString());
         console.log('  shortTermCapitalGains: ' + this.shortTermCapitalGains.toString());
         console.log('  longTermCapitalGains:  ' + this.longTermCapitalGains.toString());
         console.log('  interest:              ' + this.interest.toString());
@@ -117,7 +132,7 @@ class Portfolio {
             }
             else if (isMonthlyIncome(b.instrument)) {
                 if (isMonthlyIncome(a.instrument))
-                    return a.displayName.localeCompare(b.displayName);
+                    return b.displayName.localeCompare(a.displayName);
                 else
                     return 1;
             }
@@ -129,9 +144,29 @@ class Portfolio {
             }
             else if (isMonthlyExpense(b.instrument)) {
                 if (isMonthlyExpense(a.instrument))
-                    return a.displayName.localeCompare(b.displayName);
+                    return b.displayName.localeCompare(a.displayName);
                 else
                     return -1;
+            }
+            else if (isHome(a.instrument)) {
+                if (isHome(b.instrument))
+                    return a.displayName.localeCompare(b.displayName);
+                else if (isMonthlyIncome(b.instrument))
+                    return 1;
+                else if (isMonthlyExpense(b.instrument))
+                    return -1;
+                else
+                    return a.displayName.localeCompare(b.displayName);
+            }
+            else if (isMortgage(a.instrument)) {
+                if (isMortgage(b.instrument))
+                    a.displayName.localeCompare(b.displayName);
+                else if (isMonthlyIncome(b.instrument))
+                    return 1;
+                else if (isMonthlyExpense(b.instrument))
+                    return -1;
+                else
+                    return a.displayName.localeCompare(b.displayName);
             }
             else
                 return a.displayName.localeCompare(b.displayName);
@@ -151,9 +186,9 @@ class Portfolio {
         }
     }
 
-    monthlyChron() {
+    monthlyChron(currentDateInt) {
 
-        this.report();
+        this.report(currentDateInt);
 
         this.yearly.add(this.monthly);
         this.total.add(this.monthly);
@@ -164,9 +199,7 @@ class Portfolio {
         }        
     }
 
-    yearlyChron() {
-
-        let yearlyTaxes = activeTaxTable.calculateYearlyTax(this.yearly);
+    yearlyChron(currentDateInt) {
 
         this.yearly.zero();
 
@@ -176,13 +209,59 @@ class Portfolio {
         for (modelAsset of this.modelAssets) {
             modelAsset.finalizeChron();
         }
-    }    
+    }
+    
+    startValue() {
+
+        let amount = new Currency(0.0);
+
+        for (modelAsset of this.modelAssets) {
+
+            // just assets
+            if (isAsset(modelAsset.instrument))
+                amount.add(modelAsset.startCurrency);
+        }
+
+        return amount;
+
+    }
+
+    finishValue() {
+
+        let amount = new Currency(0.0);
+
+        for (modelAsset of this.modelAssets) {
+
+            // just assets
+            if (isAsset(modelAsset.instrument))
+                amount.add(modelAsset.finishCurrency);
+        }
+
+        return amount;
+
+    }
+
+    accumulatedValue() {
+        
+        let amount = new Currency(0.0);
+
+        for (modelAsset of this.modelAssets) {
+
+            // just assets
+            if (isAsset(modelAsset.instrument))
+                amount.add(modelAsset.accumulatedCurrency);
+        }
+
+        return amount;
+
+    }
     
     applyMonth(currentDateInt) {
         
         if (currentDateInt.day == 1) {
 
-            this.applyFirstDayOfMonth(currentDateInt);            
+            this.applyFirstDayOfMonth(currentDateInt);
+            return this.modelAssets.length; 
 
         }
 
@@ -204,6 +283,8 @@ class Portfolio {
 
         }
 
+        return 0;
+
     }
 
     applyFirstDayOfMonth(currentDateInt) {
@@ -219,7 +300,7 @@ class Portfolio {
 
                     this.applyFirstDayOfMonthTaxDeferred(modelAsset);
                     
-                }            
+                }          
                 else if (isMortgage(modelAsset.instrument)) {
 
                     this.monthly.addMortgageResult(modelAsset.applyMonthlyMortgage());
@@ -230,26 +311,27 @@ class Portfolio {
     }
 
     applyFirstDayOfMonthIncome(modelAsset) {
+
         let originalIncome = modelAsset.applyMonthlyIncome();
         let taxableIncome = new Currency(originalIncome.amount);
-        this.monthly.income.add(originalIncome);                                
+        if (modelAsset.isSelfEmployed)
+            this.monthly.selfIncome.add(taxableIncome);
+        else
+            this.monthly.employedIncome.add(taxableIncome);                                
 
-        let fica = activeTaxTable.calculateMonthlyFICAWithholding(modelAsset);
-        this.monthly.fica.add(fica);
+        let withholding = activeTaxTable.calculateFICATax(modelAsset.isSelfEmployed, taxableIncome);
+        this.monthly.fica.subtract(withholding.fica());
 
-        let iraContribution = this.calculateFirstDayOfMonthIncomeIRAContribution(modelAsset, taxableIncome, fica);
+        let iraContribution = this.calculateFirstDayOfMonthIncomeIRAContribution(modelAsset, taxableIncome, withholding.fica());
     
-        let incomeWithholding = activeTaxTable.calculateMonthlyIncomeWithholding(modelAsset, taxableIncome);                    
-        this.monthly.incomeWithholding.add(incomeWithholding);        
+        let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(taxableIncome, new Currency());                            
+        this.monthly.incomeTax.subtract(incomeTax);
 
-        console.log(modelAsset.displayName + ' deduct FICA: ' + fica.toString());
-        modelAsset.earningCurrency.subtract(fica);
-
-        console.log(modelAsset.displayName + ' deduct Income Withholding: ' + incomeWithholding.toString());
-        modelAsset.earningCurrency.subtract(incomeWithholding);        
-        
+        withholding.income = incomeTax;
+        modelAsset.deductWithholding(withholding);
+              
         if (iraContribution.amount > 0) {
-            let cleanup = new Currency((iraContribution.amount + fica.amount + incomeWithholding.amount) - originalIncome.amount);
+            let cleanup = new Currency((iraContribution.amount + withholding.fica().amount + incomeTax.amount) - originalIncome.amount);
             if (cleanup.amount < 0) {
                 cleanup.flipSign();
                 this.creditToFirstTaxableAccount(cleanup);
@@ -261,7 +343,7 @@ class Portfolio {
             this.monthly.iraContribution.add(iraContribution);
         }
 
-        this.monthly.earning.add(modelAsset.earningCurrency);
+        this.monthly.taxableEarning.add(modelAsset.earningCurrency);
 
         if (iraContribution.amount > 0)
             this.applyFundingSource(modelAsset, iraContribution);
@@ -321,7 +403,7 @@ class Portfolio {
             modelAsset.debit(income);
             this.monthly.income.add(income);               
 
-            let incomeWithholding = activeTaxTable.calculateMonthlyIncomeWithholding(income);
+            let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(income);
 
             let penalty = 0.0; 
             if (income.amount > 0 && this.activeUser.age < 60)
@@ -329,18 +411,17 @@ class Portfolio {
 
             if (penalty > 0.0) {
                 console.log('Portfolio.applyFirstMonth|TaxDeferred - 10% penalty for withdrawing ' + income.toString() + ' before age of 60');
-                incomeWithholding.add(income.multiply(1 + penalty)); 
+                incomeTax.add(income.multiply(1 + penalty)); 
             }
 
-            this.monthly.incomeWithholding.add(incomeWithholding);
+            this.monthly.incomeTax.add(incomeTax);
             
-            if (incomeWithholding.amount > 0) {
-                this.deductFromFirstTaxableAccount(incomeWithholding);
+            if (incomeTax.amount > 0) {
+                this.deductFromFirstTaxableAccount(incomeTax);
             }
         }
 
     }
-
 
     applyLastDayOfMonth(currentDateInt) {
 
@@ -350,8 +431,16 @@ class Portfolio {
             if (modelAsset.inMonth(currentDateInt)) {                                    
                 if (isCapital(modelAsset.instrument)) {
                     let capitalGainsResult = modelAsset.applyMonthlyCapitalGains();
-                    this.monthly.addCapitalGainsResult(capitalGainsResult);
-                    this.monthly.estimatedTaxes.add(activeTaxTable.calculateMonthlyEstimatedTaxes(this.yearly, capitalGainsResult));
+
+                    // no tax on capital gains until realized
+                    this.monthly.nontaxableEarning.add(capitalGainsResult.earnings);
+
+                    // if it's a house, we do have property taxes
+                    if (isHome(modelAsset.instrument)) {
+                        let propertyTaxes = new Currency(capitalGainsResult.principal.amount * (global_propertyTaxRate / 12.0));
+                        propertyTaxes.flipSign();
+                        this.monthly.propertyTaxes.add(propertyTaxes);
+                    }
                 }
                 else if (isSavingsAccount(modelAsset.instrument)) {
                     this.monthly.income.add(this.applyMonthlyIncome());
@@ -423,18 +512,6 @@ class Portfolio {
 
     }
 
-    accumulatedValue() {
-        
-        let amount = new Currency(0.0);
-
-        for (modelAsset of this.modelAssets) {
-            amount.add(modelAsset.accumulatedCurrency);
-        }
-
-        return amount;
-
-    }
-
     monthlyDataArrayToDisplayData(monthsSpan, monthlyArrayName, displayArrayName) {
         
         this[displayArrayName] = null;
@@ -478,11 +555,11 @@ class Portfolio {
 
     }
 
-    report() {
+    report(currentDateInt) {
 
-        console.log(' -------  Begin Monthly Report -------');
+        console.log(' -------  Begin Monthly (' + currentDateInt.toString() + ' ) Report -------');
         this.monthly.report();
-        console.log(' -------   End Monthly Report  -------');
+        console.log(' -------   End Monthly (' + currentDateInt.toString() + ' ) Report  -------');
 
     }
 
@@ -496,16 +573,16 @@ class Portfolio {
     assertions() {
 
         let assertion1 = this.sumDisplayData('displayValue');
-        if (assertion1.amount == this.total.income.amount)
-            console.log('assert summed monthly income == total earnings is TRUE');
+        if (assertion1.amount == (this.total.selfIncome.amount + this.total.employedIncome.amount))
+            console.log('assert summed monthly income == total income is TRUE');
         else
-            console.log('assert summed monthly income == total earnings is FALSE');
+            console.log('assert summed monthly income == total incomme is FALSE');
         
         let assertion2 = this.sumDisplayData('displayEarning');
-        if (assertion2.amount == this.total.earning.amount)
-            console.log('assert summed monthly earnings == total earnings is TRUE');
+        if (assertion2.amount == this.total.taxableEarning.amount)
+            console.log('assert summed monthly earnings == total taxableEarnings is TRUE');
         else
-            console.log('assert summed monthly earnings == total earnings is FALSE');
+            console.log('assert summed monthly earnings == total taxableEarnings is FALSE');
 
     }
 

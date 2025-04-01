@@ -1,10 +1,10 @@
 function chronometer_run(portfolio) {
     
     summary_setStartDate(portfolio.firstDateInt);
+    summary_setStartValue(portfolio.startValue());  
     summary_setFinishDate(portfolio.lastDateInt);
 
-    let totalMonths = 0;
-    let totalYears = 0;
+    let totalMonths = 0;    
 
     activeTaxTable.initializeChron();
     portfolio.initializeChron();
@@ -12,26 +12,28 @@ function chronometer_run(portfolio) {
     let currentDateInt = new DateInt(portfolio.firstDateInt.toInt());
     while (currentDateInt.toInt() <= portfolio.lastDateInt.toInt()) {
 
-        portfolio.applyMonth(currentDateInt);
-
+        totalMonths += portfolio.applyMonth(currentDateInt);     
+        
         currentDateInt.next();
 
         if (currentDateInt.day == 1) {
-            portfolio.monthlyChron();
-            activeTaxTable.monthlyChron();
+            portfolio.monthlyChron(currentDateInt);
+            activeTaxTable.monthlyChron(currentDateInt);
         }
 
         if (currentDateInt.isNewYearsDay()) {
             portfolio.applyYear(currentDateInt);
-            activeTaxTable.applyYear(currentDateInt);
+            activeTaxTable.applyYear(portfolio.yearly);
             
-            portfolio.yearlyChron();
-            activeTaxTable.yearlyChron();
+            portfolio.yearlyChron(currentDateInt);
+            activeTaxTable.yearlyChron(currentDateInt);
         }
-    }
 
-    //summary_setAccruedMonths(totalMonths);
-    summary_setAccumulatedValue(portfolio.accumulatedValue());
+        summary_setFinishValue(portfolio.finishValue());
+        summary_setAccruedMonths(totalMonths);
+        summary_setAccumulatedValue(portfolio.accumulatedValue());
+        summary_computeCAGR();
+    }    
 
     portfolio.finalizeChron();
     activeTaxTable.finalizeChron();

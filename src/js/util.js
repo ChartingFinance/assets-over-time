@@ -441,6 +441,17 @@ function isFundableAsset(value) {
         return false;
 }
 
+function isAsset(value) {
+    if (isFundableAsset(value))
+        return true;
+    else if (isHome(value))
+        return true;
+    else if (isMortgage(value))
+        return true;
+    else
+        return false;
+}
+
 function displayElementSet(sourceElement, startIndex) {
     // hide invisible placeholders
     sourceElement.parentElement.children[0].style.display = 'none';
