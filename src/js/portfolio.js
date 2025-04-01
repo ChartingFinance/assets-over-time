@@ -343,7 +343,7 @@ class Portfolio {
             this.monthly.iraContribution.add(iraContribution);
         }
 
-        this.monthly.taxableEarning.add(modelAsset.earningCurrency);
+        this.monthly.taxableEarning.add(taxableIncome);
 
         if (iraContribution.amount > 0)
             this.applyFundingSource(modelAsset, iraContribution);
@@ -363,7 +363,11 @@ class Portfolio {
                 iraContribution = new Currency(contributionLimit.amount - this.yearly.iraContribution.amount);                            
                 taxableIncome.subtract(iraContribution);                                                   
             }
-            return iraContribution
+            else {
+                taxableIncome.zero();
+            }
+
+            return iraContribution;
         }
         else
             return new Currency();
@@ -442,9 +446,10 @@ class Portfolio {
                         this.monthly.propertyTaxes.add(propertyTaxes);
                     }
                 }
-                else if (isSavingsAccount(modelAsset.instrument)) {
-                    this.monthly.income.add(this.applyMonthlyIncome());
-                    this.monthly.estimatedTaxes.add(activeTaxTable.calculateMonthlyEstimatedTaxes(modelAsset));
+                else if (isIncomeAccount(modelAsset.instrument)) {
+                    let taxableIncome = this.applyMonthlyIncome(modelAsset);
+                    this.monthly.taxableIncome.add(taxableIncome);
+                    this.monthly.estimatedTaxes.add(activeTaxTable.calculateMonthlyEstimatedTaxes(taxableIncome));
                 }
                 else if (isMonthlyExpense(modelAsset.instrument)) {
                     // if the fundingSource is Tax Deferred, we handle that in applyFirstDayOfMonth

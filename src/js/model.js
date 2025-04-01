@@ -32,25 +32,25 @@ const sInstrumentsIDs = Object.freeze({
 
 class CapitalGainsResult {
     constructor(principal, earnings) {
-        this.principal = principal;
-        this.earnings = earnings;
+        this.principal = new Currency(principal.amount);
+        this.earnings = new Currency(earnings.amount);
     }
 }
 
 class MortgageResult {
     constructor(payment, principal, interest, escrow) {
-        this.payment = payment;
-        this.principal = principal;
-        this.interest = interest;
-        this.escrow = escrow;
+        this.payment = new Currency(payment.amount);
+        this.principal = new Currency(principal.amount);
+        this.interest = new Currency(interest.amount);
+        this.escrow = new Currency(escrow.amount);
     }
 }
 
 class WithholdingResult {
     constructor(medicare, socialSecurity, income) {
-        this.medicare = medicare;
-        this.socialSecurity = socialSecurity;
-        this.income = income;
+        this.medicare = new Currency(medicare.amount);
+        this.socialSecurity = new Currency(socialSecurity.amount);
+        this.income = new Currency(income.amount);
     }
 
     fica() {

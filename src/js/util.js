@@ -408,6 +408,17 @@ function isCapital(value) {
         return false;
 }
 
+function isIncomeAccount(value) {
+    if (value == sInstrumentNames[sInstrumentsIDs.bank])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.usBond])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.corpBond])
+        return true;
+    else
+        return false;
+}
+
 function isLiquidAccount(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxableEquity] || value == sInstrumentNames[sInstrumentsIDs.cash] || value == sInstrumentNames[sInstrumentsIDs.bank];
 }
