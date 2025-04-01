@@ -353,7 +353,10 @@ class TaxTable {
     calculateMonthlyIncomeTax(income, deduction) {
 
         let yearlyIncome = new Currency(income.amount * 12.0);
-        let yearlyDeduction = new Currency(deduction.amount * 12.0);
+        let yearlyDeduction = new Currency();;
+        if (deduction)
+            yearlyDeduction = new Currency(deduction.amount * 12.0);
+
         let yearlyTax = this.calculateYearlyIncomeTax(yearlyIncome, yearlyDeduction);
         let monthlyTax = new Currency(yearlyTax.amount / 12.0);
         return monthlyTax;
@@ -362,9 +365,11 @@ class TaxTable {
 
     calculateYearlyIncomeTax(income, deduction) {
 
-        let adjusted = new Currency(income.amount - deduction.amount);
-        let tax = 0.0;
+        let adjusted = new Currency(income.amount);
+        if (deduction)
+            adjusted.subtract(deduction.amount);
 
+        let tax = 0.0;
         for (const taxRow of this.activeIncomeTable.taxRows) {
             if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
@@ -372,123 +377,37 @@ class TaxTable {
                 tax += (adjusted.amount - taxRow.fromAmount) * taxRow.rate;
         }
 
-        let incomeTax = new Currency(tax);
-        //if (modelAsset)
-        //    modelAsset.addMonthlyIncomeTaxWithholding(monthlyIncomeTaxWithholding);
-        return incomeTax;        
+        return new Currency(tax);
 
     }
 
-    /*
-    calculateMonthlyIncome(currentDateInt, modelAsset, modelAssets, activeUser) {
-        if (isMonthlyIncome(modelAsset.instrument)) {
-            if (modelAsset.startDateInt.toInt() <= currentDateInt.toInt() && modelAsset.finishDateInt.toInt() > currentDateInt.toInt())
-            {
-                // SSN is never more than 85% taxable
-                if (modelAsset.displayName == 'SSN')
-                    return new Currency(modelAsset.finishCurrency.amount * 0.85);
-                else
-                    return modelAsset.finishCurrency;
-            }
-        }
-        else if (isMonthlyExpense(modelAsset.instrument)) {
-            // find the funding model asset and determine income
-            let monthlyExpense = new Currency(modelAsset.finishCurrency.amount);
-            let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
-            if (fundingAsset) {
-                if (isTaxDeferred(fundingAsset.instrument) && activeUser.getAge() < 73) { // if over 73 will be handled by RMD
-                    let asIncome = new Currency(modelAsset.finishCurrency.amount);
-                    asIncome.flipSign();
-                    return asIncome;                    
-                }
-            }
-        }
-        else if (isTaxDeferred(modelAsset.instrument)) {
-            if (activeUser.getAge() >= 73) {
-                // if the user is 73 or older, then they must take RMDs
-                let rmd = activeTaxTable.calculateMonthlyRMD(currentDateInt, modelAsset, activeUser);
-                console.log('RMD for ' + modelAsset.displayName + ' is ' + rmd.toCurrency());
+    calculateMonthlyLongTermCapitalGainsTax(income, deduction) {
 
-                let monthlyExpenses = computeMonthlyExpensesFor(modelAssets, modelAsset.displayName);
-                
-                if (rmd.amount > monthlyExpenses.amount)
-                    return rmd;
-                else
-                    return monthlyExpenses;
-            }
-        }
-        else if (isSavingsAccount(modelAsset.instrument)) {
-            return modelAsset.earningCurrency;
-        }       
-        
-        return new Currency(0);
-    }
-    */
+        let yearlyIncome = new Currency(income.amount * 12.0);
+        let yearlyDeduction = new Currency();
+        if (deduction)
+            yearlyDeduction = new Currency(deduction.amount * 12.0);
 
-    calculateMonthlyShortTermCapitalGains(currentDateInt, modelAssets, modelAsset) { 
-        
-        // TODO: add in qualified and non qualified dividends
+        let yearlyTax = this.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, yearlyDeduction);
+        let monthlyTax = new Currency(yearlyTax.amount / 12.0);
+        return monthlyTax;
 
-        if (isMonthlyExpense(modelAsset.instrument)) {
-            let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
-            if (fundingAsset) {
-                if (isTaxableAccount(fundingAsset.instrument)) {
-                    fundingAsset.creditsThisMonth.subtract(modelAsset.finishCurrency);
-                    if (fundingAsset.creditsThisMonth.amount < 0) {
-                        // we will assume that 20% of money drawn from a taxable account is short term capital gains
-                        let asShortTermCapitalGains = new Currency(fundingAsset.creditsThisMonth.amount * 0.2);
-                        asShortTermCapitalGains.flipSign();
-                        // estimate an income tax payment of 10%
-                        let estimatedTax = new Currency(asShortTermCapitalGains.toCurrency() * 0.1);
-                        fundingAsset.addEstimatedTax(estimatedTax.amount);
-                        return asShortTermCapitalGains;
-                    }
-                }
-            }
-        }
-        
-        return new Currency(0);
     }
 
-    calculateMonthlyLongTermCaptialGains(modelAsset) {
-
-        // TODO: add in qualified and non qualified dividends
-
-        if (isMonthlyExpense(modelAsset.instrument)) {
-            let fundingAsset = util_findModelAssetByDisplayName(modelAssets, modelAsset.fundingSource);
-            if (fundingAsset) {
-                if (isTaxableAccount(fundingAsset.instrument)) {
-                    // fundingAsset.creditsThisMonth was subtracted in calculatedMonthlyShortTermCapitalGains. Must guarantee this call is next
-                    // we will assume that 80% of money drawn from a taxable account is long term capital gains
-                    let asLongTermCapitalGains = new Currency(fundingAsset.creditsThisMonth.amount * 0.8);
-                    asLongTermCapitalGains.flipSign();
-                    // estimate a long term capital gains tax payment of 10%
-                    let estimatedTax = new Currency(asLongTermCapitalGains.toCurrency() * 0.1);
-                    fundingAsset.addEstimatedTax(estimatedTax.amount);
-
-                    // zero out the creditsThisMonth so that the next pass will catch another expense drawing from this asset
-                    fundingAsset.creditsThisMonth.zero();
-
-                    return asLongTermCapitalGains;                    
-                }
-            }
-        }
+    calculateYearlyLongTermCapitalGainsTax(income, deduction) {          
         
-        return new Currency(0);
-    }
-
-    calculateYearlyLongTermCapitalGainsTax(yearly) {          
+        let adjusted = new Currency(income.amount);
+        if (deduction)
+            adjusted.subtract(deduction);
         
-        let taxableIncome = this.calculateNonFICATaxableIncome(yearly);
-        let adjusted = new Currency(taxableIncome.amount + yearly.longTermCapitalGains.amount);
-        
+        let tax = 0.0;
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
-            if (adjusted >= taxRow.fromAmount && adjusted >= taxRow.toAmount)
+            if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (adjusted >= taxRow.fromAmount && adjusted < taxRow.toAmount)
-                tax += (adjusted - taxRow.fromAmount) * taxRow.rate;
+            else if (adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount)
+                tax += (adjusted.amount - taxRow.fromAmount) * taxRow.rate;
         }
-        return tax;
+        return new Currency(tax);
 
     }
 
@@ -618,9 +537,10 @@ class TaxTable {
         this.reconcileYearlyTax(yearly);
 
         let yearlyIncomeTaxWithFICA = this.calculateYearlyFICATax(yearly);
-        let yearlyIncomeTaxSansFICA = this.calculateYearlyIncomeTax(this.calculateYearlyNonFICATaxableIncome(yearly), new Currency());
+        let yearlyIncomeTaxSansFICA = this.calculateYearlyIncomeTax(this.calculateYearlyNonFICATaxableIncome(yearly));
         
-        //this.calculateCapitalGainsTax();
+        let nonFICAIncome = this.calculateYearlyNonFICATaxableIncome(yearly);
+        let yearlyCapitalGainsTax = this.calculateYearlyLongTermCapitalGainsTax(nonFICAIncome);
     }
 
     iraContributionLimit(activeUser) {

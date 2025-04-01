@@ -300,8 +300,8 @@ class ModelAsset {
     }
 
     addMonthlyEstimatedTax(amount) {        
-        this.estimatedTaxesCurrency.add(amount);
-        return new Currency(this.estimatedTaxesCurrency.amount);
+        this.estimatedTaxCurrency.add(amount);
+        return new Currency(this.estimatedTaxCurrency.amount);
     }
 
     addMonthlyEarning(amount) {

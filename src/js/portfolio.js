@@ -427,11 +427,41 @@ class Portfolio {
         for (modelAsset of this.modelAssets) {
             if (modelAsset.finishDateInt.year == currentDateInt.year && modelAsset.finishDateInt.month == currentDateInt.month) {
                 if (modelAsset.fundingSource) {
-                    console.log('close asset position: ' + modelAsset.displayName);
-                    let result = this.applyFundingSource(modelAsset, modelAsset.finishCurrency);
+                    if (isCapital(modelAsset.instrument) && currentDateInt.toInt() < this.lastDateInt.toInt()) {
+                        console.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + modelAsset.finishCurrency.toString());
+                        
+                        let amountToTransfer = new Currency(modelAsset.finishCurrency.amount);
+                        let amountToTax = null;
 
-                    modelAsset.addMonthlyLongTermCapitalGains(result);
-                    this.monthly.longTermCapitalGains.add(result);
+                        let monthsSpan = MonthsSpan.build(modelAsset.startDateInt, modelAsset.finishDateInt);
+                        if (monthsSpan.totalMonths > 12) {
+                            
+                            modelAsset.addMonthlyLongTermCapitalGains(amountToTransfer);
+                            this.monthly.longTermCapitalGains.add(amountToTransfer);
+
+                            amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(amountToTransfer);
+                            amountToTax.flipSign();
+
+                            modelAsset.addMonthlyIncomeTax(amountToTax);                            
+                            this.monthly.incomeTax.add(amountToTax);
+                        }
+                        else {
+                            modelAsset.addMonthlyShortTermCapitalGains(amountToTransfer);
+                            this.monthly.shortTermCapitalGains.add(amountToTransfer);
+
+                            amountToTax = activeTaxTable.calculateMonthlyIncomeTax(amountToTransfer);
+                            amountToTax.flipSign();
+
+                            modelAsset.addMonthlyIncomeTax(amountToTax); 
+                            this.monthly.incomeTax.add(amountToTax);
+                        }
+
+                        console.log('capital asset tax: ' + modelAsset.displayName + ' taxed at ' + amountToTax.toString());
+                        amountToTransfer.add(amountToTax);
+                        
+                        this.applyFundingSource(modelAsset, amountToTransfer);                        
+                        modelAsset.close();                        
+                    }
                 }
             }
         }
@@ -530,8 +560,6 @@ class Portfolio {
             let fundingAsset = util_findModelAssetByDisplayName(this.modelAssets, modelAsset.fundingSource);
             if (fundingAsset) {
                 let result = modelAsset.applyFundingSource(fundingAsset, amount);
-                if (result.amount == modelAsset.finishCurrency.amount)
-                    modelAsset.close();
                 return result;
             }
         }
