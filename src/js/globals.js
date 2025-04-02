@@ -28,6 +28,14 @@ var global_user_startAge = global_default_user_startAge;
 var global_user_retirementAge = gobal_default_user_retirementAge;
 var global_user_finishAge = global_default_user_finishAge;
 
+var global_equity_dividend_allocation = 0.5;
+var global_equity_growth_allocation = 0.5;
+
+var global_equity_dividend_average_annual_rate = 0.025;
+var global_equity_dividend_qualified = 1.0;
+
+global_home_sale_capital_gains_discount = 250000;
+
 function global_reset() {
     global_inflationRate = global_default_inflationRate;
     global_taxYear = global_default_taxYear;    

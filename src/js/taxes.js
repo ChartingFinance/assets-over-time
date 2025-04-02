@@ -381,31 +381,27 @@ class TaxTable {
 
     }
 
-    calculateMonthlyLongTermCapitalGainsTax(income, deduction) {
+    estimateMonthlyLongTermCapitalGainsTax(taxableIncome, capitalGains) {
 
         let yearlyIncome = new Currency(income.amount * 12.0);
-        let yearlyDeduction = new Currency();
-        if (deduction)
-            yearlyDeduction = new Currency(deduction.amount * 12.0);
-
-        let yearlyTax = this.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, yearlyDeduction);
+        let yearlyCapitalGains = new Currency(capitalGains.amount * 12.0);
+        
+        let yearlyTax = this.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, yearlyCapitalGains);
         let monthlyTax = new Currency(yearlyTax.amount / 12.0);
         return monthlyTax;
 
     }
 
-    calculateYearlyLongTermCapitalGainsTax(income, deduction) {          
-        
-        let adjusted = new Currency(income.amount);
-        if (deduction)
-            adjusted.subtract(deduction);
+    calculateYearlyLongTermCapitalGainsTax(taxableIncome, capitalGains) {          
         
         let tax = 0.0;
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
-            if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount)
-                tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount)
-                tax += (adjusted.amount - taxRow.fromAmount) * taxRow.rate;
+            let fromAdjusted = new Currency(taxRow.fromAmount).subtract(taxableIncome);
+            let toAdjusted = new Currency(taxRow.toAmount).subtract(taxableIncome);
+            if (capitalGains.amount >= fromAdjusted.amount && capitalGains.amount >= toAdjusted.amount)
+                tax += (toAdjusted.amount - fromAdjusted.amount) * taxRow.rate;
+            else if (capitalGains.amount >= fromAdjusted.amount && capitalGains.amount < toAdjusted.amount)
+                tax += (capitalGains.amount - fromAdjusted.amount) * taxRow.rate;               
         }
         return new Currency(tax);
 
@@ -499,13 +495,13 @@ class TaxTable {
         else
             console.log('computed yearly FICA check PASSED');
 
-        let yearlyNonFICATaxableIncome = this.calculateYearlyNonFICATaxableIncome(yearly);
-        if (yearlyNonFICATaxableIncome.amount != (yearly.selfIncome.amount + yearly.employedIncome.amount))
-            console.log('computed yearly non FICA taxable income != portfolio yearly non FICA taxable income');
+        let yearlyTaxableIncome = this.calculateYearlyTaxableIncome(yearly);
+        if (yearlyTaxableIncome.amount != (yearly.selfIncome.amount + yearly.employedIncome.amount))
+            console.log('computed yearly taxable income != portfolio yearly taxable income');
         else
-            console.log('computed yearly non FICA taxable income check PASSED');
+            console.log('computed yearly taxable income check PASSED');
 
-        let yearlyIncomeTax = this.calculateYearlyIncomeTax(yearlyNonFICATaxableIncome, new Currency());
+        let yearlyIncomeTax = this.calculateYearlyIncomeTax(yearlyTaxableIncome, new Currency());
         if (yearlyIncomeTax.amount != yearly.incomeTax.amount)
             console.log('computed yearly income tax != portfolio yearly income tax');
         else
@@ -523,6 +519,17 @@ class TaxTable {
 
     }
 
+    calculateYearlyTaxableIncome(yearly) {
+
+        let taxableIncome = new Currency(yearly.selfIncome.amount + yearly.employedIncome.amount);
+        taxableIncome.add(yearly.iraDistribution);
+        taxableIncome.add(yearly.shortTermCapitalGains);   
+        taxableIncome.add(yearly.interest);
+        return this.applyYearlyDeductions(yearly, taxableIncome);
+
+    }
+
+    /*
     calculateYearlyNonFICATaxableIncome(yearly) {
 
         let nonFICATaxableIncome = new Currency(yearly.selfIncome.amount + yearly.employedIncome.amount);
@@ -532,15 +539,18 @@ class TaxTable {
         return this.applyYearlyDeductions(yearly, nonFICATaxableIncome);
 
     }
+    */
 
     applyYear(yearly) {
         this.reconcileYearlyTax(yearly);
 
-        let yearlyIncomeTaxWithFICA = this.calculateYearlyFICATax(yearly);
-        let yearlyIncomeTaxSansFICA = this.calculateYearlyIncomeTax(this.calculateYearlyNonFICATaxableIncome(yearly));
+        let yearlyFICATax = this.calculateYearlyFICATax(yearly);
+        let yearlyTaxableIncome = this.calculateYearlyTaxableIncome(yearly);
+        let yearlyIncomeTax = this.calculateYearlyIncomeTax(yearlyTaxableIncome);        
         
-        let nonFICAIncome = this.calculateYearlyNonFICATaxableIncome(yearly);
-        let yearlyCapitalGainsTax = this.calculateYearlyLongTermCapitalGainsTax(nonFICAIncome);
+        let yearlyLongTermCapitalGainsAndQualifiedDividends = new Currency(yearly.longTermCapitalGains.amount + yearly.qualifiedDividends.amount);
+        let yearlyLongTermCapitalGainsAndQualifiedDividendsTax = this.calculateYearlyLongTermCapitalGainsTax(yearlyTaxableIncome, yearlyLongTermCapitalGainsAndQualifiedDividends);
+        console.log('Taxes.applyYear|yearlyLongTermCapitalGainsAndQualifiedDividendsTax: ' + yearlyLongTermCapitalGainsAndQualifiedDividendsTax.toString());
     }
 
     iraContributionLimit(activeUser) {

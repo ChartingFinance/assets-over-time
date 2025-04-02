@@ -48,9 +48,20 @@ class MortgageResult {
 
 class WithholdingResult {
     constructor(medicare, socialSecurity, income) {
-        this.medicare = new Currency(medicare.amount);
-        this.socialSecurity = new Currency(socialSecurity.amount);
-        this.income = new Currency(income.amount);
+        if (medicare)
+            this.medicare = new Currency(medicare.amount);
+        else
+            this.medicare = new Currency();
+
+        if (socialSecurity)
+            this.socialSecurity = new Currency(socialSecurity.amount);
+        else
+            this.socialSecurity = new Currency();
+
+        if (income)
+            this.income = new Currency(income.amount);
+        else
+            this.income = new Currency();
     }
 
     fica() {
@@ -136,6 +147,10 @@ class ModelAsset {
         }
 
         return modelAsset;
+    }
+
+    isSocialSecurity() {
+        return this.displayName == 'SSN';
     }
 
     hasMonthlyRate() {
@@ -317,7 +332,6 @@ class ModelAsset {
     deductWithholding(withholdingIn) {
 
         let withholding = new WithholdingResult(withholdingIn.medicare, withholdingIn.socialSecurity, withholdingIn.income);
-        withholding.flipSigns();
 
         console.log(this.displayName + ' add socialSecurity: ' + withholding.socialSecurity.toString());
         this.addMonthlySocialSecurity(withholding.socialSecurity);

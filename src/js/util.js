@@ -427,6 +427,10 @@ function isTaxDeferred(value) {
     return value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity];
 }
 
+function isTaxFree(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.taxFreeEquity];
+}
+
 function isSavingsAccount(value) {
     return value == sInstrumentNames[sInstrumentsIDs.bank];
 }

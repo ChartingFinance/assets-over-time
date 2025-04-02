@@ -16,6 +16,7 @@ class FinancialPackage {
         this.propertyTaxes = new Currency();
         this.shortTermCapitalGains = new Currency();
         this.longTermCapitalGains = new Currency();
+        this.qualifiedDividends = new Currency();
         this.interest = new Currency();
     }
 
@@ -36,12 +37,13 @@ class FinancialPackage {
         this.propertyTaxes.add(financialPackage.propertyTaxes);
         this.shortTermCapitalGains.add(financialPackage.shortTermCapitalGains);
         this.longTermCapitalGains.add(financialPackage.longTermCapitalGains);
+        this.qualifiedDividends.add(financialPackage.qualifiedDividends);
         this.interest.add(financialPackage.interest);
     }
 
     subtract(financialPackage) {
         this.employedIncome.subtract(financialPackage.employedIncome);
-        this.selfEmployedIncome.subtract(financialPackage.selfIncome);
+        this.selfIncome.subtract(financialPackage.selfIncome);
         this.iraDistribution.subtract(financialPackage.iraDistribution);
         this.taxableEarning.subtract(financialPackage.taxableEarning);
         this.nontaxableEarning.subtract(financialPackage.nontaxableEarning);
@@ -56,7 +58,35 @@ class FinancialPackage {
         this.propertyTaxes.subtract(financialPackage.propertyTaxes);
         this.shortTermCapitalGains.subtract(financialPackage.shortTermCapitalGains);
         this.longTermCapitalGains.subtract(financialPackage.longTermCapitalGains);
+        this.qualifiedDividends.subtract(financialPackage.qualifiedDividends);
         this.interest.subtract(financialPackage.interest);
+    }
+
+    multiply(amount) {
+        this.employedIncome.multiply(amount);
+        this.selfIncome.multiply(amount);
+        this.iraDistribution.multiply(amount);
+        this.taxableEarning.multiply(amount);
+        this.nontaxableEarning.multiply(amount);
+        this.expense.multiply(amount);
+        this.fica.multiply(amount);
+        this.incomeTax.multiply(amount);
+        this.estimatedTaxes.multiply(amount);
+        this.iraContribution.multiply(amount);
+        this.mortgage.multiply(amount);
+        this.mortgageInterest.multiply(amount);
+        this.mortgagePrincipal.multiply(amount);
+        this.propertyTaxes.multiply(amount);
+        this.shortTermCapitalGains.multiply(amount);
+        this.longTermCapitalGains.multiply(amount);
+        this.qualifiedDividends.multiply(amount);
+        this.interest.multiply(amount);
+    }
+
+    copy() {
+        let aCopy = new FinancialPackage();
+        aCopy.add(this);
+        return aCopy;
     }
 
     zero() {
@@ -76,6 +106,7 @@ class FinancialPackage {
         this.propertyTaxes.zero();
         this.shortTermCapitalGains.zero();
         this.longTermCapitalGains.zero();
+        this.qualifiedDividends.zero();
         this.interest.zero();
     }
 
@@ -97,6 +128,7 @@ class FinancialPackage {
         console.log('  propertyTaxes:         ' + this.propertyTaxes.toString());
         console.log('  shortTermCapitalGains: ' + this.shortTermCapitalGains.toString());
         console.log('  longTermCapitalGains:  ' + this.longTermCapitalGains.toString());
+        console.log('  qualifiedDividends     ' + this.qualifiedDividends.toString());
         console.log('  interest:              ' + this.interest.toString());
     }
 
@@ -321,19 +353,28 @@ class Portfolio {
         else
             this.monthly.employedIncome.add(taxableIncome);                                
 
-        let withholding = activeTaxTable.calculateFICATax(modelAsset.isSelfEmployed, taxableIncome);
-        this.monthly.fica.subtract(withholding.fica());
+        let withholding = new WithholdingResult();
+        if (!modelAsset.isSocialSecurity()) {
+            withholding = activeTaxTable.calculateFICATax(modelAsset.isSelfEmployed, taxableIncome);
+            withholding.flipSigns();
+            this.monthly.fica.add(withholding.fica());
+        }
 
         let iraContribution = this.calculateFirstDayOfMonthIncomeIRAContribution(modelAsset, taxableIncome, withholding.fica());
     
-        let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(taxableIncome, new Currency());                            
-        this.monthly.incomeTax.subtract(incomeTax);
+        if (modelAsset.isSocialSecurity()) {
+            taxableIncome.multiply(0.85); // maximum allowed for social security
+        }
+        
+        let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(taxableIncome);                            
+        incomeTax.flipSign();
+        this.monthly.incomeTax.add(incomeTax);
 
         withholding.income = incomeTax;
         modelAsset.deductWithholding(withholding);
               
         if (iraContribution.amount > 0) {
-            let cleanup = new Currency((iraContribution.amount + withholding.fica().amount + incomeTax.amount) - originalIncome.amount);
+            let cleanup = new Currency((iraContribution.amount - withholding.fica().amount - incomeTax.amount) - originalIncome.amount);
             if (cleanup.amount < 0) {
                 cleanup.flipSign();
                 this.creditToFirstTaxableAccount(cleanup);
@@ -350,7 +391,7 @@ class Portfolio {
         if (iraContribution.amount > 0)
             this.applyFundingSource(modelAsset, iraContribution);
         else
-            this.applyFundingSource(modelAsset);
+            this.applyFundingSource(modelAsset); // no argument means use the modelAsset.earningCurrency
 
     }
 
@@ -395,8 +436,13 @@ class Portfolio {
                         this.monthly.propertyTaxes.add(propertyTaxes);
                     }
 
+                    // if it's taxable, see how much we need to draw and handle for taxes
+                    else if (isTaxableAccount(modelAsset.instrument)) {
+                        this.applyLastDayOfMonthTaxable(modelAsset);
+                    }
+
                     // if it's taxDeferred, see if we need to take a distribution or if an expense is tied to it
-                    if (isTaxDeferred(modelAsset.instrument)) {
+                    else if (isTaxDeferred(modelAsset.instrument)) {
                         this.applyLastDayOfMonthTaxDeferred(modelAsset);
                     }
                 }
@@ -406,19 +452,18 @@ class Portfolio {
                     this.monthly.estimatedTaxes.add(activeTaxTable.calculateMonthlyEstimatedTaxes(taxableIncome));
                 }
                 else if (isMonthlyExpense(modelAsset.instrument)) {
-                    // if the fundingSource is Tax Deferred, we handle that in applyFirstDayOfMonth
-                    let skip = false;
-                    if (modelAsset.fundingSource) {
-                        let fundingSourceAsset = util_findModelAssetByDisplayName(this.modelAssets, modelAsset.fundingSource);
-                        if (fundingSourceAsset && isTaxDeferred(fundingSourceAsset.instrument))
-                            skip = true;
+                    // if the fundingSource is Taxable, we handle that in applyLastDayOfMonthTaxable
+                    // if the fundingSource is Tax Deferred, we handle that in applyLastDayOfMonthTaxDeferred
+                    // TaxFree will go through
+
+                    let expense = modelAsset.applyMonthlyExpense();
+
+                    let fundingSourceAsset = util_findModelAssetByDisplayName(this.modelAssets, modelAsset.fundingSource);
+                    if (fundingSourceAsset && isTaxFree(modelAsset)) {
+                        this.monthly.expense.add(expense);
+                        this.applyFundingSource(modelAsset);    
                     }
 
-                    this.monthly.expense.add(modelAsset.applyMonthlyExpense());
-
-                    if (!skip) {
-                        this.applyFundingSource(modelAsset);
-                    }
                 }
             }
         }
@@ -431,25 +476,33 @@ class Portfolio {
                         console.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + modelAsset.finishCurrency.toString());
                         
                         let amountToTransfer = new Currency(modelAsset.finishCurrency.amount);
+                        let capitalGains = new Currency(modelAsset.finishCurrency.amount - modelAsset.startCurrency.amount);
                         let amountToTax = null;
 
                         let monthsSpan = MonthsSpan.build(modelAsset.startDateInt, modelAsset.finishDateInt);
                         if (monthsSpan.totalMonths > 12) {
                             
-                            modelAsset.addMonthlyLongTermCapitalGains(amountToTransfer);
-                            this.monthly.longTermCapitalGains.add(amountToTransfer);
+                            if (monthsSpan.totalMonths > 24 && isHome(modelAsset.instrument))
+                                capitalGains.amount -= global_home_sale_capital_gains_discount;
 
-                            amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(amountToTransfer);
+                            modelAsset.addMonthlyLongTermCapitalGains(capitalGains);
+                            this.monthly.longTermCapitalGains.add(capitalGains);
+
+                            let asYearly = this.monthly.copy();
+                            asYearly.multiply(12.0);
+                            let yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(asYearly);
+                            
+                            amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, capitalGains);
                             amountToTax.flipSign();
 
                             modelAsset.addMonthlyIncomeTax(amountToTax);                            
                             this.monthly.incomeTax.add(amountToTax);
                         }
                         else {
-                            modelAsset.addMonthlyShortTermCapitalGains(amountToTransfer);
-                            this.monthly.shortTermCapitalGains.add(amountToTransfer);
+                            modelAsset.addMonthlyShortTermCapitalGains(capitalGains);
+                            this.monthly.shortTermCapitalGains.add(capitalGains);
 
-                            amountToTax = activeTaxTable.calculateMonthlyIncomeTax(amountToTransfer);
+                            amountToTax = activeTaxTable.calculateMonthlyIncomeTax(capitalGains);
                             amountToTax.flipSign();
 
                             modelAsset.addMonthlyIncomeTax(amountToTax); 
@@ -464,6 +517,45 @@ class Portfolio {
                     }
                 }
             }
+        }
+
+    }
+
+    applyLastDayOfMonthTaxable(modelAsset) {
+
+        let expense = new Currency();  
+        
+        let expenseAssets = util_findModelAssetsByFundingSource(this.modelAssets, sInstrumentNames[sInstrumentsIDs.monthlyExpense], modelAsset.displayName);
+        if (expenseAssets.length > 0) {
+            for (let expenseAsset of expenseAssets) {
+                expense.add(expenseAsset.finishCurrency);
+            }
+            this.monthly.expense.add(expense);            
+        }
+    
+        if (expense.amount < 0) {
+            expense.flipSign();
+            modelAsset.debit(expense);
+            
+            let qDividends = new Currency(modelAsset.finishCurrency.amount * global_equity_dividend_allocation);
+            let gStocks = new Currency(modelAsset.finishCurrency.amount * global_equity_growth_allocation);
+
+            let monthlyQDividends = new Currency(qDividends.amount * (global_equity_dividend_average_annual_rate / 12.0));
+            let monthlyGStocks = new Currency(gStocks.amount / 12.0);
+            if (monthlyQDividends.amount < expense.amount) {
+                let test = new Currency(expense.amount - monthlyQDividends.amount);
+                if (monthlyGStocks.amount < test.amount)
+                    console.log('Portfolio.applyLastDayOfMonthTaxable - exceeding monthly withdrawal boundary');
+                else
+                    monthlyGStocks.amount = test.amount;
+            }
+            else {
+                monthlyQDividends.amount = expense.amount;
+                monthlyGStocks.zero();
+            }
+
+            this.monthly.qualifiedDividends.add(monthlyQDividends);
+            this.monthly.longTermCapitalGains.add(monthlyGStocks);
         }
 
     }
@@ -513,6 +605,7 @@ class Portfolio {
                 incomeTax.add(income.multiply(penalty)); 
             }
 
+            incomeTax.flipSign();
             this.monthly.incomeTax.add(incomeTax);
             
             let withholding = new WithholdingResult( new Currency(), new Currency(), incomeTax);
