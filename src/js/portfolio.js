@@ -161,50 +161,10 @@ class Portfolio {
         console.log('Portfolio.sortModelAssets');
     
         modelAssets.sort(function (a, b) {
-            if (isMonthlyIncome(a.instrument)) {
-                if (isMonthlyIncome(b.instrument))
-                    return a.displayName.localeCompare(b.displayName);
-                else
-                    return -1;
-            }
-            else if (isMonthlyIncome(b.instrument)) {
-                if (isMonthlyIncome(a.instrument))
-                    return b.displayName.localeCompare(a.displayName);
-                else
-                    return 1;
-            }
-            else if (isMonthlyExpense(a.instrument)) {
-                if (isMonthlyExpense(b.instrument))
-                    return a.displayName.localeCompare(b.displayName);
-                else
-                    return 1;
-            }
-            else if (isMonthlyExpense(b.instrument)) {
-                if (isMonthlyExpense(a.instrument))
-                    return b.displayName.localeCompare(a.displayName);
-                else
-                    return -1;
-            }
-            else if (isHome(a.instrument)) {
-                if (isHome(b.instrument))
-                    return a.displayName.localeCompare(b.displayName);
-                else if (isMonthlyIncome(b.instrument))
-                    return 1;
-                else if (isMonthlyExpense(b.instrument))
-                    return -1;
-                else
-                    return a.displayName.localeCompare(b.displayName);
-            }
-            else if (isMortgage(a.instrument)) {
-                if (isMortgage(b.instrument))
-                    a.displayName.localeCompare(b.displayName);
-                else if (isMonthlyIncome(b.instrument))
-                    return 1;
-                else if (isMonthlyExpense(b.instrument))
-                    return -1;
-                else
-                    return a.displayName.localeCompare(b.displayName);
-            }
+            if (a.sortIndex() < b.sortIndex())
+                return -1;
+            else if (b.sortIndex() < a.sortIndex())
+                return 1;
             else
                 return a.displayName.localeCompare(b.displayName);
         });
@@ -470,55 +430,56 @@ class Portfolio {
 
         // sale of assets and proceeds transferred to fundingSource
         for (modelAsset of this.modelAssets) {
-            if (modelAsset.finishDateInt.year == currentDateInt.year && modelAsset.finishDateInt.month == currentDateInt.month) {
+            if (modelAsset.finishDateInt.year == currentDateInt.year && modelAsset.finishDateInt.month == currentDateInt.month && currentDateInt.toInt() < this.lastDateInt.toInt()) {
                 if (modelAsset.fundingSource) {
-                    if (isCapital(modelAsset.instrument) && currentDateInt.toInt() < this.lastDateInt.toInt()) {
-                        console.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + modelAsset.finishCurrency.toString());
-                        
-                        let amountToTransfer = new Currency(modelAsset.finishCurrency.amount);
-                        let capitalGains = new Currency(modelAsset.finishCurrency.amount - modelAsset.startCurrency.amount);
-                        let amountToTax = null;
 
-                        let monthsSpan = MonthsSpan.build(modelAsset.startDateInt, modelAsset.finishDateInt);
-                        if (monthsSpan.totalMonths > 12) {
-                            
-                            if (monthsSpan.totalMonths > 24 && isHome(modelAsset.instrument))
-                                capitalGains.amount -= global_home_sale_capital_gains_discount;
+                    this.closeAsset(modelAsset);
 
-                            modelAsset.addMonthlyLongTermCapitalGains(capitalGains);
-                            this.monthly.longTermCapitalGains.add(capitalGains);
-
-                            let asYearly = this.monthly.copy();
-                            asYearly.multiply(12.0);
-                            let yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(asYearly);
-                            
-                            amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, capitalGains);
-                            amountToTax.flipSign();
-
-                            modelAsset.addMonthlyIncomeTax(amountToTax);                            
-                            this.monthly.incomeTax.add(amountToTax);
-                        }
-                        else {
-                            modelAsset.addMonthlyShortTermCapitalGains(capitalGains);
-                            this.monthly.shortTermCapitalGains.add(capitalGains);
-
-                            amountToTax = activeTaxTable.calculateMonthlyIncomeTax(capitalGains);
-                            amountToTax.flipSign();
-
-                            modelAsset.addMonthlyIncomeTax(amountToTax); 
-                            this.monthly.incomeTax.add(amountToTax);
-                        }
-
-                        console.log('capital asset tax: ' + modelAsset.displayName + ' taxed at ' + amountToTax.toString());
-                        amountToTransfer.add(amountToTax);
-                        
-                        this.applyFundingSource(modelAsset, amountToTransfer);                        
-                        modelAsset.close();                        
-                    }
                 }
             }
         }
 
+    }
+
+    closeAsset(modelAsset) {
+        if (!isCapital(modelAsset.instrument)) return;
+    
+        console.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + modelAsset.finishCurrency.toString());
+    
+        const amountToTransfer = new Currency(modelAsset.finishCurrency.amount);
+        const capitalGains = new Currency(modelAsset.finishCurrency.amount - modelAsset.startCurrency.amount);
+        let amountToTax = new Currency();
+    
+        const monthsSpan = MonthsSpan.build(modelAsset.startDateInt, modelAsset.finishDateInt);
+        const isLongTerm = monthsSpan.totalMonths > 12;
+    
+        if (isLongTerm) {
+            if (monthsSpan.totalMonths > 24 && isHome(modelAsset.instrument)) {
+                capitalGains.amount -= global_home_sale_capital_gains_discount;
+            }
+    
+            modelAsset.addMonthlyLongTermCapitalGains(capitalGains);
+            this.monthly.longTermCapitalGains.add(capitalGains);
+    
+            const yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(this.monthly.copy().multiply(12.0));
+            amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, capitalGains);
+        } else {
+            modelAsset.addMonthlyShortTermCapitalGains(capitalGains);
+            this.monthly.shortTermCapitalGains.add(capitalGains);
+    
+            amountToTax = activeTaxTable.calculateMonthlyIncomeTax(capitalGains);
+        }
+    
+        amountToTax.flipSign();
+        modelAsset.addMonthlyIncomeTax(amountToTax);
+        this.monthly.incomeTax.add(amountToTax);
+    
+        console.log('capital asset tax: ' + modelAsset.displayName + ' taxed at ' + amountToTax.toString());
+    
+        amountToTransfer.add(amountToTax);
+        this.applyFundingSource(modelAsset, amountToTransfer);
+    
+        modelAsset.close();
     }
 
     applyLastDayOfMonthTaxable(modelAsset) {
@@ -532,6 +493,8 @@ class Portfolio {
             }
             this.monthly.expense.add(expense);            
         }
+
+        expense = modelAsset.applyMonthlyCredits(expense);
     
         if (expense.amount < 0) {
             expense.flipSign();
@@ -553,6 +516,21 @@ class Portfolio {
                 monthlyQDividends.amount = expense.amount;
                 monthlyGStocks.zero();
             }
+
+            let asYearly = this.monthly.copy();
+            asYearly.multiply(12.0);
+            let yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(asYearly);
+            
+            let capitalGains = new Currency(monthlyQDividends.amount + monthlyGStocks.amount);
+            capitalGains.multiply(12.0);
+            
+            let amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, capitalGains);
+            amountToTax.divide(12.0);
+            amountToTax.flipSign();
+
+            modelAsset.credit(amountToTax);
+            modelAsset.addMonthlyIncomeTax(amountToTax);                            
+            this.monthly.incomeTax.add(amountToTax);
 
             this.monthly.qualifiedDividends.add(monthlyQDividends);
             this.monthly.longTermCapitalGains.add(monthlyGStocks);

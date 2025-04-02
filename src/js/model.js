@@ -13,21 +13,22 @@ const sTaxChoice = 'taxChoice';
     //const sHoldAllUntilFinish = 'holdAllUntilFinish';
     //const sUseForTaxes = 'useForTaxes';
 
-const sInstrumentNames = ['monthlyIncome', 'monthlyExpense', 'home', 'mortgage', 'debt', 'taxableEquity', 'taxDeferredEquity', 'taxFreeEquity', 'usBond', 'corpBond', 'bank', 'cash'];
-const sIntrumentDisplayNames = ['💲💰 Monthly Income', '💸💰 Monthly Expense', '🏡 House', '💸🏡 Mortgage', '💳 Debt', '🧾📈 Taxable Account', '⏳📈 Tax Deferred Account', '📈 Tax Free Account', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '💰 Cash'];
+const sInstrumentNames = ['monthlyIncome', 'home', 'mortgage', 'usBond', 'corpBond', 'bank', 'taxFreeEquity',  'taxDeferredEquity', 'taxableEquity', 'cash', 'debt', 'monthlyExpense'];
+const sInstrumentSortOrder = ['monthlyIncome', 'home', 'mortgage', 'usBond', 'corpBond', 'bank', 'taxFreeEquity',  'taxDeferredEquity', 'taxableEquity', 'cash', 'debt', 'monthlyExpense'];
+const sIntrumentDisplayNames = ['💲💰 Monthly Income', '🏡 House', '💸🏡 Mortgage', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '📈 Tax Free Account', '⏳📈 Tax Deferred Account', '🧾📈 Taxable Account', '💰 Cash',  '💳 Debt', '💸💰 Monthly Expense'];
 const sInstrumentsIDs = Object.freeze({
-    monthlyIncome: 0,    
-    monthlyExpense: 1,   
-    home: 2,
-    mortgage: 3,
-    debt: 4,
-    taxableEquity: 5,
-    taxDeferredEquity: 6,
-    taxFreeEquity: 7,
-    usBond: 8,
-    corpBond: 9,
-    bank: 10,
-    cash: 11
+    monthlyIncome: 0,  
+    home: 1,
+    mortgage: 2,
+    usBond: 3,
+    corpBond: 4,
+    bank: 5,
+    taxFreeEquity: 6,
+    taxDeferredEquity: 7,
+    taxableEquity: 8,
+    cash: 9,
+    debt: 10,
+    monthlyExpense: 11
 });
 
 class CapitalGainsResult {
@@ -149,6 +150,10 @@ class ModelAsset {
         return modelAsset;
     }
 
+    sortIndex() {
+        return sInstrumentSortOrder.indexOf(this.instrument);
+    }
+
     isSocialSecurity() {
         return this.displayName == 'SSN';
     }
@@ -175,6 +180,7 @@ class ModelAsset {
 
         console.log('credit: ' + this.displayName + ' ' + currency.toString());
         this.finishCurrency.add(currency);
+        this.monthlyCredits.add(currency);
 
     }
 
@@ -182,11 +188,14 @@ class ModelAsset {
 
         console.log('debit: ' + this.displayName + ' ' + currency.toString());
         this.finishCurrency.subtract(currency);
+        this.monthlyCredits.subtract(currency);
 
     }
 
     initializeChron() {
         
+        this.monthlyCredits = new Currency();
+
         // earningCurrency
         this.earningCurrency = new Currency();
         this.monthlyEarning = [];
@@ -231,6 +240,8 @@ class ModelAsset {
     }
 
     monthlyChron() {
+
+        this.monthlyCredits.zero();
 
         this.accumulatedCurrency.add(this.earningCurrency);
         this.monthlyAccumulated.push(this.accumulatedCurrency.toCurrency());
@@ -353,6 +364,7 @@ class ModelAsset {
 
     }
 
+    /*
     applyMonth_common(isInMonth) {
 
         if (isMonthlyIncome(this.instrument)) {
@@ -370,6 +382,7 @@ class ModelAsset {
         }
 
     }
+    */
 
     applyMonthlyIncome() {
         
@@ -450,6 +463,7 @@ class ModelAsset {
 
     }
 
+    /*
     applyMonthlyTaxes() {
 
         console.log('monthly withholding: ' + this.displayName + ' ' + this.funcMonthlyWithholding().toString())
@@ -477,6 +491,22 @@ class ModelAsset {
     applyMonthlyOther() {
 
         return new Currency();
+
+    }
+    */
+
+    applyMonthlyCredits(expense) {
+
+        console.log('apply credits: ' + this.displayName + ' expense ' + expense.toString() + ' to monthly credit of ' + this.monthlyCredits.toString());
+        let test = new Currency(this.monthlyCredits.amount + expense.amount);
+        if (test.amount >= 0) {            
+            this.credit(expense);
+            return new Currency();
+        }
+        else {
+            console.log('apply credits: ' + this.displayName + ' expense exeeded credits by ' + test.toString());
+            return test;
+        }
 
     }
 
