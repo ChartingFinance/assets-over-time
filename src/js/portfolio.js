@@ -222,7 +222,7 @@ class Portfolio {
 
     monthlyChron(currentDateInt) {
 
-        this.reportMonthlhy(currentDateInt);
+        this.reportMonthly(currentDateInt);
 
         this.yearly.add(this.monthly);
         this.total.add(this.monthly);
