@@ -222,7 +222,7 @@ class Portfolio {
 
     monthlyChron(currentDateInt) {
 
-        this.report(currentDateInt);
+        this.reportMonthlhy(currentDateInt);
 
         this.yearly.add(this.monthly);
         this.total.add(this.monthly);
@@ -235,6 +235,7 @@ class Portfolio {
 
     yearlyChron(currentDateInt) {
 
+        this.reportYearly(currentDateInt);
         this.yearly.zero();
 
     }
@@ -767,11 +768,19 @@ class Portfolio {
 
     }
 
-    report(currentDateInt) {
+    reportMonthly(currentDateInt) {
 
         console.log(' -------  Begin Monthly (' + currentDateInt.toString() + ' ) Report -------');
         this.monthly.report();
         console.log(' -------   End Monthly (' + currentDateInt.toString() + ' ) Report  -------');
+
+    }
+
+    reportYearly(currentDateInt) {
+
+        console.log(' -------  Begin Yearly (' + currentDateInt.toString() + ' ) Report -------');
+        this.yearly.report();
+        console.log(' -------   End Yearly  (' + currentDateInt.toString() + ' ) Report  -------');
 
     }
 
