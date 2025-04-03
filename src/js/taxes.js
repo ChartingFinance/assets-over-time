@@ -170,6 +170,12 @@ class TaxTable {
 
     }
 
+    addYearlySocialSecurity(amount) {
+
+        this.yearlySocialSecurityAccumulator.add(amount);
+        
+    }
+
     yearlyChron() {
 
         this.yearlySocialSecurityAccumulator.zero();
@@ -329,10 +335,10 @@ class TaxTable {
         }
             
         if (this.yearlySocialSecurityAccumulator.amount + c.amount > maxC.amount) {
+            console.log('at maximum social security tax');
             c.amount = maxC.amount - this.yearlySocialSecurityAccumulator.amount;
         }
 
-        //modelAsset.addMonthlySocialSecurity(c);
         return c;
 
     }

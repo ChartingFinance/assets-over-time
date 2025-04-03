@@ -377,6 +377,7 @@ class Portfolio {
             let withholding = new WithholdingResult();
             if (!modelAsset.isSocialSecurity()) {
                 withholding = activeTaxTable.calculateFICATax(modelAsset.isSelfEmployed, taxableIncome);
+                activeTaxTable.addYearlySocialSecurity(withholding.socialSecurity);
             }
 
             let iraContribution = this.calculateFirstDayOfMonthIncomeIRAContribution(modelAsset, taxableIncome, withholding.fica());
