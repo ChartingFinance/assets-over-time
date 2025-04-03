@@ -13,13 +13,13 @@ const sTaxChoice = 'taxChoice';
     //const sHoldAllUntilFinish = 'holdAllUntilFinish';
     //const sUseForTaxes = 'useForTaxes';
 
-const sInstrumentNames = ['monthlyIncome', 'home', 'mortgage', 'usBond', 'corpBond', 'bank', 'taxFreeEquity',  'taxDeferredEquity', 'taxableEquity', 'cash', 'debt', 'monthlyExpense'];
-const sInstrumentSortOrder = ['monthlyIncome', 'home', 'mortgage', 'usBond', 'corpBond', 'bank', 'taxFreeEquity',  'taxDeferredEquity', 'taxableEquity', 'cash', 'debt', 'monthlyExpense'];
-const sIntrumentDisplayNames = ['💲💰 Monthly Income', '🏡 House', '💸🏡 Mortgage', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '📈 Tax Free Account', '⏳📈 Tax Deferred Account', '🧾📈 Taxable Account', '💰 Cash',  '💳 Debt', '💸💰 Monthly Expense'];
+const sInstrumentNames = ['home', 'mortgage', 'monthlyIncome', 'usBond', 'corpBond', 'bank', 'taxFreeEquity',  'taxDeferredEquity', 'taxableEquity', 'cash', 'debt', 'monthlyExpense'];
+const sInstrumentSortOrder = ['home', 'mortgage', 'monthlyIncome', 'usBond', 'corpBond', 'bank', 'taxFreeEquity',  'taxDeferredEquity', 'taxableEquity', 'cash', 'debt', 'monthlyExpense'];
+const sIntrumentDisplayNames = ['🏡 House', '💸🏡 Mortgage', '💲💰 Monthly Income', '🏛️ US Treasury', '🏛️ Corporate Bond', '🏦 Savings', '📈 Tax Free Account', '⏳📈 Tax Deferred Account', '🧾📈 Taxable Account', '💰 Cash',  '💳 Debt', '💸💰 Monthly Expense'];
 const sInstrumentsIDs = Object.freeze({
-    monthlyIncome: 0,  
-    home: 1,
-    mortgage: 2,
+    home: 0,
+    mortgage: 1,
+    monthlyIncome: 2,  
     usBond: 3,
     corpBond: 4,
     bank: 5,
@@ -33,36 +33,65 @@ const sInstrumentsIDs = Object.freeze({
 
 class CapitalGainsResult {
     constructor(principal, earnings) {
-        this.principal = new Currency(principal.amount);
-        this.earnings = new Currency(earnings.amount);
+        this.principal = new Currency();
+        if (principal)
+            this.principal.add(principal);
+        this.earnings = new Currency();
+        if (earnings)
+            this.earnings.add(earnings);
     }
 }
 
 class MortgageResult {
     constructor(payment, principal, interest, escrow) {
-        this.payment = new Currency(payment.amount);
-        this.principal = new Currency(principal.amount);
-        this.interest = new Currency(interest.amount);
-        this.escrow = new Currency(escrow.amount);
+        this.payment = new Currency();
+        if (payment)
+            this.payment.add(payment);
+        this.principal = new Currency();
+        if (principal)
+            this.principal.add(principal);
+        this.interest = new Currency();
+        if (interest)
+            this.interest.add(interest);
+        this.escrow = new Currency();
+        if (escrow)
+            this.escrow.add(escrow);
+    }
+}
+
+class IncomeResult {
+    constructor(selfIncome, employedIncome) {
+        this.selfIncome = new Currency();
+        if (selfIncome)
+            this.selfIncome.add(selfIncome);
+        this.employedIncome = new Currency();
+        if (employedIncome)
+            this.employedIncome.add(employedIncome);
+    }
+}
+
+class ExpenseResult {
+    constructor(expense, nextExpense) {
+        this.expense = new Currency();
+        if (expense)
+            this.expense.add(expense);
+        this.nextExpense = new Currency();
+        if (nextExpense)
+            this.nextExpense.add(nextExpense);
     }
 }
 
 class WithholdingResult {
     constructor(medicare, socialSecurity, income) {
+        this.medicare = new Currency();
         if (medicare)
-            this.medicare = new Currency(medicare.amount);
-        else
-            this.medicare = new Currency();
-
+            this.medicare.add(medicare);
+        this.socialSecurity = new Currency();
         if (socialSecurity)
-            this.socialSecurity = new Currency(socialSecurity.amount);
-        else
-            this.socialSecurity = new Currency();
-
+            this.socialSecurity.add(socialSecurity);
+        this.income = new Currency();
         if (income)
-            this.income = new Currency(income.amount);
-        else
-            this.income = new Currency();
+            this.income.add(income);
     }
 
     fica() {
@@ -73,6 +102,14 @@ class WithholdingResult {
         this.medicare.flipSign();
         this.socialSecurity.flipSign();
         this.income.flipSign();
+    }
+}
+
+class InterestResult {
+    constructor(income) {
+        this.income = new Currency();
+        if (income)
+            this.income.add(income);
     }
 }
 
@@ -195,6 +232,8 @@ class ModelAsset {
     initializeChron() {
         
         this.monthlyCredits = new Currency();
+        this.monthlyIRAContribution = new Currency();
+        this.monthlyIRADistribution = new Currency();
 
         // earningCurrency
         this.earningCurrency = new Currency();
@@ -242,11 +281,16 @@ class ModelAsset {
     monthlyChron() {
 
         this.monthlyCredits.zero();
+        this.monthlyIRAContribution.zero();
+        this.monthlyIRADistribution.zero();
 
         this.accumulatedCurrency.add(this.earningCurrency);
         this.monthlyAccumulated.push(this.accumulatedCurrency.toCurrency());
         
-        this.monthlyEarning.push(this.earningCurrency.toCurrency());
+        if (isMonthlyIncome(this.instrument) || isMonthlyExpense(this.instrument))
+            this.monthlyEarning.push(this.finishCurrency.toCurrency());
+        else
+            this.monthlyEarning.push(this.earningCurrency.toCurrency());
         this.earningCurrency.zero();
 
         this.monthlyValue.push(this.finishCurrency.toCurrency());
@@ -302,11 +346,13 @@ class ModelAsset {
 
     addMonthlyShortTermCapitalGains(amount) {
         this.shortTermCapitalGainsCurrency.add(amount);
+        this.monthlyEarningsCurrency.add(amount);
         return new Currency(this.shortTermCapitalGainsCurrency.amount);
     }
 
     addMonthlyLongTermCapitalGains(amount) {
         this.longTermCapitalGainsCurrency.add(amount);
+        this.monthlyEarningsCurrency.add(amount);
         return new Currency(this.longTermCapitalGainsCurrency.amount);
     }
 
@@ -340,6 +386,16 @@ class ModelAsset {
         return new Currency(this.finishCurrency.amount);
 	}
 
+    addIRAContribution(amount) {
+        this.monthlyIRAContribution.add(amount);
+        return new Currency(this.monthlyIRAContribution.amount);
+    }
+
+    addIRADistribution(amount) {
+        this.monthlyIRADistribution.add(amount);
+        return new Currency(this.monthlyIRADistribution.amount);
+    }
+
     deductWithholding(withholdingIn) {
 
         let withholding = new WithholdingResult(withholdingIn.medicare, withholdingIn.socialSecurity, withholdingIn.income);
@@ -364,25 +420,20 @@ class ModelAsset {
 
     }
 
-    /*
-    applyMonth_common(isInMonth) {
-
-        if (isMonthlyIncome(this.instrument)) {
-            // income gets a raise at the end of the year
-            return;
+    applyMonthly() {
+        if (isMonthlyIncome(this.instrument))
+            return this.applyMonthlyIncome();
+        else if (isMonthlyExpense(this.instrument))
+            return this.applyMonthlyExpense();
+        else if (isMortgage(this.instrument))
+            return this.applyMonthlyMortgage();
+        else if (isCapital(this.instrument))
+            return this.applyMonthlyCapital();
+        else {
+            console.log('Model.applyMonthly: unsupported instrument ' + this.instrument);
+            return null;
         }
-
-        if (isInMonth) {
-            this.earningCurrency = new Currency(0.0);
-
-            if (this.hasMonthlyRate())
-                this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
-            
-            this.credit(this.earningCurrency);        
-        }
-
     }
-    */
 
     applyMonthlyIncome() {
         
@@ -399,7 +450,10 @@ class ModelAsset {
         console.log('monthly income: ' + this.displayName + ' ' + this.finishCurrency.toString());
 
         this.earningCurrency = new Currency(this.finishCurrency.amount);
-        return new Currency(this.earningCurrency.amount);      
+        if (this.isSelfEmployed)
+            return new IncomeResult(new Currency(this.earningCurrency.amount), new Currency());
+        else
+            return new IncomeResult(new Currency(), new Currency(this.earningCurrency.amount));      
 
     }
 
@@ -419,7 +473,7 @@ class ModelAsset {
 
         this.earningCurrency = new Currency(this.finishCurrency.amount);            
         this.finishCurrency = new Currency(this.finishCurrency.amount * (1+this.annualReturnRate.asMonthly()));
-        return new Currency(this.earningCurrency.amount);
+        return new ExpenseResult(new Currency(this.earningCurrency.amount), new Currency(this.finishCurrency.amount));
         
     }
 
@@ -437,7 +491,8 @@ class ModelAsset {
         --this.monthsRemainingDynamic;
 
         let c = new Currency(monthlyMortgagePayment);
-        this.earningCurrency = new Currency(monthlyMortgageInterest.amount - monthlyMortgagePrincipal.amount);
+        this.earningCurrency = new Currency(monthlyMortgagePrincipal.amount);
+        this.earningCurrency.flipSign();
         console.log('mortgage payment: ' + this.displayName + ' ' + c.toString() + ', interest payment: ' + monthlyMortgageInterest.toString() + ' principal payment: ' + monthlyMortgagePrincipal.toString());
 
         this.finishCurrency.subtract(monthlyMortgagePrincipal);
@@ -445,10 +500,10 @@ class ModelAsset {
         
     }
 
-    applyMonthlyCapitalGains() {
+    applyMonthlyCapital() {
 
         if (!isCapital(this.instrument)) {
-            console.log('Model.applyMonthlyCapitalGains - model not capital');
+            console.log('Model.applyMonthlyCapital - model not capital');
             return;
         }
 
@@ -463,38 +518,6 @@ class ModelAsset {
 
     }
 
-    /*
-    applyMonthlyTaxes() {
-
-        console.log('monthly withholding: ' + this.displayName + ' ' + this.funcMonthlyWithholding().toString())
-        this.earningCurrency.subtract(this.funcMonthlyWithholding());
-        return new Currency(this.earningCurrency.amount);
-
-    }
-
-    applyMonthlyTaxEstimates() {
-
-        return new Currency();
-
-    }
-
-    applyMonthlyTaxPayments() {
-
-        return new Currency();
-
-    }
-
-    applyMonthlyRMD() {
-
-    }
-
-    applyMonthlyOther() {
-
-        return new Currency();
-
-    }
-    */
-
     applyMonthlyCredits(expense) {
 
         console.log('apply credits: ' + this.displayName + ' expense ' + expense.toString() + ' to monthly credit of ' + this.monthlyCredits.toString());
@@ -505,11 +528,18 @@ class ModelAsset {
         }
         else {
             console.log('apply credits: ' + this.displayName + ' expense exeeded credits by ' + test.toString());
+            let credits = new Currency(this.monthlyCredits.amount);
+            this.debit(credits);
             return test;
         }
 
     }
 
+    applyYearly() {
+        if (isMonthlyIncome(this.instrument)) {
+            this.applyYearlyIncome(); // a raise!!
+        }
+    }
     applyYearlyIncome() {
         
         this.finishCurrency = new Currency(this.finishCurrency.amount * (1+this.annualReturnRate.annualReturnRate));        

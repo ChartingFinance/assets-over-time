@@ -279,8 +279,8 @@ function charting_buildCashFlowDataSet(modelAssets, label, sign) {
   for (const modelAsset of modelAssets) {
     if (modelAsset == null)
       continue;
-    else if (flowLineChartExclusions.includes(modelAsset.instrument))
-      continue;
+    //else if (flowLineChartExclusions.includes(modelAsset.instrument))
+    //  continue;
 
     for (let ii = 0; ii < modelAsset.displayEarningsData.length; ii++) {
 
@@ -334,18 +334,23 @@ function charting_buildCashFlowDataSet_fica(portfolio) {
 
 function charting_buildCashFlowDataSet_taxes(portfolio) {
 
+  displayIncomeTaxAndFICA = [];
+
+  for (let ii = 0; ii < portfolio.displayIncomeTax.length; ++ii)
+    displayIncomeTaxAndFICA.push(portfolio.displayIncomeTax[ii] + portfolio.displayFICA[ii]);
+
   let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
-  cashFlowDataSet.label = 'Federal Income Tax';  
-  cashFlowDataSet.data = portfolio.displayIncomeTax;
+  cashFlowDataSet.label = 'Federal Taxes';  
+  cashFlowDataSet.data = displayIncomeTaxAndFICA;
   cashFlowDataSet.backgroundColor = '#ffff00';  
   return cashFlowDataSet;
   
 }
 
-function charting_applyTaxesToCashFlowDataSet(cashFlowDataSet, ficaDataSet, taxDataSet) {
+function charting_applyTaxesToCashFlowDataSet(cashFlowDataSet, taxDataSet) {
   for (let ii = 0; ii < cashFlowDataSet.data.length; ii++) {
-    let taxData = ficaDataSet.data[ii] + taxDataSet.data[ii];
-    cashFlowDataSet.data[ii] -= taxData;
+    let taxData = taxDataSet.data[ii];
+    cashFlowDataSet.data[ii] += taxData;
   }
 }
 
@@ -359,18 +364,17 @@ function charting_buildDisplayCashFlowFromPortfolio(portfolio) {
 
   let chartingCashFlowDataSet_credits = charting_buildCashFlowDataSet(reducedModelAssets, 'Credits', 1);
   let chartingCashFlowDataSet_debits = charting_buildCashFlowDataSet(reducedModelAssets, 'Debits', -1);
-  let chartingCashFlowDataSet_cash = charting_buildCashFlowDataSet(reducedModelAssets, 'Cash', 0);
-  let chartingCashFlowDataSet_fica = charting_buildCashFlowDataSet_fica(portfolio);
+  let chartingCashFlowDataSet_cash = charting_buildCashFlowDataSet(reducedModelAssets, 'Growth', 0);
+  //let chartingCashFlowDataSet_fica = charting_buildCashFlowDataSet_fica(portfolio);
   let chartingCashFlowDataSet_rmds = charting_buildCashFlowDataSet_rmds(portfolio);
   let chartingCashFlowDataSet_taxes = charting_buildCashFlowDataSet_taxes(portfolio);
-
-  // because we are displaying Earnings we don't need to take taxes off (earnings = value - taxes)
-  //charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_fica, chartingCashFlowDataSet_taxes);
+  
+  charting_applyTaxesToCashFlowDataSet(chartingCashFlowDataSet_cash, chartingCashFlowDataSet_taxes);
     
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_credits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_debits);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_cash);
-  chartingCashFlowData.datasets.push(chartingCashFlowDataSet_fica);
+  //chartingCashFlowData.datasets.push(chartingCashFlowDataSet_fica);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_rmds);
   chartingCashFlowData.datasets.push(chartingCashFlowDataSet_taxes);
 

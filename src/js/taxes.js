@@ -350,19 +350,19 @@ class TaxTable {
 
     }
 
-    calculateMonthlyIncomeTax(income, deduction) {
+    estimateMonthlyIncomeTax(monthly, income) {
 
+        let yearly = monthly.copy();
+        yearly.multiply(12.0);
         let yearlyIncome = new Currency(income.amount * 12.0);
-        let yearlyDeduction = new Currency();;
-        if (deduction)
-            yearlyDeduction = new Currency(deduction.amount * 12.0);
 
-        let yearlyTax = this.calculateYearlyIncomeTax(yearlyIncome, yearlyDeduction);
+        yearlyIncome = this.applyYearlyDeductions(yearly, yearlyIncome);
+        let yearlyTax = this.calculateYearlyIncomeTax(yearlyIncome);
         let monthlyTax = new Currency(yearlyTax.amount / 12.0);
         return monthlyTax;
 
     }
-
+    
     calculateYearlyIncomeTax(income, deduction) {
 
         let adjusted = new Currency(income.amount);
@@ -381,6 +381,7 @@ class TaxTable {
 
     }
 
+    /*
     estimateMonthlyLongTermCapitalGainsTax(taxableIncome, capitalGains) {
 
         let yearlyIncome = new Currency(income.amount * 12.0);
@@ -391,6 +392,7 @@ class TaxTable {
         return monthlyTax;
 
     }
+    */
 
     calculateYearlyLongTermCapitalGainsTax(taxableIncome, capitalGains) {          
         
