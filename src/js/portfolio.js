@@ -361,6 +361,10 @@ class Portfolio {
             let result = modelAsset.applyMonthly();
             this.monthly.addResult(result);       
         }
+        else if (isIncomeAccount(modelAsset.instrument)) {
+            let result = modelAsset.applyMonthly();
+            this.monthly.addResult(result);        
+        }
         
     }
 
@@ -501,13 +505,6 @@ class Portfolio {
                 this.applyLastDayOfMonthTaxDeferred(modelAsset);
             }
         }
-        /*
-        else if (isIncomeAccount(modelAsset.instrument)) {
-            let taxableIncome = this.applyMonthlyIncome(modelAsset);
-            this.monthly.taxableIncome.add(taxableIncome);
-            this.monthly.estimatedTaxes.add(activeTaxTable.calculateMonthlyEstimatedTaxes(taxableIncome));
-        }
-        */
         else if (isMonthlyExpense(modelAsset.instrument)) {
             // if the fundingSource is Taxable, we handle that in applyLastDayOfMonthTaxable
             // if the fundingSource is Tax Deferred, we handle that in applyLastDayOfMonthTaxDeferred
@@ -655,7 +652,7 @@ class Portfolio {
             modelAsset.debit(income);
             this.monthly.iraDistribution.add(income);               
 
-            let incomeTax = activeTaxTable.calculateMonthlyIncomeTax(income, new Currency());
+            let incomeTax = activeTaxTable.estimateMonthlyIncomeTax(this.monthly, income);
 
             // TODO: inherited IRA exclusion
             let penalty = 0.0; 

@@ -422,20 +422,22 @@ class ModelAsset {
 
     applyMonthly() {
         if (isMonthlyIncome(this.instrument))
-            return this.applyMonthlyIncome();
+            return this.applyMonthlyIncomeSalary();
         else if (isMonthlyExpense(this.instrument))
             return this.applyMonthlyExpense();
         else if (isMortgage(this.instrument))
             return this.applyMonthlyMortgage();
         else if (isCapital(this.instrument))
             return this.applyMonthlyCapital();
+        else if (isIncomeAccount(this.instrument))
+            return this.applyMonthlyIncomeHoldings();
         else {
             console.log('Model.applyMonthly: unsupported instrument ' + this.instrument);
             return null;
         }
     }
 
-    applyMonthlyIncome() {
+    applyMonthlyIncomeSalary() {
         
         if (!isMonthlyIncome(this.instrument)) {
             console.log('Model.applyMonthlyIncome - model not income');
@@ -454,6 +456,31 @@ class ModelAsset {
             return new IncomeResult(new Currency(this.earningCurrency.amount), new Currency());
         else
             return new IncomeResult(new Currency(), new Currency(this.earningCurrency.amount));      
+
+    }
+
+    applyMonthlyIncomeHoldings() {
+
+        if (!isIncomeAccount(this.instrument)) {
+            console.log('Model.applyMonthlyIncome - model not income');
+            return new Currency();
+        }
+
+        if (this.startCurrency.amount < 0) {
+            this.startCurrency.amount *= -1;
+            this.finishCurrency.amount *= -1;
+        }        
+
+        this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
+
+        console.log('monthly income holding: ' + this.displayName + ' ' + this.earningCurrency.toString());
+
+        this.finishCurrency.add(this.earningCurrency);        
+        
+        if (this.isSelfEmployed)
+            return new IncomeResult(new Currency(this.earningCurrency.amount), new Currency());
+        else
+            return new IncomeResult(new Currency(), new Currency(this.earningCurrency.amount));
 
     }
 
