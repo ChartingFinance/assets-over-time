@@ -385,8 +385,6 @@ function isMonthlyExpense(value) {
 function isMonthlyIncome(value) {
     if (value == sInstrumentNames[sInstrumentsIDs.monthlyIncome])
         return true;
-    else if (value == sInstrumentNames[sInstrumentsIDs.bank])
-        return true;
     else
         return false;
 }
