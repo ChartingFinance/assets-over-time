@@ -1,12 +1,12 @@
-const us_2024_taxtables = {
-    "year": 2024,
+const us_2025_taxtables = {
+    "year": 2025,
     "fica": {
         "url": "https://www.irs.gov/taxtopics/tc751",
         "ssHalfRate": 0.062,
         "ssFullRate": 0.124,
         "medicareHalfRate": 0.0145,
         "medicareFullRate": 0.0290,
-        "maxSSEarnings": 168600.0
+        "maxSSEarnings": 176100.0
     },
     "income": {
         "url": "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024",
@@ -14,25 +14,25 @@ const us_2024_taxtables = {
             { 
                 "filingType": "single",
                 "taxRows": [
-                    {"rate": 0.10, "fromAmount": 0.0, "toAmount": 11600.0},
-                    {"rate": 0.12, "fromAmount": 11601.0, "toAmount": 47150.0},
-                    {"rate": 0.22, "fromAmount": 47151.0, "toAmount": 100525.0},
-                    {"rate": 0.24, "fromAmount": 100526.0, "toAmount": 191950.0},
-                    {"rate": 0.32, "fromAmount": 191951.0, "toAmount": 243725.0},
-                    {"rate": 0.35, "fromAmount": 243726.0, "toAmount": 609350.0},
-                    {"rate": 0.37, "fromAmount": 609351.0, "toAmount": -1.0 }
+                    {"rate": 0.10, "fromAmount": 0.0, "toAmount": 11925.0},
+                    {"rate": 0.12, "fromAmount": 11926.0, "toAmount": 48475.0},
+                    {"rate": 0.22, "fromAmount": 48476.0, "toAmount": 103350.0},
+                    {"rate": 0.24, "fromAmount": 103351.0, "toAmount": 197300.0},
+                    {"rate": 0.32, "fromAmount": 197301.0, "toAmount": 250525.0},
+                    {"rate": 0.35, "fromAmount": 250556.0, "toAmount": 626350.0},
+                    {"rate": 0.37, "fromAmount": 626251.0, "toAmount": -1.0 }
                 ]
             },
             {
                 "filingType": "married",
                 "taxRows": [
-                    {"rate": 0.10, "fromAmount": 0.0, "toAmount": 23200.0},
-                    {"rate": 0.12, "fromAmount": 23201.0, "toAmount": 94300.0},
-                    {"rate": 0.22, "fromAmount": 94301.0, "toAmount": 201050.0},
-                    {"rate": 0.24, "fromAmount": 201051.0, "toAmount": 383900.0},
-                    {"rate": 0.32, "fromAmount": 383901.0, "toAmount": 487450.0},
-                    {"rate": 0.35, "fromAmount": 487451.0, "toAmount": 731200.0},
-                    {"rate": 0.37, "fromAmount": 731201.0, "toAmount": -1.0}
+                    {"rate": 0.10, "fromAmount": 0.0, "toAmount": 23850.0},
+                    {"rate": 0.12, "fromAmount": 23851.0, "toAmount": 96950.0},
+                    {"rate": 0.22, "fromAmount": 96951.0, "toAmount": 206700.0},
+                    {"rate": 0.24, "fromAmount": 206701.0, "toAmount": 394600.0},
+                    {"rate": 0.32, "fromAmount": 394601.0, "toAmount": 501050.0},
+                    {"rate": 0.35, "fromAmount": 501051.0, "toAmount": 751600.0},
+                    {"rate": 0.37, "fromAmount": 751601.0, "toAmount": -1.0}
                 ]
             }
         ]
@@ -43,25 +43,25 @@ const us_2024_taxtables = {
             {
                 "filingType": "single",
                 "taxRows": [
-                {"rate": 0.0, "fromAmount": 0.0, "toAmount": 47025.0 },
-                {"rate": 0.15, "fromAmount": 47026.0, "toAmount": 518900.0 },
-                {"rate": 0.2, "fromAmount": 518901.0, "toAmount": -1.0 }
+                {"rate": 0.0, "fromAmount": 0.0, "toAmount": 48350.0 },
+                {"rate": 0.15, "fromAmount": 48351.0, "toAmount": 533400.0 },
+                {"rate": 0.2, "fromAmount": 533401.0, "toAmount": -1.0 }
                 ]
             },
             {
                 "filingType": "married",
                 "taxRows": [
-                    {"rate": 0.0, "fromAmount": 0.0, "toAmount": 94050.0 },
-                    {"rate": 0.15, "fromAmount": 94051.0, "toAmount": 583750.0 },
-                    {"rate": 0.2, "fromAmount": 583751.0, "toAmount": -1.0 }                    
+                    {"rate": 0.0, "fromAmount": 0.0, "toAmount": 96700.0 },
+                    {"rate": 0.15, "fromAmount": 96701.0, "toAmount": 600050.0 },
+                    {"rate": 0.2, "fromAmount": 600051.0, "toAmount": -1.0 }                    
                 ]
             }
         ]
     },
     "standardDeduction": {
         "url": "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024",
-        "single": 14600.0,
-        "married": 29200.0        
+        "single": 15000.0,
+        "married": 30000.0        
     }
 }; 
 
@@ -127,7 +127,7 @@ class TaxTable {
     }
 
     initializeChron() {
-        this.activeTaxTables = JSON.parse(JSON.stringify(us_2024_taxtables));
+        this.activeTaxTables = JSON.parse(JSON.stringify(us_2025_taxtables));
         if (global_filingAs == 'Single') {
             this.activeIncomeTable = this.activeTaxTables.income.tables[0];
             this.activeCapitalGainsTable = this.activeTaxTables.capitalGains.tables[0];
