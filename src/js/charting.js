@@ -248,7 +248,7 @@ function charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt,
     if (buildNewDataSet) {
       chartingEarningsDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
       chartingEarningsDataSet.label = modelAsset.displayName;
-      chartingEarningsDataSet.data = modelAsset.displayEarningsData;
+      chartingEarningsDataSet.data = modelAsset.displayEarningData;
     }
     else
       chartingEarningsDataSet = chartingEarningsData.datasets[dataIndex];
