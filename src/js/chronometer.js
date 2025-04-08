@@ -1,5 +1,15 @@
 function chronometer_run(portfolio) {
     
+    if (portfolio.modelAssets == null || portfolio.modelAssets.length == 0) {
+        console.log('chronometer_run - no modelAssets');
+        return;
+    }
+
+    if (portfolio.firstDateInt == null || portfolio.lastDateInt == null) {
+        console.log('chronometer_run - non firstDateInt or lastDateInt');
+        return;
+    }
+
     summary_setStartDate(portfolio.firstDateInt);
     summary_setStartValue(portfolio.startValue());  
     summary_setFinishDate(portfolio.lastDateInt);

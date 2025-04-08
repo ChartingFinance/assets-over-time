@@ -346,13 +346,13 @@ class ModelAsset {
 
     addMonthlyShortTermCapitalGains(amount) {
         this.shortTermCapitalGainsCurrency.add(amount);
-        this.monthlyEarningsCurrency.add(amount);
+        this.earningCurrency.add(amount);
         return new Currency(this.shortTermCapitalGainsCurrency.amount);
     }
 
     addMonthlyLongTermCapitalGains(amount) {
         this.longTermCapitalGainsCurrency.add(amount);
-        this.monthlyEarningsCurrency.add(amount);
+        this.earningCurrency.add(amount);
         return new Currency(this.longTermCapitalGainsCurrency.amount);
     }
 
@@ -665,15 +665,15 @@ class ModelAsset {
 
     }
 
-    monthlyEarningsDataToDisplayEarningsData(monthsSpan) {
+    monthlyEarningDataToDisplayEarningData(monthsSpan) {
 
-        this.displayEarningsData = [];
+        this.displayEarningData = [];
         for (let ii = monthsSpan.offsetMonths; ii < this.monthlyEarning.length; ii += monthsSpan.combineMonths) {
             let total = 0.0;
             for (let jj = 0; jj < monthsSpan.combineMonths && ii+jj < this.monthlyEarning.length; jj++) {
                 total += this.monthlyEarning[ii+jj];
             }
-            this.displayEarningsData.push(total);
+            this.displayEarningData.push(total);
         }
     }    
 
@@ -707,10 +707,10 @@ class ModelAsset {
         return this.accumulatedCurrency.amount < 0.0;
     }
 
-    mostRecentMonthlyEarnings() {
-        if (this.monthlyEarnings && this.monthlyEarnings.length > 0) {
-            let spot = this.monthlyEarnings.length -1;
-            return Currency.parse(this.monthlyEarnings[spot]);
+    mostRecentMonthlyEarning() {
+        if (this.monthlyEarning && this.monthlyEarning.length > 0) {
+            let spot = this.monthlyEarning.length -1;
+            return Currency.parse(this.monthlyEarning[spot]);
         }
         else
             return new Currency(0.0);

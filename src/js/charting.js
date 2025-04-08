@@ -282,12 +282,12 @@ function charting_buildCashFlowDataSet(modelAssets, label, sign) {
     //else if (flowLineChartExclusions.includes(modelAsset.instrument))
     //  continue;
 
-    for (let ii = 0; ii < modelAsset.displayEarningsData.length; ii++) {
+    for (let ii = 0; ii < modelAsset.displayEarningData.length; ii++) {
 
       if (firstModelAsset)
         cashFlowDataSet.data.push(0.0);
 
-      let displayData = modelAsset.displayEarningsData[ii];
+      let displayData = modelAsset.displayEarningData[ii];
       if (displayData == null)
         displayData = 0.0;
 

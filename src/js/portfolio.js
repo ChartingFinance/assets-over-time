@@ -542,7 +542,9 @@ class Portfolio {
             modelAsset.addMonthlyLongTermCapitalGains(capitalGains);
             this.monthly.longTermCapitalGains.add(capitalGains);
     
-            const yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(this.monthly.copy().multiply(12.0));
+            let monthlyCopy = this.monthly.copy();
+            monthlyCopy.multiply(12.0);
+            const yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(monthlyCopy);
             amountToTax = activeTaxTable.calculateYearlyLongTermCapitalGainsTax(yearlyIncome, capitalGains);
         } else {
             modelAsset.addMonthlyShortTermCapitalGains(capitalGains);
@@ -748,7 +750,7 @@ class Portfolio {
 
         for (modelAsset of this.modelAssets) {
             modelAsset.monthlyAssetDataToDisplayAssetData(monthsSpan);
-            modelAsset.monthlyEarningsDataToDisplayEarningsData(monthsSpan);
+            modelAsset.monthlyEarningDataToDisplayEarningData(monthsSpan);
         }  
 
         this.monthlyDataArrayToDisplayData(monthsSpan, 'monthlyEarning', 'displayEarning');
