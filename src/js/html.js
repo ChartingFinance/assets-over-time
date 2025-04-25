@@ -1,3 +1,7 @@
+
+const htmlPlus = '➕';
+const htmlMinus = '➖';
+
 const htmlAssetHeader = 
 `<form class="asset" style="background-color: $BACKGROUND-COLOR$">
     <div style="overflow: hidden; padding: 10px;">
@@ -13,7 +17,14 @@ const htmlAssetHeader =
         $ASSETPROPERTIES$
     </div>
     <br />
-    <input type="submit" class="remove" value="Remove" title="Remove this card from the active card set and recalculate" />
+    <div class="width-full" style="float: left; padding: 10px;">
+        <div style="float: left; width: 50%">
+            <input type="submit" class="remove" value="Remove" title="Remove this card from the active card set and recalculate" />        
+        </div>
+        <div style="float: left; width: 50%; text-align: right">
+            <input type="submit" class="inputOutput" name="fundTransfers" value="Transfers" title="Define how to transfer funds among the cards" data-fundtransfers="$FUNDTRANSFERS$" />
+        </div>
+    </div>    
 </form>`;
 
 const htmlAssetBody = 
@@ -54,10 +65,13 @@ const htmlAssetBody =
     <div style="float: left; width: 45%; text-align: center">
         $SLOT2$
     </div>
-</div>
+</div>`;
+
+/*
 <div class="width-full" style="float: left; padding-top: 10px">    
     $FUNDINGSOURCEDISPLAY$
 </div>`;
+*/
 
 const htmlInvisibleDisplay = `<label class="invisible" for="invisiblePlaceholder">Invisible</label><br class="invisible" />
     <input class="invisible" type="number" style=""width: 125px" name="invisiblePlaceholder" placeholder="invisible" />`;
@@ -118,30 +132,6 @@ function html_buildInstrumentOptions(instrument) {
         html += '>' + sIntrumentDisplayNames[i] + '</option>';
     }
     return html;
-}
-
-function html_buildFundingSourceOptions(modelAssets, currentDisplayName, fundingSource) {
-    if (modelAssets == null) {
-        console.log('html_buildFundingSourceOptions - modelAssets is null; querying html assets');
-        modelAssets = membrane_htmlElementsToAssetModels();    
-    }
-    let html = '<option value="none">None</option>';
-    for (const modelAsset of modelAssets) {
-        if (isFundableAsset(modelAsset.instrument) && modelAsset.displayName != currentDisplayName) {
-            html += '<option value="' + modelAsset.displayName + '"';
-            if (modelAsset.displayName == fundingSource)
-                html += ' selected';
-            html += '>' + modelAsset.displayName + '</option>';
-        }
-    }
-    return html;
-}
-
-function html_updateAssetElementFundingSources(assetElement) {
-    // update the 'apply to' dropdown
-    let assetModels = membrane_htmlElementsToAssetModels();
-    let fundingSourceElement = assetElement.querySelector('[name="fundingSource"]');
-    fundingSourceElement.innerHTML = html_buildFundingSourceOptions(assetModels, null, null);
 }
 
 function html_buildStoryNameOptionsFromLocalStorage() {
@@ -229,9 +219,12 @@ function html_buildRemovableAssetElement(modelAssets, modelAsset) {
     html = html_handleSlot1(modelAsset, html);
     html = html_handleSlot2(modelAsset, html); 
 
-    html = html.replace('$FUNDINGSOURCEOPTIONS$', html_buildFundingSourceOptions(modelAssets, modelAsset.displayName, modelAsset.fundingSource));
+    if (modelAsset.fundTransfers)
+        html = html.replace('$FUNDTRANSFERS$', util_escapedJSONStringify(modelAsset.fundTransfers));
+    else
+        html = html.replace('$FUNDTRANSFERS$', '');
 
-    if ('accumulatedCurrency' in modelAsset && modelAsset.accumulatedCurrency.amount != 0) {
+        if ('accumulatedCurrency' in modelAsset && modelAsset.accumulatedCurrency.amount != 0) {
         if (modelAsset.accumulatedCurrency.amount > 0)
             html = html.replace('$BACKGROUND-COLOR$', positiveBackgroundColor + ';');
         else if (modelAsset.accumulatedCurrency.amount < 0)
@@ -245,4 +238,85 @@ function html_buildRemovableAssetElement(modelAssets, modelAsset) {
 
 function html_buildAssetsElement() {
     return htmlAssets.slice();
+}
+
+
+// BEGIN TRANSFER ASSETS
+
+const htmlTransferAsset = 
+`<form class="fund-transfer" style="background-color: $BACKGROUND-COLOR$">
+    <div style="padding: 10px;">
+        <div class="width-full">
+            <label for="toDisplayName">Familiar Name</label><br />
+            <input type="text" class="width-full" name="toDisplayName" value="$TODISPLAYNAME$" readonly />
+        </div>
+        <div class="width-full" style="padding-top: 10px;">
+            <div style="float: left; width: 50%">
+                <label for="moveOnFinishDate">Move on Finish</label><br />
+                &nbsp;<input type="checkbox" style="text-align: right" name="moveOnFinishDate" $MOVEONFINISHDATE$ />
+            </div>
+            <div style="float: left; width: 50%; text-align: right;">
+                <label for="moveValue">Move %</label><br />
+                <input type="number" style="width: 75px" name="moveValue" value="$MOVEVALUE$" step="0.1" />
+            </div>
+        </div>
+    </div>    
+</form>`;
+
+function html_applyModelAssetToPopupTransfers(modelAsset, popupFormsTransfersElement) {
+    popupFormsTransfersElement.querySelector('#popupFormTransfers-title').innerHTML = modelAsset.displayName;
+    popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyEarning').value = modelAsset.monthlyEarnings[0];
+    popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyAfterTax').value = modelAsset.monthlyAfterTaxes[0];
+    popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyCredits').value = modelAsset.monthlyCredits[0];
+    //popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyDebits').value = modelAsset.monthlyDebits[0];
+}
+
+function html_buildTransferrableAssets(modelAssets, currentDisplayName) {
+
+    let currentModelAsset = util_findModelAssetByDisplayName(modelAssets, currentDisplayName);
+
+    let html = '';
+    for (const modelAsset of modelAssets) {
+        if (isFundableAsset(modelAsset.instrument)) {
+            if (modelAsset.displayName != currentDisplayName) {
+                html += html_buildTransferrableAsset(currentModelAsset, modelAsset);
+            }
+        }
+    }
+    return html;
+
+}
+
+function html_buildTransferrableAsset(currentModelAsset, transferrableModelAsset) {
+
+    let html = htmlTransferAsset;
+    html = html.replace('$TODISPLAYNAME$', transferrableModelAsset.displayName);
+
+    let moveOnFinishDate = '';
+    let moveValue = 0;
+    for (const fundTransfer of currentModelAsset.fundTransfers) {
+        if (fundTransfer.toDisplayName == transferrableModelAsset.displayName) {
+            moveValue = fundTransfer.moveValue;
+            if (fundTransfer.moveOnFinishDate) {
+                moveOnFinishDate = 'checked';
+            }
+            break;
+        }
+    }
+
+    html = html.replace('$MOVEONFINISHDATE$', moveOnFinishDate);
+    html = html.replace('$MOVEVALUE$', moveValue.toString());
+    return html;
+
+}
+
+function html_setAssetElementFundTransfers(currentDisplayName, fundTransfers) {
+    const assetElements = assetsContainerElement.querySelectorAll('form');
+    for (const assetElement of assetElements) {
+        const displayName = assetElement.querySelector('[name="displayName"]').value;
+        if (displayName == currentDisplayName) {
+            fundTransfersElement = assetElement.querySelector('[name="fundTransfers"]');
+            fundTransfersElement.setAttribute('data-fundtransfers', util_escapedJSONStringify(fundTransfers));
+        }
+    }
 }

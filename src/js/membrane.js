@@ -19,7 +19,7 @@ function membrane_modelAssetToHTML(modelAssets, modelAsset) {
 function membrane_modelAssetsToHTML(modelAssets) {
     let html = '';
     let colorId = 0;
-    for (modelAsset of modelAssets) {
+    for (let modelAsset of modelAssets) {
         if (colorId >= colorRange.length)
             colorId = 0;
         modelAsset.colorId = colorId++;
@@ -42,11 +42,15 @@ function membrane_rawDataToModelAssets(rawModelAssets) {
 function membrane_rawModelDataToModelAsset(rawModelData) {
     let startDateInt = new DateInt((rawModelData.startDateInt.year * 100) + rawModelData.startDateInt.month);
     let startCurrency = new Currency(rawModelData.startCurrency.amount);
+    let basisCurrency = new Currency();
+    if (rawModelData.basisCurrency)
+        basisCurrency = new Currency(rawModelData.basisCurrency.amount);
     let finishDateInt = new DateInt((rawModelData.finishDateInt.year * 100) + rawModelData.finishDateInt.month);
-    //let finishCurrency = new Currency(rawModelData.finishCurrency.amount);
     let arr = new ARR(rawModelData.annualReturnRate.annualReturnRate);
-    let modelAsset = new ModelAsset(rawModelData.instrument, rawModelData.displayName, startDateInt, startCurrency, finishDateInt, rawModelData.monthsRemaining, arr);
-    modelAsset.fundingSource = rawModelData.fundingSource;
+    let fundTransfers = [];
+    if (rawModelData.fundTransfers)
+        fundTransfers = rawModelData.fundTransfers.map(transfer => new FundTransfer(transfer.toDisplayName, transfer.moveOnFinishDate, transfer.moveValue));
+    let modelAsset = new ModelAsset(rawModelData.instrument, rawModelData.displayName, startDateInt, startCurrency, basisCurrency, finishDateInt, rawModelData.monthsRemaining, arr, fundTransfers);
     return modelAsset;
 }
 
@@ -64,6 +68,18 @@ function membrane_htmlElementsToAssetModels () {
         assetModels.push(membrane_htmlElementToAssetModel(assetElement));
     }
     return assetModels;
+}
+
+function membrane_htmlElementsToFundTransfers(currentDisplayName, scrollableYElement) {
+    var fundTransfers = [];
+    const fundTransferElements = scrollableYElement.querySelectorAll('.fund-transfer');
+    for (const fundTransferElement of fundTransferElements) {
+        let fundTransfer = FundTransfer.parseHTML(fundTransferElement);        
+        if (fundTransfer.moveValue) {
+            fundTransfers.push(fundTransfer);
+        }
+    }
+    return fundTransfers;
 }
 
 function JSONObjectToAsset(assetObject, id) {

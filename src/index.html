@@ -41,6 +41,54 @@
             Charting Financial Assets Over Time
         </h1>
         
+        <!-- Popup Forms -->
+        <div id="popupFormShare" class="popup">
+            <div class="popup-content">
+                <span class="closeBtn">&times;</span>
+                <h2 id="popupTitle">Buy me a Coffee!</h2><br />
+                <p>This will help pay for server costs as this project grows-- like the sharing feature.</p>
+                <h2><a href='https://buymeacoffee.com/charting.finance' target="_blank">Visit my Coffee</a></h2>
+            </div>
+        </div>
+
+        <div id="popupFormTransfers" class="popup">
+            <div class="popup-content width-full">
+                <span class="closeBtn" style="width: 100%; text-align: right;">&times;</span>  
+                <div style="float: left; width: 50%">             
+                    <h3 id="popupFormTransfers-title"></h3>
+                    <div class="width-full" style="padding-top: 10px;">                        
+                        <div style="float: left; width: 45%; padding: 5px;">
+                            <label for="popupFormTransfers-monthlyEarning">Monthly Earning</label><br />
+                            <input type="number" class="width-full" id="popupFormTransfers-monthlyEarning" step="0.01" readonly />
+                        </div>
+                        <div style="float: left; width: 45%; padding: 5px">
+                            <label for="monthlyAfterTax">Monthly After Tax</label><br />
+                            <input type="number" class="width-full" id="popupFormTransfers-monthlyAfterTax" step="0.01" readonly />
+                        </div>
+                    </div>
+                    <div class="width-full" style="padding-top: 10px;">
+                        <div style="float: left; width: 45%; padding: 5px;">
+                            <label for="popupFormTransfers-monthlyCredits">Monthly Credits</label><br />
+                            <input type="number" class="width-full" id="popupFormTransfers-monthlyCredits" step="0.01" readonly />
+                        </div>
+                        <div style="float: left; width: 45%; padding: 5px">
+                            <label for="popformTransfers-monthlyDebits">Monthly Debits</label><br />
+                            <input type="number" class="width-full" id="popupFormTransfers-monthlyDebits" step="0.01" readonly />
+                        </div>
+                    </div>
+                </div>
+                <div style="float: left; width: 50%">
+                    <h3>Transferrable Cards</h3>
+                    <div class="scrollable-y">                    
+                    </div>
+                </div>
+                <br />&nbsp;<br />
+                <div class="width-full" style="clear: both; width: 100%; text-align: center; padding: 10px;">
+                    <button onclick="popupFormTransfers_onSave()">Save</button>
+                </div>
+            </div>
+        </div>
+
         <div class="row" id="topContainer">
             <div class="column left" style="text-align: center;">
                 <div style="width: 100%">
@@ -89,13 +137,15 @@
                                 <input class="hidable width-full" type="number" style="display: none" name="monthsRemaining" value="321" placeholder="months">
                             </div>
                         </div>
+                        <!--
                         <div class="width-full" style="float: left; padding-top: 10px; padding-bottom: 10px;">                           
                             <label for="fundingSource">Apply to Card</label><br />
                             <select class="width-full" name="fundingSource">
                                 <option value="none">None</option>
                             </select>
                         </div>
-                    </div>
+                        -->
+                    </div><br />
                     <input type="submit" value="Create" title="Add this 'card' of financial data to the active set of financial cards to the right" />
                 </form>
             </div>
@@ -168,61 +218,33 @@
                         <span>Growth View</span>
                     </div>
                 </div>
-            </div>
-
-            <div style="width: 100%">
-                <canvas id="chartAssetCanvas"></canvas>
-            </div>
-            <div style="width: 100%; display: none">
-                <canvas id="chartEarningsCanvas"></canvas>
-            </div>
-            <div style="width: 100%; display: none">
-                <canvas id="chartCashFlowCanvas"></canvas>
-            </div>
-            <div class="column left">
-         
-        </div>   
-
-        <!-- Popup Forms -->
-        <div id="popupFormShare" class="popup">
-            <div class="popup-content">
-                <span class="closeBtn">&times;</span>
-                <h2 id="popupTitle">Buy me a Coffee!</h2><br />
-                <p>This will help pay for server costs as this project grows-- like the sharing feature.</p>
-                <h2><a href='https://buymeacoffee.com/charting.finance' target="_blank">Visit my Coffee</a></h2>
-            </div>
-        </div>
-
-        <div id="popupFormCardSelection" class="popup">
-            <div class="popup-content">
-                <span class="closeBtn">&times;</span>
-                <h2>Select Cards to apply with percentages</h2><br />
-                <div style="width: 100%">
-                    <label for="cardSelection1">Apply to Card</label>
-                    <div style="width:75%">
-                        <select id="cardSelection1">
-                            <option>None</option>
-                        </select>
-                    </div>
-                    <div style="width:20%">
-                        <label for="percentage1">Percentage</label>
-                        <input type="number" step=1 id="percentage1" />
-                    </div>
-                </div><br />
-                <div style="width: 100%">
-                    <label for="cardSelection1">Apply to Card</label>
-                    <div style="width:75%">
-                        <select id="cardSelection1">
-                            <option>None</option>
-                        </select>
-                    </div>
-                    <div style="width:20%">
-                        <label for="percentage1">Percentage</label>
-                        <input type="number" step=1 id="percentage1" />
+                <div>
+                    <div class="tab-reports">
+                        <span>Reports</span>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div style="float: left; width: 75%">
+                <div style="width: 100%">
+                    <canvas id="chartAssetCanvas"></canvas>
+                </div>
+                <div style="width: 100%; display: none">
+                    <canvas id="chartEarningsCanvas"></canvas>
+                </div>
+                <div style="width: 100%; display: none">
+                    <canvas id="chartCashFlowCanvas"></canvas>
+                </div>
+            </div>
+            <div style="float: left; width: 25%">
+                <div style="width: 100%; padding: 8px;">
+                    <div id="reports"></div>
+                </div>
+            </div>
+            <div class="column left">
+            </div>
+         
+        </div>           
 
         <script>
             <!-- these are dynamic functions -->
@@ -236,12 +258,12 @@
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
             var chartEarningsCanvas = document.getElementById('chartEarningsCanvas');
             var chartCashFlowCanvas = document.getElementById('chartCashFlowCanvas');
+            var reportsElement = document.getElementById('reports');
             var activeStoryArc = null;
             var activeStoryName = null;
             var activeAssetCanvas = null;
             var activeEarningsCanvas = null;
             var activeCashFlowCanvas = null;
-            var activeTaxTable = null;
 
             var highlightDisplayName = null;
         </script>
@@ -271,12 +293,6 @@
                     util_ensureStoryNames(activeStoryArc, activeStoryName);
                 }
 
-                /* dropdown commented out right now 
-                let optionsHTML = html_buildStoryNameOptionsFromLocalStorage();
-                let selectSavedDatasets = document.getElementById('savedDataSets');
-                selectSavedDatasets.innerHTML = optionsHTML;
-                */
-
                 // Get the last working data set
                 loadLocalData();
             }
@@ -305,10 +321,6 @@
                         displayElementSet(monthsElement, 0);
                     }
                 });
-
-                fundingElement.addEventListener('change', function(event) {
-                    console.log('assetElement.fundingElement.change');
-                });
             }
 
             function connectAssetsContainerSelects() {
@@ -320,9 +332,6 @@
                             let monthsElement = event.target.parentElement.parentElement.querySelector('[name="monthsRemaining"]');
                             displayElementSet(monthsElement, 0);
                         }
-                    }
-                    else if (event.target.name == 'fundingSource') {
-                        console.log('assetsContainerElement.fundingElement.change');
                     }
                 });
             }
@@ -345,31 +354,38 @@
                         let monthsElement = mostRecentAssetElement.querySelector('[name="monthsRemaining"]');
                         displayElementSet(monthsElement, 0);
                     }
-
-                    html_updateAssetElementFundingSources(assetElement);
                     
                     calculate();
                 });
-                
-                let fundingOptionsHtml = html_buildFundingSourceOptions(null, null, null);
-                assetElement.querySelector('[name="fundingSource"]').innerHTML = fundingOptionsHtml;
             }
 
-            function connectRemoveAsset() {
+            function connectAssetsContainerTransfers() {
+                console.log('connectAssetsContainerTransfers');
+                assetsContainerElement.addEventListener('click', function (ev) {
+                    if (ev.srcElement.name == sFundTransfers) {
+                        event.preventDefault();
+                        let assetElement = ev.srcElement.parentNode.parentNode.parentNode;
+                        let displayName = assetElement.querySelector('input[name="displayName"]').value;                        
+                        showPopupTransfers(displayName);
+                    }
+                });
+            }
+
+            function connectAssetsContainerRemove() {
                 console.log('connectUpdateOrRemoveAsset');
                 assetsContainerElement.addEventListener('click', function (ev) {
 
                     if (ev.srcElement.className.includes('remove')) {
                         ev.preventDefault();
-                        let removeContainerNode = ev.srcElement.parentNode;
+
+                        let removeContainerNode = ev.srcElement.parentNode;                    
                         while (removeContainerNode.parentNode.id != 'assets')
                             removeContainerNode = removeContainerNode.parentNode;
                         assetsContainerElement.removeChild(removeContainerNode);
 
-                        html_updateAssetElementFundingSources(assetElement);
-
                         calculate();
                     }
+
                 });
             }
         </script>
@@ -429,6 +445,12 @@
                     tab3.classList.remove('active');
                     chartCashFlowCanvas.parentElement.style.display = 'none';                    
                 }
+                /*
+                else if (tab4.classList.contains('active')) {
+                    tab4.classList.remove('active');
+                    reportsElement.parentElement.style.display = 'none';
+                }
+                */
                 tab1.classList.add('active');
                 chartAssetCanvas.parentElement.style.display = '';
             }
@@ -442,6 +464,12 @@
                     tab3.classList.remove('active');
                     chartCashFlowCanvas.parentElement.style.display = 'none';                    
                 }
+                /*
+                else if (tab4.classList.contains('active')) {
+                    tab4.classList.remove('active');
+                    reportsElement.parentElement.style.display = 'none';
+                }
+                */
                 tab2.classList.add('active');
                 chartEarningsCanvas.parentElement.style.display = '';                
             }
@@ -455,8 +483,33 @@
                     tab2.classList.remove('active');
                     chartEarningsCanvas.parentElement.style.display = 'none';                    
                 }
+                /*
+                else if (tab4.classList.contains('active')) {
+                    tab4.classList.remove('active');
+                    reportsElement.parentElement.style.display = 'none';
+                }
+                */
                 tab3.classList.add('active');
                 chartCashFlowCanvas.parentElement.style.display = '';                
+            }
+
+            function tab4_click() {
+                /*
+                if (tab1.classList.contains('active')) {
+                    tab1.classList.remove('active');
+                    chartAssetCanvas.parentElement.style.display = 'none';
+                }
+                else if (tab2.classList.contains('active')) {
+                    tab2.classList.remove('active');
+                    chartEarningsCanvas.parentElement.style.display = 'none';                    
+                }
+                else if (tab3.classList.contains('active')) {
+                    tab3.classList.remove('active');
+                    chartCashFlowCanvas.parentElement.style.display = 'none';
+                }
+                tab4.classList.add('active');
+                reportsElement.parentElement.style.display = '';
+                */
             }
         </script>
         <script>
@@ -519,10 +572,10 @@
             }
 
             function calculate() {
+                reportsElement.innerHTML = '';
                 let modelAssets = membrane_htmlElementsToAssetModels();
                 let portfolio = new Portfolio(modelAssets);
                 chronometer_run(portfolio);
-                //chronometer_applyMonths(modelAssets);
 
                 // unhook mouse events
                 clearMouseEvents();
@@ -610,19 +663,41 @@
 
             function doPopupShare(popupTitle) {
                 document.getElementById('popupFormShare').style.display = 'block';
-                //document.getElementById('popupTitle').innerHTML = popupTitle;
-                //let inputElement = document.getElementById('datasetTitle');
-                //inputElement.value = util_getYYYYmm() + ' ';
             }
 
-            function doPopupCardSelection() {
-                document.getElementById('popupFormCardSelection').style.display = 'block';
+            function showPopupTransfers(currentDisplayName) {
+
+                let popupFormTransfersElement = document.getElementById('popupFormTransfers');
+                let scrollableYElement = popupFormTransfersElement.querySelector('.scrollable-y');
+
+                let modelAssets = membrane_htmlElementsToAssetModels();                
+                let portfolio = new Portfolio(modelAssets);
+                chronometer_run(portfolio);
+
+                html_applyModelAssetToPopupTransfers(util_findModelAssetByDisplayName(portfolio.modelAssets, currentDisplayName), popupFormTransfersElement);
+                scrollableYElement.innerHTML = html_buildTransferrableAssets(portfolio.modelAssets, currentDisplayName);
+
+                popupFormTransfersElement.style.display = 'block';
+
             }
 
-            document.querySelector('.closeBtn').addEventListener('click', function() {
-                document.getElementById('popupFormShare').style.display = 'none';
-                document.getElementById('popupFormCardSelection').style.display = 'none';
-            });
+            function popupFormTransfers_onSave(ev) {
+                let popupFormTransfersElement = document.getElementById('popupFormTransfers');
+                let currentDisplayName = popupFormTransfersElement.querySelector('#popupFormTransfers-title').innerHTML;
+                let scrollableYElement = popupFormTransfersElement.querySelector('.scrollable-y');
+                let fundTransfers = membrane_htmlElementsToFundTransfers(currentDisplayName, scrollableYElement);
+                html_setAssetElementFundTransfers(currentDisplayName, fundTransfers);
+
+                calculate();
+                popupFormTransfersElement.style.display = 'none';
+            }
+
+            const closeButtonElements = document.querySelectorAll('.closeBtn');
+            for (const closeButtonElement of closeButtonElements) {
+                closeButtonElement.addEventListener('click', function() {
+                    closeButtonElement.parentElement.parentElement.style.display = 'none';
+                });
+            }
 
         </script>
         <script>
@@ -633,9 +708,10 @@
                 buildInstrumentOptions();
                 initiateActiveData();            
                 connectAssetSelect();
-                connectAssetsContainerSelects();
                 connectCreateAsset();
-                connectRemoveAsset();
+                connectAssetsContainerSelects();
+                connectAssetsContainerTransfers();
+                connectAssetsContainerRemove();
             }            
 
             initialize();

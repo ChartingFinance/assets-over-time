@@ -134,6 +134,8 @@ class TaxTable {
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.single;
             this.iraContributionLimitBelow50 = 7000;
             this.iraContributionLimit50AndOver = 8000;
+            this.four01KContributionLimitBelow50 = 23500;
+            this.four01KContributionLimit50AndOver = 31000;
         }
         else {
             this.activeIncomeTable = this.activeTaxTables.income.tables[1];
@@ -141,7 +143,8 @@ class TaxTable {
             this.activeStandardDeduction = this.activeTaxTables.standardDeduction.married;
             this.iraContributionLimitBelow50 = 14000;
             this.iraContributionLimit50AndOver = 16000;
-        }
+            this.four01KContributionLimitBelow50 = 23500;
+            this.four01KContributionLimit50AndOver = 31000;        }
 
         this.yearlySocialSecurityAccumulator = new Currency();
 
@@ -238,64 +241,6 @@ class TaxTable {
         return (currentDateInt.month == 4);
     }    
 
-    /*
-    payEstimatedTaxes(currentDateInt, modelAssets) {        
-
-        let estimatedTaxesPaid = new Currency(0.0);
-
-        for (let modelAsset of modelAssets) {
-            if (modelAsset.hasEstimatedTax()) {
-                estimatedTaxesPaid.add(new Currency(modelAsset.getEstimatedTax()));
-                modelAsset.debitAndClearEstimatedTax();
-            }
-        }
-
-        console.log('TaxTable.payEstimatedTaxes: ' + estimatedTaxesPaid.toCurrency());
-
-        this.estimatedTaxPayments.push(estimatedTaxesPaid.amount);
-    }
-
-    lastYearsEstimatedTaxPayments() {
-        // get the previous years 4 estimated tax payments. REMEMBER: the last two are the current year, so adjust the index
-        let total = 0.0;
-        let count = 0;
-        for (let ii = this.estimatedTaxPayments.length -3; ii >= 0 && count < 4 ; ii--) {
-            total += this.estimatedTaxPayments[ii];
-            ++count;
-        }
-        return total;
-    }
-
-    payYearlyTaxes(currentDateInt, modelAssets) {
-        // see what the total is for this period
-        let totalTax = new Currency(this.yearlyFederalTaxes[this.yearlyFederalTaxes.length -1]);
-
-        // compute the estimated tax payments
-        let estimatedTaxesPaid = new Currency(this.lastYearsEstimatedTaxPayments());
-
-        // compute the difference
-        let difference = new Currency(totalTax.amount - estimatedTaxesPaid.amount);
-        this.yearlyPayments.push(difference.toCurrency());
-
-        console.log('TaxTable.payYearlyTaxes (totalToPay - estimatedPaid = remainderToPay): ' + totalTax.toCurrency() + ' - ' + estimatedTaxesPaid.toCurrency() + ' = ' + difference.toCurrency());
-
-        // find the modelAssets to be used for the tax payments
-        let modelAssetsForTaxes = util_findAssetModelsToUseForTaxes(modelAssets);
-
-        // TAX CALCULATION REMAINS THE SAME
-        // scan through model assets and check for 'useForTaxes' property
-        if (modelAssetsForTaxes.length > 0) {
-            let partialTax = new Currency(difference.amount / modelAssetsForTaxes.length);
-            let count = 0;
-            for (modelAsset of modelAssetsForTaxes) {
-                let message = 'TaxTable.payYearlyTaxes (' + (++count).toString() + ' of ' + modelAssetsForTaxes.length.toString() + '): ' + modelAsset.displayName + ' ' + partialTax.toCurrency();
-                console.log(message);
-                modelAsset.finishCurrency.subtract(partialTax);
-            }
-        }
-    }
-    */
-
     calculateMonthlyWithholding(isSelfEmployed, income) {
 
         let result = this.calculateFICATax(isSelfEmployed, income);
@@ -305,14 +250,6 @@ class TaxTable {
     }
 
     calculateFICATax(isSelfEmployed, income) {
-
-        /*
-        if (modelAsset.displayName == 'SSN') {
-            // social security is not taxed for FICA
-            console.log('TaxTable.calculateMonthlyFICAWithholding - SSN is not taxed for FICA');
-            return;
-        }
-        */
 
         let result = new WithholdingResult(new Currency(), new Currency(), new Currency());
         result.socialSecurity.add(this.calculateSocialSecurityTax(isSelfEmployed, income));
@@ -379,8 +316,10 @@ class TaxTable {
         for (const taxRow of this.activeIncomeTable.taxRows) {
             if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
-            else if (adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount)
+            else if ((adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount) || (taxRow.toAmount == -1)) {
                 tax += (adjusted.amount - taxRow.fromAmount) * taxRow.rate;
+                break;
+            }
         }
 
         return new Currency(tax);
@@ -404,12 +343,18 @@ class TaxTable {
         
         let tax = 0.0;
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
-            let fromAdjusted = new Currency(taxRow.fromAmount).subtract(taxableIncome);
-            let toAdjusted = new Currency(taxRow.toAmount).subtract(taxableIncome);
-            if (capitalGains.amount >= fromAdjusted.amount && capitalGains.amount >= toAdjusted.amount)
-                tax += (toAdjusted.amount - fromAdjusted.amount) * taxRow.rate;
-            else if (capitalGains.amount >= fromAdjusted.amount && capitalGains.amount < toAdjusted.amount)
-                tax += (capitalGains.amount - fromAdjusted.amount) * taxRow.rate;               
+            let adjusted = taxableIncome.copy().add(capitalGains);            
+            if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount) {
+                let taxableAmount = (taxRow.toAmount - taxRow.fromAmount) - taxableIncome.amount;
+                if (taxableAmount > 0)
+                    tax += taxableAmount * taxRow.rate;
+            }
+            else if ((adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount) || (taxRow.toAmount == -1)) {
+                let taxableAmount = (adjusted.amount - taxRow.fromAmount) - taxableIncome.amount;
+                if (taxableAmount > 0)
+                    tax += taxableAmount * taxRow.rate;
+                break;               
+            }
         }
         return new Currency(tax);
 
@@ -491,6 +436,12 @@ class TaxTable {
             let c = new Currency(this.activeStandardDeduction);;            
             taxableIncome.subtract(c);
         }
+
+        if (taxableIncome.amount < 0) {
+            console.log('TaxTable.applyYearlyDeductions: taxable income < 0, setting to 0');
+            taxableIncome.zero();
+        }
+
         return taxableIncome;
 
     }
@@ -530,9 +481,18 @@ class TaxTable {
     calculateYearlyTaxableIncome(yearly) {
 
         let taxableIncome = new Currency(yearly.selfIncome.amount + yearly.employedIncome.amount);
-        taxableIncome.add(yearly.iraDistribution);
-        taxableIncome.add(yearly.shortTermCapitalGains);   
-        taxableIncome.add(yearly.interest);
+
+        let ordinaryIncome = new Currency();
+        // this is ordinary income
+        ordinaryIncome.add(yearly.four01KDistribution);
+        ordinaryIncome.add(yearly.iraDistribution);
+        ordinaryIncome.add(yearly.shortTermCapitalGains);   
+        ordinaryIncome.add(yearly.interestIncome);
+
+        if (ordinaryIncome.amount != yearly.ordinaryIncome().amount)
+            console.log('Taxes.calculateYearlyTaxableIncome: ordinaryIncome mismatch');
+
+        taxableIncome.add(ordinaryIncome);
         return this.applyYearlyDeductions(yearly, taxableIncome);
 
     }
@@ -566,5 +526,12 @@ class TaxTable {
             return new Currency(this.iraContributionLimitBelow50);
         else
             return new Currency(this.iraContributionLimit50AndOver);
+    }
+
+    four01KContributionLimit(activeUser) {
+        if (activeUser.age < 50)
+            return new Currency(this.four01KContributionLimitBelow50);
+        else
+            return new Currency(this.four01KContributionLimit50AndOver);
     }
 }

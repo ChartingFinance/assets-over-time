@@ -164,12 +164,18 @@ class Currency {
             return new Currency(0.0);
     }
 
+    copy() {
+        return new Currency(this.amount);
+    }
+
     zero() {
         this.amount = 0.0;
+        return this;
     }
 
     flipSign() {
         this.amount *= -1.0;
+        return this;
     }
 
     add(currency) {
@@ -266,6 +272,11 @@ function util_lastDateInt(modelAssets) {
 }
 
 function util_totalMonths(startDateInt, finishDateInt) {
+    if (startDateInt == null || finishDateInt == null) {
+        console.log('util_totalMonths - startDateInt or finishDateInt is null');
+        return 0;
+    }
+
     let runnerDateInt = new DateInt(startDateInt.toInt());
     let totalMonths = 0;
     while (runnerDateInt.toInt() <= finishDateInt.toInt()) {
@@ -339,6 +350,18 @@ function util_findModelAssetByDisplayName(modelAssets, displayName) {
     return null;
 }
 
+function util_removeModelAssetByDisplayName(modelAssets, displayName) {
+    let ii = 0;
+    for (; ii < modelAssets.length; ++ii) {
+        if (modelAssets[ii].displayName == displayName)
+            break;
+    }
+
+    if (ii < modelAssets.length) {
+        modelAssets.splice(ii, 1);
+    }
+}
+
 function util_findModelAssetsByFundingSource(modelAssets, instrument, fundingSource) {
     let results = [];
     for (const modelAsset of util_findModelAssetsByInstrument(modelAssets, instrument)) {
@@ -385,6 +408,15 @@ function isMonthlyExpense(value) {
 function isMonthlyIncome(value) {
     if (value == sInstrumentNames[sInstrumentsIDs.monthlyIncome])
         return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.monthlySocialSecurity])
+        return true;
+    else
+        return false;
+}
+
+function isSocialSecurity(value) {
+    if (value == sInstrumentNames[sInstrumentsIDs.monthlySocialSecurity])
+        return true;
     else
         return false;
 }
@@ -394,13 +426,13 @@ function isTaxableAccount(value) {
 }
 
 function isCapital(value) {
-    if (value == sInstrumentNames[sInstrumentsIDs.taxableEquity])
+    if (isTaxableAccount(value))
         return true;
-    else if (value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity])
+    else if (isTaxDeferred(value))
         return true;
-    else if (value == sInstrumentNames[sInstrumentsIDs.taxFreeEquity])
+    else if (isTaxFree(value))
         return true;
-    else if (value == sInstrumentNames[sInstrumentsIDs.home])
+    else if (isHome(value))
         return true;
     else
         return false;
@@ -422,11 +454,19 @@ function isLiquidAccount(value) {
 }
 
 function isTaxDeferred(value) {
-    return value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity];
+    return value == sInstrumentNames[sInstrumentsIDs.ira] || value == sInstrumentNames[sInstrumentsIDs.four01K];
+}
+
+function isIRA(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.ira];
+}
+
+function is401K(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.four01K];
 }
 
 function isTaxFree(value) {
-    return value == sInstrumentNames[sInstrumentsIDs.taxFreeEquity];
+    return value == sInstrumentNames[sInstrumentsIDs.rothIRA];
 }
 
 function isSavingsAccount(value) {
@@ -440,9 +480,11 @@ function isFundableAsset(value) {
         return true;
     else if (value == sInstrumentNames[sInstrumentsIDs.taxableEquity])
         return true;
-    else if (value == sInstrumentNames[sInstrumentsIDs.taxDeferredEquity])
+    else if (value == sInstrumentNames[sInstrumentsIDs.four01K])
         return true;
-    else if (value == sInstrumentNames[sInstrumentsIDs.taxFreeEquity])
+    else if (value == sInstrumentNames[sInstrumentsIDs.ira])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.rothIRA])
         return true;
     else if (value == sInstrumentNames[sInstrumentsIDs.usBond])
         return true;
@@ -548,6 +590,16 @@ function util_ensureStoryNames(storyArc, storyName) {
 
 function util_saveLocalAssetModels(storyArc, storyName, assetModels) {
     let key = util_buildStoryArcKey(storyArc, storyName);
+
+    /*
+    // have to use util_escapedJSONStringify because of storing json in the data-fundtransfer attribute
+    for (let ii = 0; ii < assetModels.length; ++ii) {
+        if (assetModels[ii].fundTransfers) {
+            assetModels[ii].fundTransfers = util_escapedJSONStringify(assetModels[ii].fundTransfers);
+        }
+    }
+    */
+
     localStorage.setItem(key, JSON.stringify(assetModels));
 }
 
@@ -589,4 +641,23 @@ function util_findAssetModelsToUseForTaxes(assetModels) {
         }
     }
     return result;
+}
+
+function util_escapedJSONStringify(obj) {
+    if (obj == null) {
+        return null;
+    }
+    
+    for (let ii = 0; ii < obj.length; ++ii) {
+        if (obj[ii].fromModel)
+            delete obj[ii].fromModel;
+        if (obj[ii].toModel)
+            delete obj[ii].toModel;
+    }
+
+    return btoa(JSON.stringify(obj)); //.replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function util_unescapedJSONParse(str) {
+    return JSON.parse(atob(str)); // (str.replace(/&quot;/g, '"').replace(/&apos;/g, "'"));
 }

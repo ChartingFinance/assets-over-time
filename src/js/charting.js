@@ -30,7 +30,7 @@ const stackedBarChartDataSet = {
     data: null
  };
 
-const assetStackedBarChartExclusions = ['monthlyExpense', 'monthlyIncome'];
+const assetStackedBarChartExclusions = ['monthlyExpense', 'monthlySalary', 'monthlySocialSecurity'];
 
 const lineChartConfig = {
   type: 'line',
@@ -334,14 +334,14 @@ function charting_buildCashFlowDataSet_fica(portfolio) {
 
 function charting_buildCashFlowDataSet_taxes(portfolio) {
 
-  displayIncomeTaxAndFICA = [];
+  let displayAllTaxes = [];
 
-  for (let ii = 0; ii < portfolio.displayIncomeTax.length; ++ii)
-    displayIncomeTaxAndFICA.push(portfolio.displayIncomeTax[ii] + portfolio.displayFICA[ii]);
+  for (let ii = 0; ii < portfolio.displayIncomeTaxes.length; ++ii)
+    displayAllTaxes.push(portfolio.displayIncomeTaxes[ii] + portfolio.displayFICAs[ii] + portfolio.displayCapitalGainsTaxes[ii]);
 
   let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
   cashFlowDataSet.label = 'Federal Taxes';  
-  cashFlowDataSet.data = displayIncomeTaxAndFICA;
+  cashFlowDataSet.data = displayAllTaxes;
   cashFlowDataSet.backgroundColor = '#ffff00';  
   return cashFlowDataSet;
   

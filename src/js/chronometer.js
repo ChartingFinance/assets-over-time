@@ -59,7 +59,7 @@ function chronometer_applyMonths(modelAssets) {
     if (activeTaxTable != null)
         activeTaxTable.initializeChron();
 
-    for (modelAsset of modelAssets) {
+    for (let modelAsset of modelAssets) {
         modelAsset.initializeChron();
     }
 
