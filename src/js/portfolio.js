@@ -360,6 +360,9 @@ class Portfolio {
         this.yearly = new FinancialPackage();
         this.total = new FinancialPackage();
 
+        this.monthlyIncomeTaxes = [];
+        this.monthlyCapitalGainsTaxes = [];
+
         this.displayCapitalGainsTaxes = [];
     }
 
