@@ -461,6 +461,10 @@ function isIRA(value) {
     return value == sInstrumentNames[sInstrumentsIDs.ira];
 }
 
+function isRothIRA(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.rothIRA];
+}
+
 function is401K(value) {
     return value == sInstrumentNames[sInstrumentsIDs.four01K];
 }

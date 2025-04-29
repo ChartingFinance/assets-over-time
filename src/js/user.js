@@ -39,4 +39,9 @@ class User {
     getMonth() {
         return this.month;
     }
+
+    rmdRequired() {
+        return this.age >= 73;
+    }
+
 }

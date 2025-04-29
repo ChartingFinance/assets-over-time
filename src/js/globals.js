@@ -1,6 +1,6 @@
 const global_default_inflationRate = 0.031;
 
-const global_default_taxYear = 2024;
+const global_default_taxYear = 2025;
 
 const global_default_filingAs = 'Single';
 

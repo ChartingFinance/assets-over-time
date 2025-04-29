@@ -148,25 +148,6 @@ class TaxTable {
 
         this.yearlySocialSecurityAccumulator = new Currency();
 
-        /*
-
-        this.yearlyMedicareAccumulator = new Currency();
-        this.yearlyFICAAccumulator = new Currency();
-        this.yearlyIncomeTaxWithholdingAccumulator = new Currency();
-        this.yearlyTaxableIncomeAccumulator = new Currency();
-        this.yearlyRMDsAccumulator = new Currency();
-        this.yearlyWithholdingsAccumulator = new Currency();
-        this.yearlyShortTermCapitalGainsAccumulator = new Currency();
-        this.yearlyLongTermCapitalGainsAccumulator = new Currency();    
-        this.yearlyMortgageDeductionAccumulator = new Currency();
-        this.yearlyPropertyTaxDeductionAccumulator = new Currency();
-
-        this.yearlyFICATaxes = [];
-        this.yearlyWithholding = [];
-        this.yearlyFederalTaxes = [];
-        this.yearlyPayments = [];
-        */
-
     }
 
     monthlyChron() {
@@ -183,18 +164,6 @@ class TaxTable {
 
         this.yearlySocialSecurityAccumulator.zero();
 
-        /*
-        
-        this.yearlyMedicareAccumulator.zero();
-        this.yearlyIncomeTaxWithholdingAccumulator.zero();
-        this.yearlyTaxableIncomeAccumulator.zero();
-        this.yearlyRMDsAccumulator.zero();
-        this.yearlyShortTermCapitalGainsAccumulator.zero();
-        this.yearlyLongTermCapitalGainsAccumulator.zero();    
-        this.yearlyMortgageDeductionAccumulator.zero();
-        this.yearlyPropertyTaxDeductionAccumulator.zero();
-        */
-
         // apply inflation to the tax rows
         this.inflateTaxes();
 
@@ -203,17 +172,6 @@ class TaxTable {
     finalizeChron() {
 
     }
-
-    /*
-    funcYearlyWithholding() {
-
-        let yearlyWithholding = new Currency(this.yearlySocialSecurityAccumulator.amount);
-        yearlyWithholding.add(this.yearlyMedicareAccumulator);
-        yearlyWithholding.add(this.yearlyIncomeTaxWithholdingAccumulator.amount);
-        return yearlyWithholding;
-        
-    }
-    */
 
     inflateTaxRows(taxTables) {
         for (let taxTable of taxTables) {
@@ -293,6 +251,7 @@ class TaxTable {
 
     }
 
+    /*
     estimateMonthlyIncomeTax(monthly, income) {
 
         let yearly = monthly.copy();
@@ -305,6 +264,7 @@ class TaxTable {
         return monthlyTax;
 
     }
+    */
     
     calculateYearlyIncomeTax(income, deduction) {
 
@@ -400,10 +360,10 @@ class TaxTable {
                 return new Currency(0);
             }
 
-            let index = modelAsset.monthlyValue.length - currentDateInt.month;
+            let index = modelAsset.monthlyValues.length - currentDateInt.month;
             if (index < 0)
                 index = 0;
-            let value = modelAsset.monthlyValue[index];
+            let value = modelAsset.monthlyValues[index];
             let rmd = value / divisor;
 
             rmd /= 12.0;
@@ -436,6 +396,12 @@ class TaxTable {
             let c = new Currency(this.activeStandardDeduction);;            
             taxableIncome.subtract(c);
         }
+
+        if (yearly.four01KContribution.amount > 0)
+            taxableIncome.subtract(yearly.four01KContribution);
+        else
+            taxableIncome.subtract(yearly.iraContribution);
+
 
         if (taxableIncome.amount < 0) {
             console.log('TaxTable.applyYearlyDeductions: taxable income < 0, setting to 0');
@@ -481,18 +447,7 @@ class TaxTable {
     calculateYearlyTaxableIncome(yearly) {
 
         let taxableIncome = new Currency(yearly.selfIncome.amount + yearly.employedIncome.amount);
-
-        let ordinaryIncome = new Currency();
-        // this is ordinary income
-        ordinaryIncome.add(yearly.four01KDistribution);
-        ordinaryIncome.add(yearly.iraDistribution);
-        ordinaryIncome.add(yearly.shortTermCapitalGains);   
-        ordinaryIncome.add(yearly.interestIncome);
-
-        if (ordinaryIncome.amount != yearly.ordinaryIncome().amount)
-            console.log('Taxes.calculateYearlyTaxableIncome: ordinaryIncome mismatch');
-
-        taxableIncome.add(ordinaryIncome);
+        taxableIncome.add(yearly.ordinaryIncome());
         return this.applyYearlyDeductions(yearly, taxableIncome);
 
     }

@@ -120,6 +120,21 @@ class FinancialPackage {
 
     }
 
+    limitDeductions(activeUser) {
+
+        let maxIRADeduction = activeTaxTable.iraContributionLimit(activeUser);
+        if (this.iraContribution.amount > maxIRADeduction.amount)
+            this.iraContribution.amount = maxIRADeduction.amount;
+        
+        let max401KDeduction = activeTaxTable.four01KContributionLimit(activeUser);
+        if (this.four01KContribution.amount > max401KDeduction)
+            this.four01KContribution.amount = max401KDeduction.amount;
+
+        if (this.propertyTaxes.amount > global_propertyTaxDeductionMax)
+            this.propertyTaxes.amount = global_propertyTaxDeductionMax;
+
+    }
+
     totalIncome() {
 
         let income = this.wageIncome().copy();
@@ -238,7 +253,7 @@ class FinancialPackage {
         console.log('  longTermCapitalGains:    ' + this.longTermCapitalGains.toString());        
         console.log('  nonTaxableIncome:        ' + this.nontaxableIncome().toString());
         console.log('    qualifiedDividends       ' + this.qualifiedDividends.toString());
-        console.log('    rothDistribution:         ' + this.iraContribution.toString());
+        console.log('    rothDistribution:         ' + this.rothDistribution.toString());
         console.log('deductions:              ' + this.deductions().toString());
         console.log('  iraContribution:         ' + this.iraContribution.toString());
         console.log('  401KContribution:        ' + this.four01KContribution.toString());
@@ -250,6 +265,7 @@ class FinancialPackage {
         console.log('  longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString());
         console.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
         console.log('  estimatedTaxes:          ' + this.estimatedTaxes.toString());
+        console.log('rothContribution:        ' + this.rothContribution.toString());
         console.log('assetAppreciation:       ' + this.assetAppreciation.toString());
         console.log('mortgagePrincipal:       ' + this.mortgagePrincipal.toString());        
         console.log('afterTaxIncome:          ' + this.afterTaxIncome().toString());
@@ -274,7 +290,7 @@ class FinancialPackage {
         html += '  <li>longTermCapitalGains:    ' + this.longTermCapitalGains.toString() + '</li>';        
         html += '  <li>nonTaxableIncome:        ' + this.nontaxableIncome().toString() + '<ul>';
         html += '    <li>qualifiedDividends       ' + this.qualifiedDividends.toString() + '</li>';
-        html += '    <li>rothDistribution:         ' + this.iraContribution.toString() + '</li></ul></ul>';
+        html += '    <li>rothDistribution:         ' + this.rothDistribution.toString() + '</li></ul></ul>';
         html += '<li>deductions:              ' + this.deductions().toString() + '<ul>';
         html += '  <li>iraContribution:         ' + this.iraContribution.toString() + '</li>';
         html += '  <li>401KContribution:        ' + this.four01KContribution.toString() + '</li>';
@@ -286,6 +302,7 @@ class FinancialPackage {
         html += '  <li>longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString() + '</li>';
         html += '  <li>propertyTaxes:           ' + this.propertyTaxes.toString() + '</li>';
         html += '  <li>estimatedTaxes:          ' + this.estimatedTaxes.toString() + '</li></ul>';
+        html += '<li>rothContribution:        ' + this.rothContribution.toString() + '</li>';
         html += '<li>assetAppreciation:       ' + this.assetAppreciation.toString() + '</li>';
         html += '<li>mortgagePrincipal:       ' + this.mortgagePrincipal.toString() + '</li>';        
         html += '<li>afterTaxIncome:          ' + this.afterTaxIncome().toString() + '</li>';
@@ -390,6 +407,8 @@ class Portfolio {
         this.monthlyIncomeTaxes = [];
         this.monthlyCapitalGainsTaxes = [];
 
+        this.displayCapitalGainsTaxes = [];
+
         for (let modelAsset of this.modelAssets) {
             modelAsset.initializeChron();
         }
@@ -415,6 +434,7 @@ class Portfolio {
 
         this.reportYearly(currentDateInt);
         this.yearly.zero();
+        this.activeUser.addYears(1);
 
     }
 
@@ -521,12 +541,12 @@ class Portfolio {
      
             }
         }
-
-        // 401K or ira deductions
+        
+        // 401K or ira required minimum distribution
         for (let modelAsset of this.modelAssets) {
             if (modelAsset.inMonth(currentDateInt)) {
 
-                this.applyFirstDayOfMonthDeductions(modelAsset);                   
+                this.calculateFirstDayOfMonthRMDs(currentDateInt, modelAsset);
         
             }
         }
@@ -592,15 +612,30 @@ class Portfolio {
 
     }
 
+    /*
     applyFirstDayOfMonthDeductions(modelAsset) {
 
         if (modelAsset.four01KContributionCurrency.amount > 0) {
             console.log('Portfolio.applyFirstDayOfMonthTaxes ' + modelAsset.displayName + ' - Deductible 401K contribution: ' + modelAsset.four01KContributionCurrency.toString());
-            this.monthly.four01KContribution.add(modelAsset.four01KContribution);            
+            this.monthly.four01KContribution.add(modelAsset.four01KContributionCurrency);            
         }
         else if (modelAsset.iraContributionCurrency.amount > 0) {
             console.log('Portfolio.applyFirstDayOfMonthTaxes ' + modelAsset.displayName + ' - Deductible IRA contribution: ' + modelAsset.iraContributionCurrency.toString());
-            this.monthly.iraContribution.add(modelAsset.iraContribution);
+            this.monthly.iraContribution.add(modelAsset.iraContributionCurrency);
+        }
+
+    }
+    */
+
+    calculateFirstDayOfMonthRMDs(currentDateInt, modelAsset) {
+
+        if (!isTaxDeferred(modelAsset.instrument))
+            return;
+    
+        if (this.activeUser.rmdRequired()) {
+            // if the user is 73 or older, then they must take RMDs
+            let rmd = activeTaxTable.calculateMonthlyRMD(currentDateInt, this.activeUser, modelAsset);
+            modelAsset.addMonthlyRMD(rmd);
         }
 
     }
@@ -635,11 +670,12 @@ class Portfolio {
                 }
                 else if (isTaxFree(fundTransfer.toModel.instrument)) {
                     console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + fundTransfer.toModel.displayName + ' rothIRA');
+                    this.monthly.rothContribution.add(incomeAmount);
                 }
                 runningIncomeAmount.subtract(incomeAmount);
             }
             
-            let extraAmount = new Currency(modelAssetIncome.amount - runningIncomeAmount.amount);
+            let extraAmount = new Currency(modelAssetIncome.amount + runningIncomeAmount.amount);
             if (extraAmount.amount > 0) {
                 console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first taxable account');                
                 this.creditToFirstTaxableAccount(extraAmount);               
@@ -665,15 +701,24 @@ class Portfolio {
         let totalIRAContribution = new Currency(0.0);
         let totalIRAContributionLimit = activeTaxTable.iraContributionLimit(this.activeUser);
         for (let fundTransfer of modelAsset.fundTransfers) {
+            delete fundTransfer.approvedAmount;
             fundTransfer.bind(modelAsset, this.modelAssets);
-            if (isTaxDeferred(fundTransfer.toModel.instrument) && !modelAsset.is401K()) {
-                let iraContribution = new Currency(modelAsset.earningCurrency.amount * fundTransfer.percentage());            
-                if (this.yearly.iraContribution.amount + iraContribution.amount > totalIRAContributionLimit.amount) {
+            if (isTaxDeferred(fundTransfer.toModel.instrument) && isIRA(fundTransfer.toModel.instrument)) {
+                let iraContribution = fundTransfer.calculate();            
+                if (this.yearly.iraContribution.amount + this.yearly.rothContribution.amount + iraContribution.amount > totalIRAContributionLimit.amount) {
                     iraContribution = new Currency(totalIRAContributionLimit.amount - this.yearly.iraContribution.amount);
                 }
-                fundTransfer.approvedTransfer = iraContribution;
+                fundTransfer.approvedAmount = iraContribution;
                 totalIRAContribution.add(iraContribution);
-            }        
+            }
+            else if (isRothIRA(fundTransfer.toModel.instrument)) {
+                let rothContribution = fundTransfer.calculate();            
+                if (this.yearly.iraContribution.amount + this.yearly.rothContribution.amount + rothContribution.amount > totalIRAContributionLimit.amount) {
+                    rothContribution = new Currency(totalIRAContributionLimit.amount - this.yearly.rothContribution.amount);
+                }
+                fundTransfer.approvedAmount = rothContribution;
+                totalIRAContribution.add(rothContribution);
+            }
         }
 
         if (totalIRAContribution.amount == 0) {
@@ -694,13 +739,14 @@ class Portfolio {
         let totalFour01KContribution = new Currency(0.0);
         let totalFour01KContributionLimit = activeTaxTable.four01KContributionLimit(this.activeUser);
         for (let fundTransfer of modelAsset.fundTransfers) {
+            delete fundTransfer.approvedAmount;
             fundTransfer.bind(modelAsset, this.modelAssets);
-            if (isTaxDeferred(fundTransfer.toModel.instrument) && modelAsset.is401K()) {
-                let four01KContribution = new Currency(modelAsset.earningCurrency.amount * fundTransfer.percentage());            
+            if (isTaxDeferred(fundTransfer.toModel.instrument) && is401K(fundTransfer.toModel.instrument)) {
+                let four01KContribution = fundTransfer.calculate();            
                 if (this.yearly.four01KContribution.amount + four01KContribution.amount > totalFour01KContributionLimit.amount) {
                     four01KContribution = new Currency(contributionLimit.amount - this.yearly.iraContribution.amount);
                 }
-                fundTransfer.approvedTransfer = four01KContribution;
+                fundTransfer.approvedAmount = four01KContribution;
                 totalFour01KContribution.add(four01KContribution);
             }        
         }
@@ -723,10 +769,12 @@ class Portfolio {
             }
         }
 
+        // ensure RMDs are handled
         for (let modelAsset of this.modelAssets) {
             if (modelAsset.inMonth(currentDateInt)) {
 
-                this.applyLastDayOfMonthTaxes(modelAsset);
+                this.ensureRMDDistributions(modelAsset);
+
             }
         }
 
@@ -760,52 +808,6 @@ class Portfolio {
             let result = modelAsset.applyMonthly();
             this.monthly.addResult(result);
         }
-
-    }
-
-    applyLastDayOfMonthTaxes(modelAsset) {
-
-
-   
-    }
-
-    calculateLastDayOfMonthExpenseIRADistribution(modelAsset) {
-
-        if (!isMonthlyExpense(modelAsset.instrument)) {
-            console.log('Portfolio.calculateLastDayOfMonthExpenseIRADistribution - not a monthly expense model asset');
-            return new Currency();
-        }        
-        
-        let totalIRADistribution = new Currency(0.0);
-        for (let fundTransfer of modelAsset.fundTransfers) {
-            fundTransfer.bind(modelAsset, this.modelAssets);
-            if (isTaxDeferred(fundTransfer.toModel.instrument)) {
-                let iraDistribution = new Currency(modelAsset.earningCurrency.amount * fundTransfer.percentage());                            
-                totalIRADistribution.add(iraDistribution);
-            }        
-        }
-
-        return totalIRADistribution
-
-    }
-
-    calculateLastDayOfMonthExpense401KDistribution(modelAsset) {
-
-        if (!isMonthlyExpense(modelAsset.instrument)) {
-            console.log('Portfolio.calculateLastDayOfMonthExpense401KDistribution - not a monthly expense model asset');
-            return new Currency();
-        }        
-        
-        let totalIRADistribution = new Currency(0.0);
-        for (let fundTransfer of modelAsset.fundTransfers) {
-            fundTransfer.bind(modelAsset, this.modelAssets);
-            if (isTaxDeferred(fundTransfer.toModel.instrument)) {
-                let iraDistribution = new Currency(modelAsset.earningCurrency.amount * fundTransfer.percentage());                            
-                totalIRADistribution.add(iraDistribution);
-            }        
-        }
-
-        return totalIRADistribution
 
     }
 
@@ -864,6 +866,41 @@ class Portfolio {
             let assetChange = this.debitFromFirstTaxableAccount(modelAssetExpense.flipSign());
             this.applyCapitalGainsToFirstTaxableAccount(assetChange);
                         
+        }
+
+    }
+
+    ensureRMDDistributions(modelAsset) {
+
+        if (!isTaxDeferred(modelAsset.instrument))
+            return;
+
+        let rmd = modelAsset.rmdCurrency.copy();
+        let distributions = new Currency();
+
+        if (this.activeUser.rmdRequired()) {
+            
+            if (isIRA(modelAsset.instrument))
+                distributions = modelAsset.iraDistributionCurrency.copy();
+            else if (is401K(modelAsset.instrument))
+                distributions = modelAsset.four01KDistributionCurrency.copy();            
+            else
+                console.log('Portfolio.ensureRMDDistributions: should not be here!');
+
+        }
+
+        if (rmd.amount > distributions.amount) {
+
+            let remains = new Currency(rmd.amount - distributions.amount);
+
+            if (isIRA(modelAsset.instrument))
+                modelAsset.addIRADistribution(remains);
+            else
+                modelAsset.addFour01KDistribution(remains);
+
+            modelAsset.debit(remains);
+            this.creditToFirstTaxableAccount(remains);
+
         }
 
     }
@@ -967,6 +1004,7 @@ class Portfolio {
     applyMonthlyTaxes() {
 
         let yearly = this.monthly.copy().multiply(12.0);
+        yearly.limitDeductions(this.activeUser);
         let yearlyIncome = activeTaxTable.calculateYearlyTaxableIncome(yearly);
 
         let incomeTax = activeTaxTable.calculateYearlyIncomeTax(yearlyIncome);
@@ -988,82 +1026,6 @@ class Portfolio {
         this.creditToFirstTaxableAccount(longTermCapitalGainsTax);                                  
         
     }
-
-    applyLastDayOfMonthTaxDeferred(modelAsset) {
-
-        let income = new Currency();
-        let expense = new Currency();  
-
-        if (this.activeUser.age >= 73) {
-            income = activeTaxTable.calculateMonthlyRMD(modelAsset);                        
-        }
-        
-        let expenseAssets = util_findModelAssetsByFundingSource(this.modelAssets, sInstrumentNames[sInstrumentsIDs.monthlyExpense], modelAsset.displayName);
-        if (expenseAssets.length > 0) {
-            for (let expenseAsset of expenseAssets) {
-                expense.add(expenseAsset.finishCurrency);
-            }
-            this.monthly.expense.add(expense);            
-        }
-
-        expense.flipSign();
-        if (income.amount < expense.amount) {
-            // take additional from modelAsset
-            let extraWithdrawn = new Currency(expense.amount - income.amount);
-            income.add(extraWithdrawn);
-        }
-        else if (income.amount > expense.amount) {
-            // send excess to the first taxable account
-            let excessAvailable = new Currency(income.amount - expense.amount);
-            this.creditToFirstTaxableAccount(excessAvailable)
-        }
-
-        if (income.amount > 0) {
-            modelAsset.debit(income);
-            this.monthly.iraDistribution.add(income);               
-
-            let incomeTax = activeTaxTable.estimateMonthlyIncomeTax(this.monthly, income);
-
-            // TODO: inherited IRA exclusion
-            let penalty = 0.0; 
-            //if (income.amount > 0 && this.activeUser.age < 60)
-            //    penalty = 0.1; // 10%                                        
-
-            if (penalty > 0.0) {
-                console.log('Portfolio.applyFirstMonth|TaxDeferred - 10% penalty for withdrawing ' + income.toString() + ' before age of 60');
-                incomeTax.add(income.multiply(penalty)); 
-            }
-
-            this.monthly.incomeTax.subtract(incomeTax);
-            
-            let withholding = new WithholdingResult( new Currency(), new Currency(), incomeTax.flipSign());
-            modelAsset.deductWithholding(withholding);
-
-        }
-
-    }
-
-    /*
-    applyFundTransfers(modelAsset) {
-
-        if (modelAsset.fundTransfers && modelAsset.fundTransfers.length > 0) {
-            for (let fundTransfer of modelAsset.fundTransfers) {                    
-                fundTransfer.bind(modelAsset, this.modelAssets);                
-                fundTransfer.execute();                
-            }
-        }
-        else {
-            if (isMonthlyIncome(modelAsset.instrument)) {
-                // if not, then apply the income afterTax to the first taxable account
-                this.creditToFirstTaxableAccount(modelAsset.afterTaxCurrency.copy());                
-            }
-            else if (isMonthlyExpense(modelAsset.instrument)) {
-                this.creditToFirstTaxableAccount(modelAsset.earningCurrency.copy());
-            }
-        }
-
-    }
-    */
 
     applyCapitalGainsToFirstTaxableAccount(amount) {
 

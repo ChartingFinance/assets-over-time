@@ -212,10 +212,10 @@ class FundTransfer {
         let amount = null;
         let percentage = this.moveValue / 100.0;
         amount = new Currency(this.fromModel.finishCurrency.amount * percentage);
-        if (this.approvedValue) {
-            if (amount.amount > this.approvedValue.amount) {
-                console.log('FundTransfer.calculate: reducing amount ' + amount.toString() + ' to approved value: ' + this.approvedValue.toString());
-                amount = this.approvedValue.copy();
+        if (this.approvedAmount) {
+            if (amount.amount > this.approvedAmount.amount) {
+                console.log('FundTransfer.calculate: reducing amount ' + amount.toString() + ' to approved amount: ' + this.approvedAmount.toString());
+                amount = this.approvedAmount.copy();
             }
         }
 
@@ -719,6 +719,13 @@ class ModelAsset {
 
     }
 
+    addMonthlyRMD(amount) {
+
+        console.log(this.displayName + ' add RMD: ' + amount.toString());
+        this.rmdCurrency.add(amount);
+        return this.rmdCurrency.copy();
+
+    }
 
     addMonthlyEstimatedTax(amount) {
 
