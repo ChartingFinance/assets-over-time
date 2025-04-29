@@ -137,14 +137,6 @@
                                 <input class="hidable width-full" type="number" style="display: none" name="monthsRemaining" value="321" placeholder="months">
                             </div>
                         </div>
-                        <!--
-                        <div class="width-full" style="float: left; padding-top: 10px; padding-bottom: 10px;">                           
-                            <label for="fundingSource">Apply to Card</label><br />
-                            <select class="width-full" name="fundingSource">
-                                <option value="none">None</option>
-                            </select>
-                        </div>
-                        -->
                     </div><br />
                     <input type="submit" value="Create" title="Add this 'card' of financial data to the active set of financial cards to the right" />
                 </form>
@@ -314,7 +306,6 @@
                 console.log('connectAssetSelect');
                 let instrumentElement = assetElement.querySelector('[name="instrument"]')
                 let monthsElement = assetElement.querySelector('[name="monthsRemaining"]');
-                let fundingElement = assetElement.querySelector('[name="fundingSource"]');
 
                 instrumentElement.addEventListener('change', function(event) {
                     hideElementsWithScope(assetElement);

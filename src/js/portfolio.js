@@ -789,7 +789,7 @@ class Portfolio {
             }
         }
 
-        // sale of assets and proceeds transferred to fundingSource
+        // sale of assets and proceeds transferred to taxable account
         for (let modelAsset of this.modelAssets) {
             if (modelAsset.finishDateInt.year == currentDateInt.year && modelAsset.finishDateInt.month == currentDateInt.month && currentDateInt.toInt() < this.lastDateInt.toInt()) {
                 
@@ -1069,10 +1069,6 @@ class Portfolio {
                     modelAsset.applyYearly();
             }
         }
-
-    }
-
-    applyTaxDeferredFundingSource(modelAsset) {
 
     }
 

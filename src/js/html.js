@@ -67,12 +67,6 @@ const htmlAssetBody =
     </div>
 </div>`;
 
-/*
-<div class="width-full" style="float: left; padding-top: 10px">    
-    $FUNDINGSOURCEDISPLAY$
-</div>`;
-*/
-
 const htmlInvisibleDisplay = `<label class="invisible" for="invisiblePlaceholder">Invisible</label><br class="invisible" />
     <input class="invisible" type="number" style=""width: 125px" name="invisiblePlaceholder" placeholder="invisible" />`;
 
@@ -100,16 +94,6 @@ const htmlHoldAllUntilFinishDisplayUnchecked = `<label for="taxChoice">Hold All 
 
 const htmlHoldAllUntilFinishDisplayChecked = `<label for="taxChoice">Hold All Until Finish</label><br />
         <input type="radio" name="taxChoice" value="holdAllUntilFinish" checked />`;
-
-const htmlFundingSourceDisplay = `<label for="fundingSource">Apply to Card</label><br />
-    <select class="width-full" name="fundingSource">
-        $FUNDINGSOURCEOPTIONS$
-    </select>`;
-
-const htmlFundingSourceHidden = `<label class="hidable" for="fundingSource" style="display: none">Apply to Card</label><br class="hidable" style="display: none" />
-    <select class="hidable width-full" style="display: none" name="fundingSource">
-        $FUNDINGSOURCEOPTIONS$
-    </select>`;
 
 const htmlAssetExpense = '';
 
@@ -196,7 +180,7 @@ function html_handleSlot2(modelAsset, html) {
 
 function html_buildRemovableAssetElement(modelAssets, modelAsset) {
     let html = (html_buildAssetHeader(modelAsset)).slice();
-    html = html.replace('$ASSETPROPERTIES$', htmlAssetBody); // html_buildAssetBody(modelAsset.fundingSource));
+    html = html.replace('$ASSETPROPERTIES$', htmlAssetBody);
     html = html.replace('$DISPLAYNAME$', modelAsset.displayName);
     html = html.replace('$STARTDATE$', modelAsset.startDateInt.toHTML());
     html = html.replace('$STARTVALUE$', modelAsset.startCurrency.toHTML());
@@ -213,8 +197,6 @@ function html_buildRemovableAssetElement(modelAssets, modelAsset) {
         html = html.replace('$ACCUMULATEDVALUE$', modelAsset.accumulatedCurrency.toHTML());
     else
         html = html.replace('$ACCUMULATEDVALUE$', '0.0');   
-
-    html = html.replace('$FUNDINGSOURCEDISPLAY$', htmlFundingSourceDisplay);
 
     html = html_handleSlot1(modelAsset, html);
     html = html_handleSlot2(modelAsset, html); 

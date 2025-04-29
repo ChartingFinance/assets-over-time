@@ -333,15 +333,6 @@ function computeFinishDateFromMonthsRemainingChange(startDateValue, monthsRemain
     return finishDate.toISOString(true);
 }
 
-function computeMonthlyExpensesFor(modelAssets, displayName) {
-    let expenseSum = new Currency(0);
-    let expenseModelAssets = util_findModelAssetsByFundingSource(modelAssets, sInstrumentNames[sInstrumentsIDs.monthlyExpense], displayName);
-    for (let expenseModelAsset of expenseModelAssets) {
-        expenseSum.add(expenseModelAsset.finishCurrency);
-    }
-    return expenseSum;
-}
-
 function util_findModelAssetByDisplayName(modelAssets, displayName) {    
     for (const modelAsset of modelAssets) {
         if (modelAsset.displayName == displayName)
@@ -360,24 +351,6 @@ function util_removeModelAssetByDisplayName(modelAssets, displayName) {
     if (ii < modelAssets.length) {
         modelAssets.splice(ii, 1);
     }
-}
-
-function util_findModelAssetsByFundingSource(modelAssets, instrument, fundingSource) {
-    let results = [];
-    for (const modelAsset of util_findModelAssetsByInstrument(modelAssets, instrument)) {
-        if (modelAsset.fundingSource == fundingSource)
-            results.push(modelAsset);
-    }
-    return results;
-}
-
-function util_findExpenseModelAssetsTotal(modelAssets, sourceDisplayName) {
-    let total = 0.0;
-    for (const modelAsset of modelAssets) {
-        if (isMonthlyExpense(modelAsset.instrument) && modelAsset.fundingSource == sourceDisplayName)
-            total += modelAsset.finishCurrency.amount;
-    }
-    return total;
 }
 
 function util_findModelAssetsByInstrument(modelAssets, instrument) {
@@ -629,22 +602,6 @@ function util_YYYYmmToDisplay(YYYYmm) {
     const date = new Date(YYYYmm + '-02');
     let options = { year: 'numeric', month: 'long' };
     return date.toLocaleDateString('en-US', options);
-}
-
-function util_findAssetModelsToUseForTaxes(assetModels) {
-    let result = [];
-    for (const modelAsset of assetModels) {
-        if (isMonthlyExpense(modelAsset.instrument) && modelAsset.fundingSource)
-        {
-            let fundingSourceModelAsset = util_findModelAssetByDisplayName(assetModels, modelAsset.fundingSource);
-            if (fundingSourceModelAsset)
-                result.push(fundingSourceModelAsset);
-        }
-        else if (isSavingsAccount(modelAsset.instrument)) {
-            result.push(modelAsset);
-        }
-    }
-    return result;
 }
 
 function util_escapedJSONStringify(obj) {
