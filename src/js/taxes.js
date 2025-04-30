@@ -183,12 +183,11 @@ class TaxTable {
     }
 
     inflateTaxes() {
-        this.activeTaxTables.fica.ssHalfRate *= (1.0 + global_inflationRate);
-        this.activeTaxTables.fica.ssfFullRate *= (1.0 + global_inflationRate);
-        this.activeTaxTables.fica.maxSSEarnings *= (1.0 + global_inflationRate);
 
+        this.activeTaxTables.fica.maxSSEarnings *= (1.0 + global_inflationRate);
         this.inflateTaxRows(this.activeTaxTables.income.tables);
         this.inflateTaxRows(this.activeTaxTables.capitalGains.tables);
+
     }
 
     isEstimatedTaxPaymentDue(currentDateInt) {
@@ -212,6 +211,18 @@ class TaxTable {
         let result = new WithholdingResult(new Currency(), new Currency(), new Currency());
         result.socialSecurity.add(this.calculateSocialSecurityTax(isSelfEmployed, income));
         result.medicare.add(this.calculateMedicareTax(isSelfEmployed, income));
+
+        if (isSelfEmployed && result.fica().amount / income.amount > 0.16) {
+            console.log('TaxTable.calculateFICATax: ratio over 16%?');
+        }
+        else if (result.fica().amount / income.amount > 0.08) {
+            console.log('TaxTable.calculateFICATax: ratio over 8%?');
+        }
+        //else {
+        //    let ratio = result.fica().amount / income.amount;
+        //    console.log('TaxTable.calculateFICATax: ratio is ' + ratio.toString());
+        //}
+
         return result;
 
     }

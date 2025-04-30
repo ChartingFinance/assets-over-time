@@ -199,6 +199,15 @@ class FinancialPackage {
         return income.add(taxes);
     }
 
+    effectiveTaxRate() {
+
+        let income = this.totalIncome();
+        let taxes = this.totalTaxes().flipSign();
+        let ratio = taxes.amount / income.amount;
+        return ratio;        
+
+    }
+
     copy() {
 
         let aCopy = new FinancialPackage();
@@ -269,6 +278,7 @@ class FinancialPackage {
         console.log('assetAppreciation:       ' + this.assetAppreciation.toString());
         console.log('mortgagePrincipal:       ' + this.mortgagePrincipal.toString());        
         console.log('afterTaxIncome:          ' + this.afterTaxIncome().toString());
+        console.log('effectTaxRate:           ' + this.effectiveTaxRate().toFixed(2));
         console.log('expenses:                ' + this.expense.toString());      
     }
 
@@ -306,6 +316,7 @@ class FinancialPackage {
         html += '<li>assetAppreciation:       ' + this.assetAppreciation.toString() + '</li>';
         html += '<li>mortgagePrincipal:       ' + this.mortgagePrincipal.toString() + '</li>';        
         html += '<li>afterTaxIncome:          ' + this.afterTaxIncome().toString() + '</li>';
+        html += '<li>effectiveTaxRate:        ' + this.effectiveTaxRate().toFixed(2) + '</li>';
         html += '<li>expenses:                ' + this.expense.toString() + '</li>'; 
         html += "</ul>";
         html += '</div>';
@@ -602,10 +613,11 @@ class Portfolio {
         else if (isMonthlyIncome(modelAsset.instrument)) {
             if (!isSocialSecurity(modelAsset.instrument)) {                
                 let withholding = activeTaxTable.calculateFICATax(modelAsset.isSelfEmployed, modelAsset.incomeCurrency.copy());
+                activeTaxTable.addYearlySocialSecurity(withholding.socialSecurity);
+
                 withholding.flipSigns();
                 modelAsset.addMonthlyMedicare(withholding.medicare);
-                modelAsset.addMonthlySocialSecurity(withholding.socialSecurity);
-                activeTaxTable.addYearlySocialSecurity(withholding.socialSecurity);
+                modelAsset.addMonthlySocialSecurity(withholding.socialSecurity);                
                 this.monthly.addWithholdingResult(withholding);
             }
         }
