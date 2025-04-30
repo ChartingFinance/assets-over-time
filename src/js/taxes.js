@@ -315,15 +315,15 @@ class TaxTable {
         let tax = 0.0;
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
             let adjusted = taxableIncome.copy().add(capitalGains);            
+            /*
             if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount) {
                 let taxableAmount = (taxRow.toAmount - taxRow.fromAmount) - taxableIncome.amount;
                 if (taxableAmount > 0)
                     tax += taxableAmount * taxRow.rate;
             }
-            else if ((adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount) || (taxRow.toAmount == -1)) {
-                let taxableAmount = (adjusted.amount - taxRow.fromAmount) - taxableIncome.amount;
-                if (taxableAmount > 0)
-                    tax += taxableAmount * taxRow.rate;
+            */
+            if ((adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount) || (taxRow.toAmount == -1)) {
+                tax += capitalGains.amount * taxRow.rate;
                 break;               
             }
         }

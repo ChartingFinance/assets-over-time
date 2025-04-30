@@ -33,7 +33,6 @@ class FinancialPackage {
         this.employedIncome.add(financialPackage.employedIncome);
         this.selfIncome.add(financialPackage.selfIncome);
         this.socialSecurity.add(financialPackage.socialSecurity);
-        this.iraDistribution.add(financialPackage.iraDistribution);
         this.assetAppreciation.add(financialPackage.assetAppreciation);
         this.expense.add(financialPackage.expense);
         this.fica.add(financialPackage.fica);
@@ -64,7 +63,6 @@ class FinancialPackage {
         this.employedIncome.subtract(financialPackage.employedIncome);
         this.selfIncome.subtract(financialPackage.selfIncome);
         this.socialSecurity.subtract(financialPackage.socialSecurity);
-        this.iraDistribution.subtract(financialPackage.iraDistribution);
         this.assetAppreciation.subtract(financialPackage.assetAppreciation);
         this.expense.subtract(financialPackage.expense);
         this.fica.subtract(financialPackage.fica);
@@ -172,13 +170,29 @@ class FinancialPackage {
 
     }
 
+    deductiblePropertyTaxes() {
+
+        let ptDeduction = this.propertyTaxes.copy().flipSign();
+        if (ptDeduction.amount > global_propertyTaxDeductionMax)
+            ptDeduction.amount = global_propertyTaxDeductionMax;
+        return ptDeduction.flipSign();
+    
+    }
+
+    nonDeductiblePropertyTaxes() {
+
+        return this.propertyTaxes.copy().subtract(this.deductiblePropertyTaxes());
+
+    }
+
     deductions() {
 
         let d = this.iraContribution.copy().flipSign();
         d.subtract(this.four01KContribution);
         d.add(this.mortgageInterest);
-        d.add(this.propertyTaxes);
+        d.add(this.deductiblePropertyTaxes());
         return d;
+
     }
 
     totalTaxes() {
@@ -186,7 +200,7 @@ class FinancialPackage {
         let taxes = this.incomeTax.copy();
         taxes.add(this.fica);
         taxes.add(this.longTermCapitalGainsTax);
-        taxes.add(this.propertyTaxes);
+        taxes.add(this.nonDeductiblePropertyTaxes());
         taxes.add(this.estimatedTaxes);
         return taxes;
 
@@ -267,12 +281,12 @@ class FinancialPackage {
         console.log('  iraContribution:         ' + this.iraContribution.toString());
         console.log('  401KContribution:        ' + this.four01KContribution.toString());
         console.log('  mortgageInterest:        ' + this.mortgageInterest.toString());
-        console.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
+        console.log('  propertyTaxes:           ' + this.deductiblePropertyTaxes().toString());
         console.log('taxes:                   ' + this.totalTaxes().toString());
         console.log('  fica:                    ' + this.fica.toString());
         console.log('  incomeTax:               ' + this.incomeTax.toString());
         console.log('  longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString());
-        console.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
+        console.log('  propertyTaxes:           ' + this.nonDeductiblePropertyTaxes().toString());
         console.log('  estimatedTaxes:          ' + this.estimatedTaxes.toString());
         console.log('rothContribution:        ' + this.rothContribution.toString());
         console.log('assetAppreciation:       ' + this.assetAppreciation.toString());
@@ -305,12 +319,12 @@ class FinancialPackage {
         html += '  <li>iraContribution:         ' + this.iraContribution.toString() + '</li>';
         html += '  <li>401KContribution:        ' + this.four01KContribution.toString() + '</li>';
         html += '  <li>mortgageInterest:        ' + this.mortgageInterest.toString() + '</li>';
-        html += '  <li>propertyTaxes:           ' + this.propertyTaxes.toString() + '</li></ul>';
+        html += '  <li>propertyTaxes:           ' + this.deductiblePropertyTaxes().toString() + '</li></ul>';
         html += '<li>taxes:                   ' + this.totalTaxes().toString() + '<ul>';
         html += '  <li>fica:                    ' + this.fica.toString() + '</li>';
         html += '  <li>incomeTax:               ' + this.incomeTax.toString() + '</li>';
         html += '  <li>longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString() + '</li>';
-        html += '  <li>propertyTaxes:           ' + this.propertyTaxes.toString() + '</li>';
+        html += '  <li>propertyTaxes:           ' + this.nonDeductiblePropertyTaxes().toString() + '</li>';
         html += '  <li>estimatedTaxes:          ' + this.estimatedTaxes.toString() + '</li></ul>';
         html += '<li>rothContribution:        ' + this.rothContribution.toString() + '</li>';
         html += '<li>assetAppreciation:       ' + this.assetAppreciation.toString() + '</li>';
@@ -930,8 +944,6 @@ class Portfolio {
         console.log('close capital asset: ' + modelAsset.displayName + ' capital gains of ' + capitalGains.toString());
 
         // we need to do the calculations for this transaction since the monthly taxation routine multiplies by 12
-        let shortTermGains = new Currency();
-        let longTermGains = new Currency();
         let amountToTax = new Currency();
 
         if (!isTaxFree(modelAsset.instrument)) {
@@ -947,15 +959,17 @@ class Portfolio {
                     }
                 }
 
-                longTermGains.add(capitalGains);
+                this.monthly.longTermCapitalGains.add(capitalGains);
+
+                // this isn't technically correct, but gives us a ballpark for estimating
                 let income = new Currency(activeTaxTable.activeCapitalGainsTable.taxRows[0].toAmount);
                 amountToTax.add(activeTaxTable.calculateYearlyLongTermCapitalGainsTax(income, capitalGains));
                 this.monthly.longTermCapitalGainsTax.add(amountToTax.flipSign());    
 
             } else {
 
-                shortTermGains.add(capitalGains);
-                amountToTax.add(activeTaxTable.calculateYearlyIncomeTax(shortTermGains));
+                this.monthly.shortTermCapitalGains.add(capitalGains);
+                amountToTax.add(activeTaxTable.calculateYearlyIncomeTax(capitalGains));
                 this.monthly.incomeTax.add(amountToTax.flipSign());
 
             }
