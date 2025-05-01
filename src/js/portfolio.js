@@ -832,12 +832,12 @@ class Portfolio {
             if (extraAmount.amount > 0) {
                 console.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${extraAmount.toString()} from first taxable account`);
                 const assetChange = this.debitFromFirstTaxableAccount(extraAmount);
-                this.applyCapitalGainsToFirstFundableAccount(assetChange);
+                this.applyCapitalGainsToFirstExpensableAccount(assetChange);
             }
         } else {
             console.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${modelAssetExpense.toString()} from first taxable account`);
             const assetChange = this.debitFromFirstTaxableAccount(modelAssetExpense.flipSign());
-            this.applyCapitalGainsToFirstFundableAccount(assetChange);
+            this.applyCapitalGainsToFirstExpensableAccount(assetChange);
         }
     }
     
@@ -895,7 +895,7 @@ class Portfolio {
                 modelAsset.addFour01KDistribution(remains);
 
             modelAsset.debit(remains);
-            this.creditToFirstFundableAccount(remains);
+            this.creditToFirstExpensableAccount(remains);
 
         }
 
@@ -966,9 +966,9 @@ class Portfolio {
             for (let fundTransfer of modelAsset.fundTransfers) {
                 fundTransfer.bind(modelAsset, this.modelAssets);
 
-                // can only send money to a fundable account
-                if (!isFundableAsset(fundTransfer.toModel.instrument)) {
-                    console.log('Portfolio.applyAssetCloseFundTransfers: cannot transfer to ' + fundTransfer.toModel.displayName + ' because not a fundable account');
+                // can only send money to an expensable account
+                if (!isExpensableAsset(fundTransfer.toModel.instrument)) {
+                    console.log('Portfolio.applyAssetCloseFundTransfers: cannot transfer to ' + fundTransfer.toModel.displayName + ' because not an expensable account');
                     continue;
                 }
 
@@ -981,14 +981,14 @@ class Portfolio {
             
             let extraAmount = new Currency(modelAssetValue.amount - runningTransferAmount.amount);
             if (extraAmount.amount > 0) {
-                console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first taxable account');                
+                console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first expensable account');                
                 this.creditToFirstExpensableAccount(extraAmount);
             }
 
         }
         else {
             
-            console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + modelAssetValue.toString() + ' to first taxable account');
+            console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + modelAssetValue.toString() + ' to first expensable account');
             this.creditToFirstExpensableAccount(modelAssetValue);            
                         
         }
@@ -1021,7 +1021,7 @@ class Portfolio {
         
     }
 
-    applyCapitalGainsToFirstFundableAccount(amount) {
+    applyCapitalGainsToFirstExpensableAccount(amount) {
 
         // todo: mix short term and long term capital gains
         for (let modelAsset of this.modelAssets) {
@@ -1047,7 +1047,7 @@ class Portfolio {
     debitFromFirstExpensableAccount(amount) {
 
         for (let modelAsset of this.modelAssets) {
-            if (isFundableAsset(modelAsset.instrument)) {
+            if (isExpensableAsset(modelAsset.instrument)) {
                 return modelAsset.debit(amount);
             }
         }
