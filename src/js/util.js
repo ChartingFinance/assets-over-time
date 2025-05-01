@@ -473,6 +473,17 @@ function isFundableAsset(value) {
         return false;
 }
 
+function isExpensableAsset(value) {
+    if (value == sInstrumentNames[sInstrumentsIDs.cash])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.bank])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.taxableEquity])
+        return true;
+    else
+        return false;
+}
+
 function isAsset(value) {
     if (isFundableAsset(value))
         return true;

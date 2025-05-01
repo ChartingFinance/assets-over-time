@@ -200,7 +200,7 @@ class FinancialPackage {
         let taxes = this.incomeTax.copy();
         taxes.add(this.fica);
         taxes.add(this.longTermCapitalGainsTax);
-        taxes.add(this.nonDeductiblePropertyTaxes());
+        taxes.add(this.propertyTaxes);
         taxes.add(this.estimatedTaxes);
         return taxes;
 
@@ -286,7 +286,7 @@ class FinancialPackage {
         console.log('  fica:                    ' + this.fica.toString());
         console.log('  incomeTax:               ' + this.incomeTax.toString());
         console.log('  longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString());
-        console.log('  propertyTaxes:           ' + this.nonDeductiblePropertyTaxes().toString());
+        console.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
         console.log('  estimatedTaxes:          ' + this.estimatedTaxes.toString());
         console.log('rothContribution:        ' + this.rothContribution.toString());
         console.log('assetAppreciation:       ' + this.assetAppreciation.toString());
@@ -324,7 +324,7 @@ class FinancialPackage {
         html += '  <li>fica:                    ' + this.fica.toString() + '</li>';
         html += '  <li>incomeTax:               ' + this.incomeTax.toString() + '</li>';
         html += '  <li>longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString() + '</li>';
-        html += '  <li>propertyTaxes:           ' + this.nonDeductiblePropertyTaxes().toString() + '</li>';
+        html += '  <li>propertyTaxes:           ' + this.propertyTaxes.toString() + '</li>';
         html += '  <li>estimatedTaxes:          ' + this.estimatedTaxes.toString() + '</li></ul>';
         html += '<li>rothContribution:        ' + this.rothContribution.toString() + '</li>';
         html += '<li>assetAppreciation:       ' + this.assetAppreciation.toString() + '</li>';
@@ -638,21 +638,6 @@ class Portfolio {
 
     }
 
-    /*
-    applyFirstDayOfMonthDeductions(modelAsset) {
-
-        if (modelAsset.four01KContributionCurrency.amount > 0) {
-            console.log('Portfolio.applyFirstDayOfMonthTaxes ' + modelAsset.displayName + ' - Deductible 401K contribution: ' + modelAsset.four01KContributionCurrency.toString());
-            this.monthly.four01KContribution.add(modelAsset.four01KContributionCurrency);            
-        }
-        else if (modelAsset.iraContributionCurrency.amount > 0) {
-            console.log('Portfolio.applyFirstDayOfMonthTaxes ' + modelAsset.displayName + ' - Deductible IRA contribution: ' + modelAsset.iraContributionCurrency.toString());
-            this.monthly.iraContribution.add(modelAsset.iraContributionCurrency);
-        }
-
-    }
-    */
-
     calculateFirstDayOfMonthRMDs(currentDateInt, modelAsset) {
 
         if (!isTaxDeferred(modelAsset.instrument))
@@ -667,54 +652,42 @@ class Portfolio {
     }
 
     applyFirstDayOfMonthIncomeFundTransfers(modelAsset) {
-
         if (!isMonthlyIncome(modelAsset.instrument)) {
-            //console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' is not monthlyIncome');
-            return;                     
+            return;
         }
-
-        let modelAssetIncome = modelAsset.finishCurrency.copy();
-
-        if (modelAsset.fundTransfers && modelAsset.fundTransfers.length > 0) {
-        
-            let runningIncomeAmount = new Currency(0.0);        
-            for (let fundTransfer of modelAsset.fundTransfers) {
+    
+        const modelAssetIncome = modelAsset.finishCurrency.copy();
+        let runningIncomeAmount = new Currency(0.0);
+    
+        if (modelAsset.fundTransfers?.length > 0) {
+            for (const fundTransfer of modelAsset.fundTransfers) {
                 fundTransfer.bind(modelAsset, this.modelAssets);
-                let incomeAmount = fundTransfer.calculate();
-                fundTransfer.execute(); // goes to fundTransfer.toModel.creditCurrency
-                if (isTaxDeferred(fundTransfer.toModel.instrument)) {
-                    if (isIRA(fundTransfer.toModel.instrument)) {
-                        console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + fundTransfer.toModel.displayName + ' generated iraContribution of ' + incomeAmount.toString());                                                                
-                        this.monthly.iraContribution.add(incomeAmount);
-                    }
-                    else if (is401K(fundTransfer.toModel.instrument)) {
-                        console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + fundTransfer.toModel.displayName + ' generated 401KContribution of ' + incomeAmount.toString());                                                                
-                        this.monthly.four01KContribution.add(incomeAmount);
-                    }
-                    else
-                        console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding issue');
-                }
-                else if (isTaxFree(fundTransfer.toModel.instrument)) {
-                    console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + fundTransfer.toModel.displayName + ' rothIRA');
-                    this.monthly.rothContribution.add(incomeAmount);
-                }
+                const incomeAmount = fundTransfer.calculate();
+                fundTransfer.execute();
+    
+                this.handleFundTransferContribution(fundTransfer, incomeAmount);
                 runningIncomeAmount.subtract(incomeAmount);
             }
-            
-            let extraAmount = new Currency(modelAssetIncome.amount + runningIncomeAmount.amount);
-            if (extraAmount.amount > 0) {
-                console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first taxable account');                
-                this.creditToFirstTaxableAccount(extraAmount);               
+        }
+    
+        const extraAmount = new Currency(modelAssetIncome.amount + runningIncomeAmount.amount);
+        if (extraAmount.amount > 0) {
+            this.creditToFirstExpensableAccount(extraAmount);
+        }
+    }
+    
+    handleFundTransferContribution(fundTransfer, incomeAmount) {
+        const targetInstrument = fundTransfer.toModel.instrument;
+    
+        if (isTaxDeferred(targetInstrument)) {
+            if (isIRA(targetInstrument)) {
+                this.monthly.iraContribution.add(incomeAmount);
+            } else if (is401K(targetInstrument)) {
+                this.monthly.four01KContribution.add(incomeAmount);
             }
-
+        } else if (isTaxFree(targetInstrument)) {
+            this.monthly.rothContribution.add(incomeAmount);
         }
-        else {
-            
-            console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' funding ' + modelAssetIncome.toString() + ' to first taxable account');
-            this.creditToFirstTaxableAccount(modelAssetIncome);            
-                        
-        }
-
     }
 
     calculateFirstDayOfMonthIncomeIRAContribution(modelAsset) {
@@ -815,6 +788,8 @@ class Portfolio {
             }
         }
 
+        this.applyMonthlyTaxes();
+
         // sale of assets and proceeds transferred to taxable account
         for (let modelAsset of this.modelAssets) {
             if (modelAsset.finishDateInt.year == currentDateInt.year && modelAsset.finishDateInt.month == currentDateInt.month && currentDateInt.toInt() < this.lastDateInt.toInt()) {
@@ -823,8 +798,6 @@ class Portfolio {
             
             }
         }
-
-        this.applyMonthlyTaxes();
 
     }
 
@@ -838,62 +811,59 @@ class Portfolio {
     }
 
     applyLastDayOfMonthExpenseFundTransfers(modelAsset) {
-
         if (!isMonthlyExpense(modelAsset.instrument)) {
-            //console.log('Portfolio.applyLastDayOfMonthExpenseFundTransfers: ' + modelAsset.displayName + ' is not a monthlyExpense');
-            return;                   
+            return;
         }
-
-        let modelAssetExpense = modelAsset.finishCurrency.copy();
-
-        if (modelAsset.fundTransfers && modelAsset.fundTransfers.length > 0) {
-        
-            let runningExpenseAmount = new Currency(0.0);        
-            for (let fundTransfer of modelAsset.fundTransfers) {
+    
+        const modelAssetExpense = modelAsset.finishCurrency.copy();
+        let runningExpenseAmount = new Currency(0.0);
+    
+        if (modelAsset.fundTransfers?.length > 0) {
+            for (const fundTransfer of modelAsset.fundTransfers) {
                 fundTransfer.bind(modelAsset, this.modelAssets);
-                let expenseAmount = fundTransfer.calculate();
-                let fundTransferResult = fundTransfer.execute();
-                if (isTaxableAccount(fundTransfer.toModel.instrument)) {                
-                    if (fundTransferResult.toAssetChange.amount != 0) {
-                        console.log('Portfolio.applyFundTransfersForExpense: ' + modelAsset.displayName + ' expensing ' + fundTransfer.toModel.displayName + ' generated longTermCapitalGains of ' + fundTransferResult.toAssetChange.toString());                    
-                        this.monthly.longTermCapitalGains.add(fundTransferResult.toAssetChange);
-                    }
-                }
-                else if (isTaxDeferred(fundTransfer.toModel.instrument)) {
-                    if (fundTransferResult.toAssetChange.amount != 0) {
-                        console.log('Portfolio.applyFundTransfersForExpense: ' + modelAsset.displayName + ' expensing ' + fundTransfer.toModel.displayName + ' generated ordinaryIncome of ' + fundTransferResult.toAssetChange.toString());  
-                        if (isIRA(fundTransfer.toModel.instrument))
-                            this.monthly.iraDistribution.add(fundTransferResult.toAssetChange);
-                        else if (is401K(fundTransfer.toModel.instrument))
-                            this.monthly.four01KDistribution.add(fundTransferResult.toAssetChange);
-                        else
-                            console.log('Portfolio.applyLastDayOfMonthExpenseFundTransfers: unhandled isTaxDeferred ' + fundTransfer.toDisplayName);                            
-                    }
-                }
-                else if (isTaxFree(fundTransfer.toModel.instrument)) {
-                    console.log('Portfolio.applyFundTransfersForExpense: ' + modelAsset.displayName + ' expensing ' + fundTransfer.toModel.displayName + ' generated no tax impact');
-                    this.monthly.rothDistribution.add(fundTransferResult.toAssetChange);
-                }
+                const expenseAmount = fundTransfer.calculate();
+                const fundTransferResult = fundTransfer.execute();
+    
+                this.handleFundTransferExpense(fundTransfer, fundTransferResult, modelAsset.displayName);
                 runningExpenseAmount.add(expenseAmount);
             }
-            
-            let extraAmount = new Currency(runningExpenseAmount.amount - modelAssetExpense.amount);
+    
+            const extraAmount = new Currency(runningExpenseAmount.amount - modelAssetExpense.amount);
             if (extraAmount.amount > 0) {
-                console.log('Portfolio.applyFundTransfersForExpense: ' + modelAsset.displayName + ' expensing ' + extraAmount.toString() + ' from first taxable account');                
-                let assetChange = this.debitFromFirstTaxableAccount(extraAmount);
-                this.applyCapitalGainsToFirstTaxableAccount(assetChange);
-                
+                console.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${extraAmount.toString()} from first taxable account`);
+                const assetChange = this.debitFromFirstTaxableAccount(extraAmount);
+                this.applyCapitalGainsToFirstFundableAccount(assetChange);
             }
-
+        } else {
+            console.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${modelAssetExpense.toString()} from first taxable account`);
+            const assetChange = this.debitFromFirstTaxableAccount(modelAssetExpense.flipSign());
+            this.applyCapitalGainsToFirstFundableAccount(assetChange);
         }
-        else {
-
-            console.log('Portfolio.applyFundTransfersForExpense: ' + modelAsset.displayName + ' expensing ' + modelAssetExpense.toString() + ' from first taxable account');
-            let assetChange = this.debitFromFirstTaxableAccount(modelAssetExpense.flipSign());
-            this.applyCapitalGainsToFirstTaxableAccount(assetChange);
-                        
+    }
+    
+    handleFundTransferExpense(fundTransfer, fundTransferResult, modelAssetName) {
+        const targetInstrument = fundTransfer.toModel.instrument;
+    
+        if (isTaxableAccount(targetInstrument)) {
+            if (fundTransferResult.toAssetChange.amount !== 0) {
+                console.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated longTermCapitalGains of ${fundTransferResult.toAssetChange.toString()}`);
+                this.monthly.longTermCapitalGains.add(fundTransferResult.toAssetChange);
+            }
+        } else if (isTaxDeferred(targetInstrument)) {
+            if (fundTransferResult.toAssetChange.amount !== 0) {
+                console.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated ordinaryIncome of ${fundTransferResult.toAssetChange.toString()}`);
+                if (isIRA(targetInstrument)) {
+                    this.monthly.iraDistribution.add(fundTransferResult.toAssetChange);
+                } else if (is401K(targetInstrument)) {
+                    this.monthly.four01KDistribution.add(fundTransferResult.toAssetChange);
+                } else {
+                    console.log(`Portfolio.applyLastDayOfMonthExpenseFundTransfers: unhandled isTaxDeferred ${fundTransfer.toDisplayName}`);
+                }
+            }
+        } else if (isTaxFree(targetInstrument)) {
+            console.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated no tax impact`);
+            this.monthly.rothDistribution.add(fundTransferResult.toAssetChange);
         }
-
     }
 
     ensureRMDDistributions(modelAsset) {
@@ -925,7 +895,7 @@ class Portfolio {
                 modelAsset.addFour01KDistribution(remains);
 
             modelAsset.debit(remains);
-            this.creditToFirstTaxableAccount(remains);
+            this.creditToFirstFundableAccount(remains);
 
         }
 
@@ -959,10 +929,8 @@ class Portfolio {
                     }
                 }
 
-                this.monthly.longTermCapitalGains.add(capitalGains);
-
-                // this isn't technically correct, but gives us a ballpark for estimating
-                let income = new Currency(activeTaxTable.activeCapitalGainsTable.taxRows[0].toAmount);
+                let income = this.monthly.totalIncome().copy().multiply(12);
+                this.monthly.longTermCapitalGains.add(capitalGains);                
                 amountToTax.add(activeTaxTable.calculateYearlyLongTermCapitalGainsTax(income, capitalGains));
                 this.monthly.longTermCapitalGainsTax.add(amountToTax.flipSign());    
 
@@ -998,9 +966,9 @@ class Portfolio {
             for (let fundTransfer of modelAsset.fundTransfers) {
                 fundTransfer.bind(modelAsset, this.modelAssets);
 
-                // can only send money to a taxable account
-                if (!isTaxableAccount(fundTransfer.toModel.instrument)) {
-                    console.log('Portfolio.applyAssetCloseFundTransfers: cannot transfer to ' + fundTransfer.toModel.displayName);
+                // can only send money to a fundable account
+                if (!isFundableAsset(fundTransfer.toModel.instrument)) {
+                    console.log('Portfolio.applyAssetCloseFundTransfers: cannot transfer to ' + fundTransfer.toModel.displayName + ' because not a fundable account');
                     continue;
                 }
 
@@ -1014,14 +982,14 @@ class Portfolio {
             let extraAmount = new Currency(modelAssetValue.amount - runningTransferAmount.amount);
             if (extraAmount.amount > 0) {
                 console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first taxable account');                
-                this.creditToFirstTaxableAccount(extraAmount);
+                this.creditToFirstExpensableAccount(extraAmount);
             }
 
         }
         else {
             
             console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + modelAssetValue.toString() + ' to first taxable account');
-            this.creditToFirstTaxableAccount(modelAssetValue);            
+            this.creditToFirstExpensableAccount(modelAssetValue);            
                         
         }
 
@@ -1043,21 +1011,21 @@ class Portfolio {
         this.monthly.longTermCapitalGainsTax.add(longTermCapitalGainsTax);
 
         console.log('monthlyTaxes.fica: ' + this.monthly.fica.toString());
-        this.creditToFirstTaxableAccount(this.monthly.fica);
+        this.creditToFirstExpensableAccount(this.monthly.fica);
 
         console.log('monthlyTaxes.incomeTax: ' + this.monthly.incomeTax.toString());
-        this.creditToFirstTaxableAccount(this.monthly.incomeTax);
+        this.creditToFirstExpensableAccount(this.monthly.incomeTax);
 
         console.log('monthlyTaxes.longTermCapitalGains: ' + this.monthly.longTermCapitalGainsTax.toString());
-        this.creditToFirstTaxableAccount(longTermCapitalGainsTax);                                  
+        this.creditToFirstExpensableAccount(longTermCapitalGainsTax);                                  
         
     }
 
-    applyCapitalGainsToFirstTaxableAccount(amount) {
+    applyCapitalGainsToFirstFundableAccount(amount) {
 
         // todo: mix short term and long term capital gains
         for (let modelAsset of this.modelAssets) {
-            if (isTaxableAccount(modelAsset.instrument)) {                
+            if (isExpensableAsset(modelAsset.instrument)) {                
                 this.monthly.longTermCapitalGains.add(amount);
                 break;
             }
@@ -1065,15 +1033,26 @@ class Portfolio {
 
     }
 
-    creditToFirstTaxableAccount(amount) {
+    creditToFirstExpensableAccount(amount) {
 
         for (let modelAsset of this.modelAssets) {
-            if (isTaxableAccount(modelAsset.instrument)) {
+            if (isExpensableAsset(modelAsset.instrument)) {
                 return modelAsset.credit(amount);
             }
         }
         return new FundTransferResult();
     
+    }
+
+    debitFromFirstExpensableAccount(amount) {
+
+        for (let modelAsset of this.modelAssets) {
+            if (isFundableAsset(modelAsset.instrument)) {
+                return modelAsset.debit(amount);
+            }
+        }
+        return new FundTransferResult();
+
     }
 
     debitFromFirstTaxableAccount(amount) {

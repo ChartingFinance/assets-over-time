@@ -285,10 +285,12 @@ class TaxTable {
 
         let tax = 0.0;
         for (const taxRow of this.activeIncomeTable.taxRows) {
-            if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount)
+            if (adjusted.amount < taxRow.fromAmount)
+                break;
+            else if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount && taxRow.toAmount != -1)
                 tax += (taxRow.toAmount - taxRow.fromAmount) * taxRow.rate;
             else if ((adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount) || (taxRow.toAmount == -1)) {
-                tax += (adjusted.amount - taxRow.fromAmount) * taxRow.rate;
+                tax += (adjusted.amount - taxRow.fromAmount) * taxRow.rate;                
                 break;
             }
         }
@@ -313,20 +315,30 @@ class TaxTable {
     calculateYearlyLongTermCapitalGainsTax(taxableIncome, capitalGains) {          
         
         let tax = 0.0;
+        let combinedIncome = taxableIncome.copy().add(capitalGains);
         for (const taxRow of this.activeCapitalGainsTable.taxRows) {
-            let adjusted = taxableIncome.copy().add(capitalGains);            
-            /*
-            if (adjusted.amount >= taxRow.fromAmount && adjusted.amount >= taxRow.toAmount) {
-                let taxableAmount = (taxRow.toAmount - taxRow.fromAmount) - taxableIncome.amount;
-                if (taxableAmount > 0)
-                    tax += taxableAmount * taxRow.rate;
+
+            let taxableAmount = 0.0;
+
+            if (taxRow.toAmount === -1) {
+                // Handle the last tax bracket (no upper limit)
+                if (combinedIncome.amount > taxRow.fromAmount) {
+                    taxableAmount = Math.min(capitalGains.amount, combinedIncome.amount - taxRow.fromAmount);
+                }
+            } else {
+                // Handle regular tax brackets
+                const lowerBound = Math.max(taxRow.fromAmount, taxableIncome.amount);
+                const upperBound = Math.min(taxRow.toAmount, combinedIncome.amount);
+    
+                if (upperBound > lowerBound) {
+                    taxableAmount = upperBound - lowerBound;
+                }
             }
-            */
-            if ((adjusted.amount >= taxRow.fromAmount && adjusted.amount < taxRow.toAmount) || (taxRow.toAmount == -1)) {
-                tax += capitalGains.amount * taxRow.rate;
-                break;               
-            }
-        }
+    
+            tax += taxableAmount * taxRow.rate;
+
+        }        
+
         return new Currency(tax);
 
     }

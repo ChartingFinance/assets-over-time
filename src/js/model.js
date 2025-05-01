@@ -554,9 +554,6 @@ class ModelAsset {
         this.monthlyEarnings.push(this.earningCurrency.toCurrency());
         this.earningCurrency.zero();
 
-        this.monthlyValues.push(this.finishCurrency.toCurrency());
-        // DO NOT ZERO FINISH CURRENCY!
-
         this.monthlyShortTermCapitalGains.push(this.shortTermCapitalGainCurrency.toCurrency());
         this.shortTermCapitalGainCurrency.zero();
 
@@ -621,7 +618,10 @@ class ModelAsset {
         }
 
         this.monthlyCredits.push(this.creditCurrency.toCurrency());
-        this.creditCurrency.zero();        
+        this.creditCurrency.zero(); 
+        
+        this.monthlyValues.push(this.finishCurrency.toCurrency());
+        // DO NOT ZERO FINISH CURRENCY!     
 
     }
 
