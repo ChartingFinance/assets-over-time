@@ -76,6 +76,9 @@ const htmlInvisibleHidden = `<label class="invisible" style="display: none" for=
 const htmlMonthsRemainingDisplay = `<label class="hidable" for="monthsRemaining">Months Remaining</label><br class="hidable" />
     <input class="hidable" type="number" style="width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
 
+const htmlBasisValueDisplay = `<label class="hidable" for="basisValue">Basis Value</label><br class="hidable" />
+    <input class="hidable" type="number" style="width: 125px" name="basisValue" value="$BASISVALUE$" placeholder="original asset cost" />`;
+
 /*
 const htmlMonthsRemainingHidden = `<label class="hidable" for="monthsRemaining" style="display: none">Months Remaining</label><br class="hidable" style="display: none" />
     <input class="hidable" type="number" style="display: none; width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
@@ -108,6 +111,7 @@ const negativeBackgroundColor = '#ad7676';
 const colorRange = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#3b3eac', '#0099c6','#dd4477', '#66aa00', '#b82e2e', '#316395', '#994499', '#22aa99', '#aaaa11','#6633cc', '#e67300', '#8b0707', '#329262', '#5574a6', '#651067'];
 
 function html_buildInstrumentOptions(instrument) {
+
     let html = '';
     for (let i = 0; i < sInstrumentNames.length; i++) {
         html += '<option value="' + sInstrumentNames[i] + '"';
@@ -116,9 +120,11 @@ function html_buildInstrumentOptions(instrument) {
         html += '>' + sIntrumentDisplayNames[i] + '</option>';
     }
     return html;
+
 }
 
 function html_buildStoryNameOptionsFromLocalStorage() {
+
     let storyArcNamesKey = util_buildStoryArcKey(activeStoryArc, storyNamesKey);
     let storyNamesAsString = localStorage.getItem(storyArcNamesKey);
     if (!storyNamesAsString)
@@ -132,49 +138,41 @@ function html_buildStoryNameOptionsFromLocalStorage() {
             html += ' selected';
         html += '>' + util_YYYYmmToDisplay(storyName) + '</option>';
     }
-
     return html;
+
 }
 
 function html_buildAssetHeader(modelAsset) {
+
     let html = htmlAssetHeader;
     html = html.replace("$BACKGROUNDCOLOR$", colorRange[modelAsset.colorId]);
     html = html.replace('$INSTRUMENTOPTIONS$', html_buildInstrumentOptions(modelAsset.instrument));     
     return html;
+
 }
 
-function html_handleSlot1(modelAsset, html) {    
+function html_handleSlot1(modelAsset, html) {
+
     if (isMortgage(modelAsset.instrument) || isDebt(modelAsset.instrument)) {
         html = html.replace('$SLOT1$', htmlMonthsRemainingDisplay);
         html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);
     }
-    /*
-    else if (isLiquidAccount(modelAsset.instrument)) {
-        if (modelAsset.holdAllUntilFinish)
-            html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayChecked);
-        else
-            html = html.replace('$SLOT1$', htmlHoldAllUntilFinishDisplayUnchecked);
+    else if (isBasisable(modelAsset.instrument)) {
+        html = html.replace('$SLOT1$', htmlBasisValueDisplay);
+        html = html.replace('$BASISVALUE$', modelAsset.basisCurrency.toHTML());
     }
-    */
     else {
         html = html.replace('$SLOT1$', htmlSlotHidden);    
     }
     return html;
+
 }
 
 function html_handleSlot2(modelAsset, html) {
-    /*
-    if (isLiquidAccount(modelAsset.instrument)) {
-        if (modelAsset.useForTaxes)
-            html = html.replace('$SLOT2$', htmlUseForTaxesDisplayChecked);
-        else
-            html = html.replace('$SLOT2$', htmlUseForTaxesDisplayUnchecked);
-    }
-    else
-    */
-        html = html.replace('$SLOT2$', htmlSlotHidden);
 
+    html = html.replace('$SLOT2$', htmlSlotHidden);
     return html;
+
 }
 
 

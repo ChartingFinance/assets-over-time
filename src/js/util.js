@@ -473,6 +473,15 @@ function isFundableAsset(value) {
         return false;
 }
 
+function isBasisable(value) {
+    if (isTaxableAccount(value))
+        return true;
+    else if (isHome(value))
+        return true;
+    else
+        return false;
+}
+
 function isExpensableAsset(value) {
     if (value == sInstrumentNames[sInstrumentsIDs.cash])
         return true;
