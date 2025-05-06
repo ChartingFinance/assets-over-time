@@ -132,9 +132,9 @@
                                 <label for="annualReturnRate">Annual Return %</label><br />
                                 <input type="number" class="width-full" name="annualReturnRate" step="0.01" placeholder="in decimal" required />        
                             </div>
-                            <div style="float: left; width: 45%">
-                                <label class="hidable" style="display: none" for="monthsRemaining">Months Remaining</label><br class="hidable" style="display: none">
-                                <input class="hidable width-full" type="number" style="display: none" name="monthsRemaining" value="321" placeholder="months">
+                            <div name="slot1" style="float: left; width: 45%">
+                                <label class="hidable" for="basisValue">Basis Value</label><br class="hidable" />
+                                <input class="hidable" type="number" style="width: 125px" name="basisValue" value="0" placeholder="original asset cost" />                                
                             </div>
                         </div>
                     </div><br />
@@ -305,13 +305,10 @@
             function connectAssetSelect() {
                 console.log('connectAssetSelect');
                 let instrumentElement = assetElement.querySelector('[name="instrument"]')
-                let monthsElement = assetElement.querySelector('[name="monthsRemaining"]');
+                let slot1Element = assetElement.querySelector('[name="slot1"]');
 
                 instrumentElement.addEventListener('change', function(event) {
-                    hideElementsWithScope(assetElement);
-                    if (isMortgage(event.target.value) || isDebt(event.target.value)) {
-                        displayElementSet(monthsElement, 0);
-                    }
+                    slot1Element.innerHTML = html_buildSlotElement(event.target.value, null);
                 });
             }
 
@@ -319,11 +316,8 @@
                 console.log('connectAssetsContainerSelects');
                 assetsContainerElement.addEventListener('change', function(event) {
                     if (event.target.name == 'instrument') {
-                        hideElementsWithScope(event.target.parentElement.parentElement);
-                        if (isMortgage(event.target.value) || isDebt(event.target.value)) {
-                            let monthsElement = event.target.parentElement.parentElement.querySelector('[name="monthsRemaining"]');
-                            displayElementSet(monthsElement, 0);
-                        }
+                        let slot1Element = event.target.parentElement.parentElement.querySelector('[name="slot1"]');
+                        slot1Element.innerHTML = html_buildSlotElement(event.target.value, null);
                     }
                 });
             }
@@ -337,6 +331,7 @@
                     //gtag("event", "asset_add", null);                                    
                     assetsContainerElement.innerHTML += html_buildRemovableAssetElement(null, assetModel);
 
+                    /*
                     assetElements = assetsContainerElement.querySelectorAll('.asset');
                     let mostRecentAssetElement = assetElements[assetElements.length -1];
                     
@@ -344,8 +339,13 @@
                     
                     if (isMortgage(assetModel.instrument) || isDebt(assetModel.instrument)) {
                         let monthsElement = mostRecentAssetElement.querySelector('[name="monthsRemaining"]');
-                        displayElementSet(monthsElement, 0);
+                        displayElementSet(monthsElement);
                     }
+                    else if (isBasisable(assetModel.instrument)) {
+                        let basisElement = event.target.parentElement.parentElement.querySelector('[name="basisValue"]');
+                        displayElementSet(basisElement);
+                    }
+                    */
                     
                     calculate();
                 });

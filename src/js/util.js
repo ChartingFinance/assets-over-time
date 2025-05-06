@@ -374,6 +374,10 @@ function isDebt(value) {
     return value == sInstrumentNames[sInstrumentsIDs.debt];
 }
 
+function isMonthsRemainingAble(value) {
+    return value == sInstrumentNames[sInstrumentsIDs.mortgage] || value == sInstrumentNames[sInstrumentsIDs.debt];
+}
+
 function isMonthlyExpense(value) {
     return value == sInstrumentNames[sInstrumentsIDs.monthlyExpense];
 }
@@ -504,16 +508,18 @@ function isAsset(value) {
         return false;
 }
 
-function displayElementSet(sourceElement, startIndex) {
-    // hide invisible placeholders
+function displayElementSet(sourceElement) {
+    // show the element set
+    sourceElement.parentElement.children[0].style.display = '';
+    sourceElement.parentElement.children[1].style.display = '';
+    sourceElement.style.display = '';
+}
+
+function hideElementSet(sourceElement) {
+    // hide the element set
     sourceElement.parentElement.children[0].style.display = 'none';
     sourceElement.parentElement.children[1].style.display = 'none';
-    sourceElement.parentElement.children[2].style.display = 'none';
-
-    // show the element set
-    sourceElement.parentElement.children[startIndex].style.display = '';
-    sourceElement.parentElement.children[startIndex+1].style.display = '';
-    sourceElement.style.display = '';
+    sourceElement.style.display = 'none';
 }
 
 const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`

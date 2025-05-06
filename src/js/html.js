@@ -53,7 +53,7 @@ const htmlAssetBody =
         <label for="annualReturnRate">Annual Return %</label><br />
         <input type="number" class="width-full" name="annualReturnRate" step="0.01" value="$ANNUALRETURNRATE$" placeholder="annual return rate" required />        
     </div>
-    <div style="float: left; width: 45%; text-align: center">
+    <div name="slot1" style="float: left; width: 45%; text-align: center">
         $SLOT1$
     </div>
 </div>
@@ -62,7 +62,7 @@ const htmlAssetBody =
         <label for="accumulatedValue">Accumulated Value</label><br />
         <input type="number" class="width-full" name="accumulatedValue" step="0.01" value="$ACCUMULATEDVALUE$" placeholder="accumulated value" />
     </div>
-    <div style="float: left; width: 45%; text-align: center">
+    <div name="slot2" style="float: left; width: 45%; text-align: center">
         $SLOT2$
     </div>
 </div>`;
@@ -73,11 +73,11 @@ const htmlInvisibleDisplay = `<label class="invisible" for="invisiblePlaceholder
 const htmlInvisibleHidden = `<label class="invisible" style="display: none" for="invisiblePlaceholder">Invisible</label><br class="invisible" style="display: none" />
     <input class="invisible" type="number" style="display: none; width: 125px" name="invisiblePlaceholder" placeholder="invisible" />`;
 
-const htmlMonthsRemainingDisplay = `<label class="hidable" for="monthsRemaining">Months Remaining</label><br class="hidable" />
-    <input class="hidable" type="number" style="width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
+const htmlMonthsRemainingDisplay = `<label for="monthsRemaining">Months Remaining</label><br />
+    <input type="number" style="width: 125px" name="monthsRemaining" value="$MONTHSREMAINING$" placeholder="months" />`;
 
-const htmlBasisValueDisplay = `<label class="hidable" for="basisValue">Basis Value</label><br class="hidable" />
-    <input class="hidable" type="number" style="width: 125px" name="basisValue" value="$BASISVALUE$" placeholder="original asset cost" />`;
+const htmlBasisValueDisplay = `<label for="basisValue">Basis Value</label><br />
+    <input type="number" style="width: 125px" name="basisValue" value="$BASISVALUE$" placeholder="original asset cost" />`;
 
 /*
 const htmlMonthsRemainingHidden = `<label class="hidable" for="monthsRemaining" style="display: none">Months Remaining</label><br class="hidable" style="display: none" />
@@ -147,6 +147,29 @@ function html_buildAssetHeader(modelAsset) {
     let html = htmlAssetHeader;
     html = html.replace("$BACKGROUNDCOLOR$", colorRange[modelAsset.colorId]);
     html = html.replace('$INSTRUMENTOPTIONS$', html_buildInstrumentOptions(modelAsset.instrument));     
+    return html;
+
+}
+
+function html_buildSlotElement(instrument, modelAsset) {
+    
+    let html = htmlInvisibleDisplay;
+    
+    if (isMonthsRemainingAble(instrument)) {
+        html = htmlMonthsRemainingDisplay;
+        if (modelAsset)
+            html = html.replace('$MONTHSREMAINING$', modelAsset.monthsRemaining);            
+        else
+            html = html.replace('$MONTHSREMAINING$', '0');
+    }
+    else if (isBasisable(instrument)) {
+        html = htmlBasisValueDisplay;
+        if (modelAsset)
+            html = html.replace('$BASISVALUE$', modelAsset.basisCurrency.toHTML());
+        else
+            html = html.replace('$BASISVALUE$', '0');
+    }
+
     return html;
 
 }
