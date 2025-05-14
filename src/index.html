@@ -18,6 +18,7 @@
         <script src="js/chronometer.js"></script>
         <script src="js/globals.js"></script>
         <script src="js/html.js"></script>
+        <script src="js/logger.js"></script>
         <script src="js/membrane.js"></script>
         <script src="js/model.js"></script>
         <script src="js/portfolio.js"></script>
@@ -155,7 +156,7 @@
                     <button class="common-margin" onclick="shareData()">Share</button>
                 </div>            
                 <h3>Rolled Up Financial Data</h3>
-                <form id="rollup">
+                <form class="rollup" id="rollup1">
                     <div style="overflow: hidden;">
                         <div class="width-full" style="float: left;">
                             <label for="instrument">Financial Instrument</label><br />
@@ -166,30 +167,94 @@
                         <div class="width-full" style="float: left; padding-top: 10px;">
                             <div style="float: left; width: 55%">
                                 <label for="startDate">Start Date</label><br />
-                                <input type="month" class="width-full" id="summaryStartDate" name="startDate" readonly />
+                                <input type="month" class="width-full" name="startDate" readonly />
                             </div>
                             <div style="float: left; width: 45%">
                                 <label for="startValue">Start Asset Value</label><br />
-                                <input type="number" class="width-full" id="summaryStartValue" name="startValue" step="0.01" placeholder="computed" readonly />
+                                <input type="number" class="width-full" name="startValue" step="0.01" placeholder="computed" readonly />
                             </div>
                         </div>
                         <div class="width-full" style="float: left; padding-top: 10px">
                             <div style="float: left; width: 55%">
                                 <label for="finishDate">Finish Date</label><br />
-                                <input type="month" class="width-full" id="summaryFinishDate" name="finishDate" readonly />
+                                <input type="month" class="width-full" name="finishDate" readonly />
                             </div>
                             <div style="float: left; width: 45%">
                                 <label for="finishValue">Finish Asset Value</label><br />
-                                <input type="number" class="width-full" id="summaryFinishValue" name="finishValue" step="0.01" placeholder="computed" readonly />                                
+                                <input type="number" class="width-full" name="finishValue" step="0.01" placeholder="computed" readonly />                                
                             </div>
                         </div>
                         <div class="width-full" style="float: left; padding-top: 10px">
-                            <label for="monthsRemaining">Accrued Months</label><br />
-                            <input type="number" style="width: 125px" id="summaryAccruedMonths" name="monthsRemaining" placeholder="total months accrued" readonly /><br />
+                            <label for="totalMonths">Total Months</label><br />
+                            <input type="number" style="width: 125px"  name="totalMonths" placeholder="total months processed" readonly /><br />
                             <label for="accumulatedValue">Earned Asset Value</label><br />                                
-                            <input type="number" id="summaryAccumulatedValue" name="accumulatedValue" step="0.01" placeholder="accumulated value" readonly /><br />
+                            <input type="number" name="accumulatedValue" step="0.01" placeholder="accumulated value" readonly /><br />
                             <label for="annualReturnRate">Annual Growth %</label><br />
-                            <input type="number" id="summaryAnnualReturnRate" name="annualReturnRate" step="0.01" placeholder="annual return rate" readonly /><br />
+                            <input type="number" name="annualReturnRate" step="0.01" placeholder="annual return rate" readonly /><br />
+                        </div>
+                    </div>
+                </form>                 
+            </div>
+        </div>
+
+        <br />
+        <div style="text-align: center; clear: both">
+            <button id="showHideSimulator" onclick="clickShowHideSimulator()">Show Simulator</button>
+        </div>
+        <br />        
+
+        <div class="row" id="middleContainer" style="display: none;">
+            <div class="column left" style="text-align: center;">
+                <div style="width: 100%">
+                </div><br />
+                <h3>Goals</h3>
+                <button onclick="doMaximize()">Maximize</button>                
+            </div>
+            <div class="column middle">
+                <div style="text-align: center; clear: both">
+                </div>
+                <br />
+                <div style="padding: 10px" class="scrollable-x" id="assetsSimulator"></div>                
+            </div>
+            <div class="column right" style="text-align: center">
+                <div style="width: 100%;">
+                </div>            
+                <h3>Rolled Up Financial Data</h3>
+                <form class="rollup" id="rollup2">
+                    <div style="overflow: hidden;">
+                        <div class="width-full" style="float: left;">
+                            <label for="instrument">Financial Instrument</label><br />
+                            <input type="text" class="width-full" name="instrument" value="All Instruments" /><br />
+                            <label for="displayName" class="invisible">Familiar Name</label><br />
+                            <input type="text" class="invisible width-full" name="displayName" placeholder="familiar name" />
+                        </div>
+                        <div class="width-full" style="float: left; padding-top: 10px;">
+                            <div style="float: left; width: 55%">
+                                <label for="startDate">Start Date</label><br />
+                                <input type="month" class="width-full" name="startDate" readonly />
+                            </div>
+                            <div style="float: left; width: 45%">
+                                <label for="startValue">Start Asset Value</label><br />
+                                <input type="number" class="width-full" name="startValue" step="0.01" placeholder="computed" readonly />
+                            </div>
+                        </div>
+                        <div class="width-full" style="float: left; padding-top: 10px">
+                            <div style="float: left; width: 55%">
+                                <label for="finishDate">Finish Date</label><br />
+                                <input type="month" class="width-full" name="finishDate" readonly />
+                            </div>
+                            <div style="float: left; width: 45%">
+                                <label for="finishValue">Finish Asset Value</label><br />
+                                <input type="number" class="width-full" name="finishValue" step="0.01" placeholder="computed" readonly />                                
+                            </div>
+                        </div>
+                        <div class="width-full" style="float: left; padding-top: 10px">
+                            <label for="totalMonths">Total Months</label><br />
+                            <input type="number" style="width: 125px"  name="totalMonths" placeholder="total months processed" readonly /><br />
+                            <label for="accumulatedValue">Earned Asset Value</label><br />                                
+                            <input type="number" name="accumulatedValue" step="0.01" placeholder="accumulated value" readonly /><br />
+                            <label for="annualReturnRate">Annual Growth %</label><br />
+                            <input type="number" name="annualReturnRate" step="0.01" placeholder="annual return rate" readonly /><br />
                         </div>
                     </div>
                 </form>                 
@@ -246,7 +311,7 @@
             var bottomRowElement = document.getElementById('bottomRowContainer');
             var assetElement = document.getElementById('asset');
             var assetsContainerElement = document.getElementById('assets');
-            var totalElement = document.getElementById('total');
+            var assetsSimulatorElement = document.getElementById('assetsSimulator');
             
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
             var chartEarningsCanvas = document.getElementById('chartEarningsCanvas');
@@ -269,7 +334,7 @@
             }
 
             function initiateActiveData() {
-                console.log('initiateActiveData');
+                logger.log('initiateActiveData');
 
                 // TODO - get this from a global options setting
                 let startDateElement = assetElement.querySelector('[name="startDate"]');
@@ -303,7 +368,7 @@
             }
 
             function connectAssetSelect() {
-                console.log('connectAssetSelect');
+                logger.log('connectAssetSelect');
                 let instrumentElement = assetElement.querySelector('[name="instrument"]')
                 let slot1Element = assetElement.querySelector('[name="slot1"]');
 
@@ -313,7 +378,7 @@
             }
 
             function connectAssetsContainerSelects() {
-                console.log('connectAssetsContainerSelects');
+                logger.log('connectAssetsContainerSelects');
                 assetsContainerElement.addEventListener('change', function(event) {
                     if (event.target.name == 'instrument') {
                         let slot1Element = event.target.parentElement.parentElement.querySelector('[name="slot1"]');
@@ -323,48 +388,40 @@
             }
 
             function connectCreateAsset() {
-                console.log('connectCreateAsset');
+                logger.log('connectCreateAsset');
                 assetElement.addEventListener("submit", function(ev) {
                     ev.preventDefault();
 
                     let assetModel = membrane_htmlElementToAssetModel(assetElement); 
                     //gtag("event", "asset_add", null);                                    
                     assetsContainerElement.innerHTML += html_buildRemovableAssetElement(null, assetModel);
-
-                    /*
-                    assetElements = assetsContainerElement.querySelectorAll('.asset');
-                    let mostRecentAssetElement = assetElements[assetElements.length -1];
-                    
-                    hideElementsWithScope(mostRecentAssetElement);
-                    
-                    if (isMortgage(assetModel.instrument) || isDebt(assetModel.instrument)) {
-                        let monthsElement = mostRecentAssetElement.querySelector('[name="monthsRemaining"]');
-                        displayElementSet(monthsElement);
-                    }
-                    else if (isBasisable(assetModel.instrument)) {
-                        let basisElement = event.target.parentElement.parentElement.querySelector('[name="basisValue"]');
-                        displayElementSet(basisElement);
-                    }
-                    */
-                    
+                   
                     calculate();
                 });
             }
 
             function connectAssetsContainerTransfers() {
-                console.log('connectAssetsContainerTransfers');
-                assetsContainerElement.addEventListener('click', function (ev) {
-                    if (ev.srcElement.name == sFundTransfers) {
-                        event.preventDefault();
-                        let assetElement = ev.srcElement.parentNode.parentNode.parentNode;
-                        let displayName = assetElement.querySelector('input[name="displayName"]').value;                        
-                        showPopupTransfers(displayName);
-                    }
-                });
+
+                logger.log('connectAssetsContainerTransfers');
+                assetsContainerElement.addEventListener('click', assetsContainerElementClickTransfers);
+                assetsSimulatorElement.addEventListener('click', assetsContainerElementClickTransfers);
+
+            }
+
+            function assetsContainerElementClickTransfers (ev) {
+                    
+                if (ev.srcElement.name == sFundTransfers) {
+                    event.preventDefault();
+                    let assetElement = ev.srcElement.parentNode.parentNode.parentNode;
+                    let containerElement = assetElement.parentElement;
+                    let displayName = assetElement.querySelector('input[name="displayName"]').value;                        
+                    showPopupTransfers(containerElement, displayName);
+                }
+
             }
 
             function connectAssetsContainerRemove() {
-                console.log('connectUpdateOrRemoveAsset');
+                logger.log('connectUpdateOrRemoveAsset');
                 assetsContainerElement.addEventListener('click', function (ev) {
 
                     if (ev.srcElement.className.includes('remove')) {
@@ -380,6 +437,7 @@
 
                 });
             }
+
         </script>
         <script>
             <!-- Mouse Handlers -->
@@ -399,7 +457,7 @@
             }
 
             function handleMouseEvents(ev) {
-                console.log('element.click ' + ev.srcElement);
+                logger.log('element.click ' + ev.srcElement);
 
                 // clear previous
                 let selectedCardChartElement = document.querySelector('.selected-card-chart');
@@ -508,7 +566,7 @@
             <!-- A B save and recall -->
 
             function aplus_save() {
-                let assetModels = membrane_htmlElementsToAssetModels();
+                let assetModels = membrane_htmlElementsToAssetModels(assetsContainerElement);
                 util_saveLocalAssetModels(activeStoryArc, 'APlus', assetModels);
             }
 
@@ -520,7 +578,7 @@
             }
 
             function bplus_click() {
-                let assetModels = membrane_htmlElementsToAssetModels();
+                let assetModels = membrane_htmlElementsToAssetModels(assetsContainerElement);
                 util_saveLocalAssetModels(activeStoryArc, 'BPlus', assetModels);
             }
 
@@ -552,22 +610,24 @@
             }
          
             function updateCharts() {
-                let modelAssets = membrane_htmlElementsToAssetModels();
+
+                let modelAssets = membrane_htmlElementsToAssetModels(assetsContainerElement);
                 let portfolio = new Portfolio(modelAssets);
-                chronometer_run(portfolio);
+                chronometer_run(document.getElementById('rollup1'), portfolio);
                 portfolio.buildChartingDisplayData();
                 ensureHighlightDisplayName();
                 charting_buildFromPortfolio(portfolio, false);
                 activeAssetCanvas.update(); 
                 activeEarningsCanvas.update();
                 activeCashFlowCanvas.update();                
+
             }
 
             function calculate() {
                 reportsElement.innerHTML = '';
-                let modelAssets = membrane_htmlElementsToAssetModels();
-                let portfolio = new Portfolio(modelAssets);
-                chronometer_run(portfolio);
+                let modelAssets = membrane_htmlElementsToAssetModels(assetsContainerElement);
+                let portfolio = new Portfolio(modelAssets, true);
+                chronometer_run(document.getElementById('rollup1'), portfolio);
 
                 // unhook mouse events
                 clearMouseEvents();
@@ -613,7 +673,7 @@
             }
 
             function saveLocalData() {                
-                let assetModels = membrane_htmlElementsToAssetModels();
+                let assetModels = membrane_htmlElementsToAssetModels(assetsContainerElement);
                 util_saveLocalAssetModels(activeStoryArc, activeStoryName, assetModels);                                            
             }
 
@@ -622,6 +682,59 @@
                 let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
                 assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
                 calculate();
+            }
+        </script>
+        <script>
+            // simulations
+            function clickShowHideSimulator() {
+                let middleContainerElement = document.getElementById('middleContainer');
+                let showHideSimulatorButton = document.getElementById('showHideSimulator');
+
+                if (middleContainerElement.style.display == 'none') {
+                    middleContainerElement.style.display = '';
+                    showHideSimulatorButton.innerHTML = 'Hide Simulator';
+                }
+                else {
+                    middleContainerElement.style.display = 'none';
+                    showHideSimulatorButton.innerHTML = 'Show Simulator';
+                }
+            }
+
+            function doMaximize() {
+
+                // copy the main html elements to the simulation div                
+                let summaryContainerElement = document.getElementById('rollup2');
+
+                assetsSimulatorElement.innerHTML = assetsContainerElement.innerHTML;
+                removeRemoveButtons(assetsSimulatorElement);
+
+                let modelAssets = membrane_htmlElementsToAssetModels(assetsSimulatorElement);
+
+                if (window.Worker) {
+                    let worker = new Worker('js/simulator.js');
+                    worker.postMessage(modelAssets);
+                    worker.onmessage = function(event) {                        
+                        summaryContainerElement.classList.remove('highlight');
+                        let assetModels = membrane_jsonObjectsToModelAssets(event.data);
+                        let portfolio = new Portfolio(assetModels, false);
+                        chronometer_run(null, portfolio);
+                        assetsSimulatorElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
+                        removeRemoveButtons(assetsSimulatorElement);                        
+                        buildSummary(summaryContainerElement, portfolio);
+                        summaryContainerElement.classList.add('highlight');
+                    }
+                }
+                else {
+                    assetsSimulatorElement.innerHTML = 'Web Workers not supported in this browser.';
+                }
+
+            }
+
+            function removeRemoveButtons(containerElement) {
+                let removeButtons = containerElement.querySelectorAll('.remove');
+                for (let ii = 0; ii < removeButtons.length; ii++) {
+                    removeButtons[ii].remove();
+                }
             }
         </script>
         <script>
@@ -657,14 +770,14 @@
                 document.getElementById('popupFormShare').style.display = 'block';
             }
 
-            function showPopupTransfers(currentDisplayName) {
+            function showPopupTransfers(containerElement, currentDisplayName) {
 
                 let popupFormTransfersElement = document.getElementById('popupFormTransfers');
                 let scrollableYElement = popupFormTransfersElement.querySelector('.scrollable-y');
 
-                let modelAssets = membrane_htmlElementsToAssetModels();                
-                let portfolio = new Portfolio(modelAssets);
-                chronometer_run(portfolio);
+                let modelAssets = membrane_htmlElementsToAssetModels(containerElement);                
+                let portfolio = new Portfolio(modelAssets, false);
+                chronometer_run(null, portfolio);
 
                 html_applyModelAssetToPopupTransfers(util_findModelAssetByDisplayName(portfolio.modelAssets, currentDisplayName), popupFormTransfersElement);
                 scrollableYElement.innerHTML = html_buildTransferrableAssets(portfolio.modelAssets, currentDisplayName);

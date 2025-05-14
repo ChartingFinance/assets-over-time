@@ -213,14 +213,14 @@ class TaxTable {
         result.medicare.add(this.calculateMedicareTax(isSelfEmployed, income));
 
         if (isSelfEmployed && result.fica().amount / income.amount > 0.16) {
-            console.log('TaxTable.calculateFICATax: ratio over 16%?');
+            logger.log('TaxTable.calculateFICATax: ratio over 16%?');
         }
         else if (result.fica().amount / income.amount > 0.08) {
-            console.log('TaxTable.calculateFICATax: ratio over 8%?');
+            logger.log('TaxTable.calculateFICATax: ratio over 8%?');
         }
         //else {
         //    let ratio = result.fica().amount / income.amount;
-        //    console.log('TaxTable.calculateFICATax: ratio is ' + ratio.toString());
+        //    logger.log('TaxTable.calculateFICATax: ratio is ' + ratio.toString());
         //}
 
         return result;
@@ -241,7 +241,7 @@ class TaxTable {
         }
             
         if (this.yearlySocialSecurityAccumulator.amount + c.amount > maxC.amount) {
-            console.log('at maximum social security tax');
+            logger.log('at maximum social security tax');
             c.amount = maxC.amount - this.yearlySocialSecurityAccumulator.amount;
         }
 
@@ -379,7 +379,7 @@ class TaxTable {
                 }
             }
             if (divisor == 0) {
-                console.log('TaxTable.calculateRMD: could not find divisor for age ' + activeUser.age);
+                logger.log('TaxTable.calculateRMD: could not find divisor for age ' + activeUser.age);
                 return new Currency(0);
             }
 
@@ -427,7 +427,7 @@ class TaxTable {
 
 
         if (taxableIncome.amount < 0) {
-            console.log('TaxTable.applyYearlyDeductions: taxable income < 0, setting to 0');
+            logger.log('TaxTable.applyYearlyDeductions: taxable income < 0, setting to 0');
             taxableIncome.zero();
         }
 
@@ -439,21 +439,21 @@ class TaxTable {
 
         let yearlyFICA = this.calculateYearlyFICATax(yearly);
         if (yearlyFICA.amount != yearly.fica.amount)
-            console.log('computed yearly FICA != portfolio yearly FICA')
+            logger.log('computed yearly FICA != portfolio yearly FICA')
         else
-            console.log('computed yearly FICA check PASSED');
+            logger.log('computed yearly FICA check PASSED');
 
         let yearlyTaxableIncome = this.calculateYearlyTaxableIncome(yearly);
         if (yearlyTaxableIncome.amount != (yearly.selfIncome.amount + yearly.employedIncome.amount))
-            console.log('computed yearly taxable income != portfolio yearly taxable income');
+            logger.log('computed yearly taxable income != portfolio yearly taxable income');
         else
-            console.log('computed yearly taxable income check PASSED');
+            logger.log('computed yearly taxable income check PASSED');
 
         let yearlyIncomeTax = this.calculateYearlyIncomeTax(yearlyTaxableIncome, new Currency());
         if (yearlyIncomeTax.amount != yearly.incomeTax.amount)
-            console.log('computed yearly income tax != portfolio yearly income tax');
+            logger.log('computed yearly income tax != portfolio yearly income tax');
         else
-            console.log('computed yearly income tax check PASSED');
+            logger.log('computed yearly income tax check PASSED');
 
         return new Currency();
 
@@ -496,7 +496,7 @@ class TaxTable {
         
         let yearlyLongTermCapitalGainsAndQualifiedDividends = new Currency(yearly.longTermCapitalGains.amount + yearly.qualifiedDividends.amount);
         let yearlyLongTermCapitalGainsAndQualifiedDividendsTax = this.calculateYearlyLongTermCapitalGainsTax(yearlyTaxableIncome, yearlyLongTermCapitalGainsAndQualifiedDividends);
-        console.log('Taxes.applyYear|yearlyLongTermCapitalGainsAndQualifiedDividendsTax: ' + yearlyLongTermCapitalGainsAndQualifiedDividendsTax.toString());
+        logger.log('Taxes.applyYear|yearlyLongTermCapitalGainsAndQualifiedDividendsTax: ' + yearlyLongTermCapitalGainsAndQualifiedDividendsTax.toString());
     }
 
     iraContributionLimit(activeUser) {

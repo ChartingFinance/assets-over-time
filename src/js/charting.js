@@ -134,7 +134,7 @@ function charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet) {
   let chartingAssetData = null;
 
   if (!buildNewDataSet && charting_jsonAssetsChartData == null) {
-    console.log('charting_buildDisplayAssetsFromModelAssets - attempting to reuse null charting_jsonAssetsChartData. Building new data set.');
+    logger.log('charting_buildDisplayAssetsFromModelAssets - attempting to reuse null charting_jsonAssetsChartData. Building new data set.');
     buildNewDataSet = true;
   }
 
@@ -204,11 +204,11 @@ function charting_reducedModelAssetsForEarnings(modelAssets) {
 
 function charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt, modelAssets, buildNewDataSet) {
   if (firstDateInt == null) {
-    console.log('charting_buildDisplayEarningsFromModelAssets - null firstDateInt provided');
+    logger.log('charting_buildDisplayEarningsFromModelAssets - null firstDateInt provided');
     return null;
   }  
   else if (lastDateInt == null) {
-    console.log('charting_buildDisplayEarningsFromModelAssets - null lastDateInt provided');
+    logger.log('charting_buildDisplayEarningsFromModelAssets - null lastDateInt provided');
     return null;
   }
   
@@ -216,7 +216,7 @@ function charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt,
   let chartingEarningsData = null;
 
   if (!buildNewDataSet && charting_jsonEarningsChartData == null) {
-    console.log('charting_buildDisplayEarningsFromModelAssets - attempting to reuse null charting_jsonEarningsChartData. Building new data set.');
+    logger.log('charting_buildDisplayEarningsFromModelAssets - attempting to reuse null charting_jsonEarningsChartData. Building new data set.');
     buildNewDataSet = true;
   }
 
@@ -385,7 +385,7 @@ function charting_buildDisplayCashFlowFromPortfolio(portfolio) {
 function charting_buildFromPortfolio(portfolio, buildNewDataSet) {
   if (portfolio == null || portfolio.modelAssets == null || portfolio.modelAssets.length == 0) {
     
-    console.log('charting_buildFromModelAssets - null or zero length array provided');
+    logger.log('charting_buildFromModelAssets - null or zero length array provided');
     charting_jsonAssetsChartData = null;
     charting_jsonEarningsChartData = null;
     charting_jsonCashFlowChartData = null;

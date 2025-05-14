@@ -263,37 +263,37 @@ class FinancialPackage {
 
     report() {
 
-        console.log('income:                  ' + this.totalIncome().toString());
-        console.log('  employedIncome:          ' + this.employedIncome.toString());
-        console.log('  selfIncome:              ' + this.selfIncome.toString());
-        console.log('  ordinaryIncome:          ' + this.ordinaryIncome().toString());
-        console.log('    socialSecurity:          ' + this.socialSecurity.toString());
-        console.log('    iraDistribution:         ' + this.iraDistribution.toString());
-        console.log('    401KDistribution:        ' + this.four01KDistribution.toString());                       
-        console.log('    shortTermCapitalGains:   ' + this.shortTermCapitalGains.toString());
-        console.log('    interestIncome:          ' + this.interestIncome.toString());
-        console.log('    nonQualifiedDividends:   ' + this.nonQualifiedDividends.toString());        
-        console.log('  longTermCapitalGains:    ' + this.longTermCapitalGains.toString());        
-        console.log('  nonTaxableIncome:        ' + this.nontaxableIncome().toString());
-        console.log('    qualifiedDividends       ' + this.qualifiedDividends.toString());
-        console.log('    rothDistribution:         ' + this.rothDistribution.toString());
-        console.log('deductions:              ' + this.deductions().toString());
-        console.log('  iraContribution:         ' + this.iraContribution.toString());
-        console.log('  401KContribution:        ' + this.four01KContribution.toString());
-        console.log('  mortgageInterest:        ' + this.mortgageInterest.toString());
-        console.log('  propertyTaxes:           ' + this.deductiblePropertyTaxes().toString());
-        console.log('taxes:                   ' + this.totalTaxes().toString());
-        console.log('  fica:                    ' + this.fica.toString());
-        console.log('  incomeTax:               ' + this.incomeTax.toString());
-        console.log('  longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString());
-        console.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
-        console.log('  estimatedTaxes:          ' + this.estimatedTaxes.toString());
-        console.log('rothContribution:        ' + this.rothContribution.toString());
-        console.log('assetAppreciation:       ' + this.assetAppreciation.toString());
-        console.log('mortgagePrincipal:       ' + this.mortgagePrincipal.toString());        
-        console.log('afterTaxIncome:          ' + this.afterTaxIncome().toString());
-        console.log('effectTaxRate:           ' + this.effectiveTaxRate().toFixed(2));
-        console.log('expenses:                ' + this.expense.toString());      
+        logger.log('income:                  ' + this.totalIncome().toString());
+        logger.log('  employedIncome:          ' + this.employedIncome.toString());
+        logger.log('  selfIncome:              ' + this.selfIncome.toString());
+        logger.log('  ordinaryIncome:          ' + this.ordinaryIncome().toString());
+        logger.log('    socialSecurity:          ' + this.socialSecurity.toString());
+        logger.log('    iraDistribution:         ' + this.iraDistribution.toString());
+        logger.log('    401KDistribution:        ' + this.four01KDistribution.toString());                       
+        logger.log('    shortTermCapitalGains:   ' + this.shortTermCapitalGains.toString());
+        logger.log('    interestIncome:          ' + this.interestIncome.toString());
+        logger.log('    nonQualifiedDividends:   ' + this.nonQualifiedDividends.toString());        
+        logger.log('  longTermCapitalGains:    ' + this.longTermCapitalGains.toString());        
+        logger.log('  nonTaxableIncome:        ' + this.nontaxableIncome().toString());
+        logger.log('    qualifiedDividends       ' + this.qualifiedDividends.toString());
+        logger.log('    rothDistribution:         ' + this.rothDistribution.toString());
+        logger.log('deductions:              ' + this.deductions().toString());
+        logger.log('  iraContribution:         ' + this.iraContribution.toString());
+        logger.log('  401KContribution:        ' + this.four01KContribution.toString());
+        logger.log('  mortgageInterest:        ' + this.mortgageInterest.toString());
+        logger.log('  propertyTaxes:           ' + this.deductiblePropertyTaxes().toString());
+        logger.log('taxes:                   ' + this.totalTaxes().toString());
+        logger.log('  fica:                    ' + this.fica.toString());
+        logger.log('  incomeTax:               ' + this.incomeTax.toString());
+        logger.log('  longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString());
+        logger.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
+        logger.log('  estimatedTaxes:          ' + this.estimatedTaxes.toString());
+        logger.log('rothContribution:        ' + this.rothContribution.toString());
+        logger.log('assetAppreciation:       ' + this.assetAppreciation.toString());
+        logger.log('mortgagePrincipal:       ' + this.mortgagePrincipal.toString());        
+        logger.log('afterTaxIncome:          ' + this.afterTaxIncome().toString());
+        logger.log('effectTaxRate:           ' + this.effectiveTaxRate().toFixed(2));
+        logger.log('expenses:                ' + this.expense.toString());      
     }
 
     reportHTML(currentDateInt) {
@@ -391,8 +391,12 @@ class FinancialPackage {
 }
 
 class Portfolio {
-    constructor(modelAssets) {
+    constructor(modelAssets, reports) {
         this.modelAssets = this.sortModelAssets(modelAssets);
+        if (reports)
+            this.reports = reports;
+        else
+            this.reports = false;
         this.activeUser = new User(global_user_startAge);
 
         this.firstDateInt = util_firstDateInt(this.modelAssets);
@@ -409,7 +413,7 @@ class Portfolio {
     }
 
     sortModelAssets(modelAssets) {
-        console.log('Portfolio.sortModelAssets');
+        logger.log('Portfolio.sortModelAssets');
     
         modelAssets.sort(function (a, b) {
             if (a.sortIndex() < b.sortIndex())
@@ -421,6 +425,36 @@ class Portfolio {
         });
     
         return modelAssets;
+    }
+
+    copy() {
+
+        let modelAssets = this.modelAssets.map(modelAsset => modelAsset.copy());
+        let portfolio = new Portfolio(modelAssets);
+
+        portfolio.monthly = this.monthly.copy();
+        portfolio.yearly = this.yearly.copy();
+        portfolio.total = this.total.copy();
+        return portfolio;
+
+    }
+
+    zeroFundTransfersMoveValues() {
+
+        for (let modelAsset of this.modelAssets) {
+            modelAsset.zeroFundTransfersMoveValues();
+        }
+
+    }
+
+    dnaFundTransfers() {
+
+        let result = '';
+        for (let modelAsset of this.modelAssets) {
+            result += modelAsset.dnaFundTransfers();
+        }
+        return result;
+
     }
 
     initializeChron() {
@@ -693,7 +727,7 @@ class Portfolio {
     calculateFirstDayOfMonthIncomeIRAContribution(modelAsset) {
 
         if (!isMonthlyIncome(modelAsset.instrument)) {
-            console.log('Portfolio.calculateFirstDayOfMonthIncomeIRAContribution - not a monthly income model asset');
+            logger.log('Portfolio.calculateFirstDayOfMonthIncomeIRAContribution - not a monthly income model asset');
             return new Currency();
         }        
         
@@ -731,7 +765,7 @@ class Portfolio {
     calculateFirstDayOfMonthIncomeFour01KContribution(modelAsset) {
 
         if (!isMonthlyIncome(modelAsset.instrument)) {
-            console.log('Portfolio.calculateFirstDayOfMonthIncomeFour01KContribution - not a monthly income model asset');
+            logger.log('Portfolio.calculateFirstDayOfMonthIncomeFour01KContribution - not a monthly income model asset');
             return new Currency();
         }        
         
@@ -830,12 +864,12 @@ class Portfolio {
     
             const extraAmount = new Currency(runningExpenseAmount.amount - modelAssetExpense.amount);
             if (extraAmount.amount > 0) {
-                console.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${extraAmount.toString()} from first taxable account`);
+                logger.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${extraAmount.toString()} from first taxable account`);
                 const assetChange = this.debitFromFirstTaxableAccount(extraAmount);
                 this.applyCapitalGainsToFirstExpensableAccount(assetChange);
             }
         } else {
-            console.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${modelAssetExpense.toString()} from first taxable account`);
+            logger.log(`Portfolio.applyFundTransfersForExpense: ${modelAsset.displayName} expensing ${modelAssetExpense.toString()} from first taxable account`);
             const assetChange = this.debitFromFirstTaxableAccount(modelAssetExpense.flipSign());
             this.applyCapitalGainsToFirstExpensableAccount(assetChange);
         }
@@ -846,22 +880,22 @@ class Portfolio {
     
         if (isTaxableAccount(targetInstrument)) {
             if (fundTransferResult.toAssetChange.amount !== 0) {
-                console.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated longTermCapitalGains of ${fundTransferResult.toAssetChange.toString()}`);
+                logger.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated longTermCapitalGains of ${fundTransferResult.toAssetChange.toString()}`);
                 this.monthly.longTermCapitalGains.add(fundTransferResult.toAssetChange);
             }
         } else if (isTaxDeferred(targetInstrument)) {
             if (fundTransferResult.toAssetChange.amount !== 0) {
-                console.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated ordinaryIncome of ${fundTransferResult.toAssetChange.toString()}`);
+                logger.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated ordinaryIncome of ${fundTransferResult.toAssetChange.toString()}`);
                 if (isIRA(targetInstrument)) {
                     this.monthly.iraDistribution.add(fundTransferResult.toAssetChange);
                 } else if (is401K(targetInstrument)) {
                     this.monthly.four01KDistribution.add(fundTransferResult.toAssetChange);
                 } else {
-                    console.log(`Portfolio.applyLastDayOfMonthExpenseFundTransfers: unhandled isTaxDeferred ${fundTransfer.toDisplayName}`);
+                    logger.log(`Portfolio.applyLastDayOfMonthExpenseFundTransfers: unhandled isTaxDeferred ${fundTransfer.toDisplayName}`);
                 }
             }
         } else if (isTaxFree(targetInstrument)) {
-            console.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated no tax impact`);
+            logger.log(`Portfolio.applyFundTransfersForExpense: ${modelAssetName} expensing ${fundTransfer.toModel.displayName} generated no tax impact`);
             this.monthly.rothDistribution.add(fundTransferResult.toAssetChange);
         }
     }
@@ -881,7 +915,7 @@ class Portfolio {
             else if (is401K(modelAsset.instrument))
                 distributions = modelAsset.four01KDistributionCurrency.copy();            
             else
-                console.log('Portfolio.ensureRMDDistributions: should not be here!');
+                logger.log('Portfolio.ensureRMDDistributions: should not be here!');
 
         }
 
@@ -908,10 +942,10 @@ class Portfolio {
     
         modelAsset.onFinishDate = true;
         const amountToTransfer = new Currency(modelAsset.finishCurrency.amount);
-        console.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + amountToTransfer.toString());    
+        logger.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + amountToTransfer.toString());    
 
         const capitalGains = new Currency(modelAsset.finishCurrency.amount - modelAsset.basisCurrency.amount);
-        console.log('close capital asset: ' + modelAsset.displayName + ' capital gains of ' + capitalGains.toString());
+        logger.log('close capital asset: ' + modelAsset.displayName + ' capital gains of ' + capitalGains.toString());
 
         // we need to do the calculations for this transaction since the monthly taxation routine multiplies by 12
         let amountToTax = new Currency();
@@ -943,7 +977,7 @@ class Portfolio {
             }
         }
         
-        console.log('Portfolio.closeAsset: ' + modelAsset.displayName + ' generated tax of ' + amountToTax.toString() + ' to deduct from closure');
+        logger.log('Portfolio.closeAsset: ' + modelAsset.displayName + ' generated tax of ' + amountToTax.toString() + ' to deduct from closure');
         modelAsset.finishCurrency.add(amountToTax);        
    
         this.applyAssetCloseFundTransfers(modelAsset);    
@@ -954,7 +988,7 @@ class Portfolio {
     applyAssetCloseFundTransfers(modelAsset) {
 
         if (!isCapital(modelAsset.instrument)) {
-            //console.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' is not monthlyIncome');
+            //logger.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' is not monthlyIncome');
             return;                     
         }
 
@@ -968,27 +1002,27 @@ class Portfolio {
 
                 // can only send money to an expensable account
                 if (!isExpensableAsset(fundTransfer.toModel.instrument)) {
-                    console.log('Portfolio.applyAssetCloseFundTransfers: cannot transfer to ' + fundTransfer.toModel.displayName + ' because not an expensable account');
+                    logger.log('Portfolio.applyAssetCloseFundTransfers: cannot transfer to ' + fundTransfer.toModel.displayName + ' because not an expensable account');
                     continue;
                 }
 
                 let transferAmount = fundTransfer.calculate();
                 fundTransfer.execute(); // goes to fundTransfer.toModel.creditCurrency
-                //console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' transferred ' + transferAmount.toString() + ' to ' + fundTransfer.toModel.displayName);
+                //logger.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' transferred ' + transferAmount.toString() + ' to ' + fundTransfer.toModel.displayName);
                 
                 runningTransferAmount.add(transferAmount);
             }
             
             let extraAmount = new Currency(modelAssetValue.amount - runningTransferAmount.amount);
             if (extraAmount.amount > 0) {
-                console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first expensable account');                
+                logger.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + extraAmount.toString() + ' to first expensable account');                
                 this.creditToFirstExpensableAccount(extraAmount);
             }
 
         }
         else {
             
-            console.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + modelAssetValue.toString() + ' to first expensable account');
+            logger.log('Portfolio.applyAssetCloseFundTransfers: ' + modelAsset.displayName + ' funding ' + modelAssetValue.toString() + ' to first expensable account');
             this.creditToFirstExpensableAccount(modelAssetValue);            
                         
         }
@@ -1010,13 +1044,13 @@ class Portfolio {
         this.monthly.incomeTax.add(incomeTax);
         this.monthly.longTermCapitalGainsTax.add(longTermCapitalGainsTax);
 
-        console.log('monthlyTaxes.fica: ' + this.monthly.fica.toString());
+        logger.log('monthlyTaxes.fica: ' + this.monthly.fica.toString());
         this.creditToFirstExpensableAccount(this.monthly.fica);
 
-        console.log('monthlyTaxes.incomeTax: ' + this.monthly.incomeTax.toString());
+        logger.log('monthlyTaxes.incomeTax: ' + this.monthly.incomeTax.toString());
         this.creditToFirstExpensableAccount(this.monthly.incomeTax);
 
-        console.log('monthlyTaxes.longTermCapitalGains: ' + this.monthly.longTermCapitalGainsTax.toString());
+        logger.log('monthlyTaxes.longTermCapitalGains: ' + this.monthly.longTermCapitalGainsTax.toString());
         this.creditToFirstExpensableAccount(longTermCapitalGainsTax);                                  
         
     }
@@ -1139,19 +1173,27 @@ class Portfolio {
 
     reportMonthly(currentDateInt) {
 
-        console.log(' -------  Begin Monthly (' + currentDateInt.toString() + ' ) Report -------');
-        this.monthly.report();
-        console.log(' -------   End Monthly (' + currentDateInt.toString() + ' ) Report  -------');
+        if (this.reports) {
+            
+            logger.log(' -------  Begin Monthly (' + currentDateInt.toString() + ' ) Report -------');
+            this.monthly.report();
+            logger.log(' -------   End Monthly (' + currentDateInt.toString() + ' ) Report  -------');
+
+        }
 
     }
 
     reportYearly(currentDateInt) {
 
-        console.log(' -------  Begin Yearly (' + currentDateInt.toString() + ' ) Report -------');
-        this.yearly.report();
-        console.log(' -------   End Yearly  (' + currentDateInt.toString() + ' ) Report  -------');
+        if (this.reports) {
+            
+            logger.log(' -------  Begin Yearly (' + currentDateInt.toString() + ' ) Report -------');
+            this.yearly.report();
+            logger.log(' -------   End Yearly  (' + currentDateInt.toString() + ' ) Report  -------');
 
-        reportsElement.innerHTML += this.yearly.reportHTML(currentDateInt);
+            reportsElement.innerHTML += this.yearly.reportHTML(currentDateInt);
+
+        }
 
     }
 
@@ -1168,15 +1210,15 @@ class Portfolio {
 
         let assertion1 = this.sumDisplayData('displayValue');
         if (assertion1.amount == (this.total.selfIncome.amount + this.total.employedIncome.amount))
-            console.log('assert summed monthly income == total income is TRUE');
+            logger.log('assert summed monthly income == total income is TRUE');
         else
-            console.log('assert summed monthly income == total incomme is FALSE');
+            logger.log('assert summed monthly income == total incomme is FALSE');
         
         let assertion2 = this.sumDisplayData('displayEarning');
         if (assertion2.amount == this.total.ordinaryIncome.amount)
-            console.log('assert summed monthly earnings == total taxableIncome is TRUE');
+            logger.log('assert summed monthly earnings == total taxableIncome is TRUE');
         else
-            console.log('assert summed monthly earnings == total taxableIncome is FALSE');
+            logger.log('assert summed monthly earnings == total taxableIncome is FALSE');
 
     }
 

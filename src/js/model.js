@@ -192,12 +192,17 @@ class FundTransfer {
 
     }
 
+    copy() {
+        let fundTransfer = new FundTransfer(this.toDisplayName, this.moveOnFinishDate, this.moveValue);
+        return fundTransfer;
+    }
+
     bind(fromModel, models) {
 
         this.fromModel = fromModel;
         this.toModel = util_findModelAssetByDisplayName(models, this.toDisplayName);
         if (this.toModel == null) {
-            console.log('FundTransfer.bind: to model not found: ' + this.toDisplayName);
+            logger.log('FundTransfer.bind: to model not found: ' + this.toDisplayName);
         }
 
     }
@@ -205,7 +210,7 @@ class FundTransfer {
     calculate() {
         
         if (this.fromModel == null) {
-            console.log('FundTransfer.calculate: make sure to call bind() because from model not found: ' + this.fromDisplayName);
+            logger.log('FundTransfer.calculate: make sure to call bind() because from model not found: ' + this.fromDisplayName);
             return new Currency(0.0);
         }
 
@@ -214,7 +219,7 @@ class FundTransfer {
         amount = new Currency(this.fromModel.finishCurrency.amount * percentage);
         if (this.approvedAmount) {
             if (amount.amount > this.approvedAmount.amount) {
-                console.log('FundTransfer.calculate: reducing amount ' + amount.toString() + ' to approved amount: ' + this.approvedAmount.toString());
+                logger.log('FundTransfer.calculate: reducing amount ' + amount.toString() + ' to approved amount: ' + this.approvedAmount.toString());
                 amount = this.approvedAmount.copy();
             }
         }
@@ -226,17 +231,17 @@ class FundTransfer {
     execute() {
 
         if (this.fromModel == null) {
-            console.log('FundTransfer.execute: make sure to call bind() because from model not found: ' + this.fromDisplayName);
+            logger.log('FundTransfer.execute: make sure to call bind() because from model not found: ' + this.fromDisplayName);
             return;
         }
 
         if (this.toModel == null) {
-            console.log('FundTransfer.execute: make sure to call bind() because to model not found: ' + this.toDisplayName);
+            logger.log('FundTransfer.execute: make sure to call bind() because to model not found: ' + this.toDisplayName);
             return;
         }
 
         if (this.moveOnFinishDate && !this.fromModel.onFinishDate) {
-            console.log('FundTransfer.execute: moveOnFinishDate is true but fromModel not on finish date: ' + this.fromDisplayName);
+            logger.log('FundTransfer.execute: moveOnFinishDate is true but fromModel not on finish date: ' + this.fromDisplayName);
             return;            
         }
         
@@ -273,13 +278,16 @@ class ModelAsset {
     static parseJSON(jsonObject) {
         let instrument = jsonObject.instrument;
         let displayName = jsonObject.displayName;
-        let startDateInt = DateInt.parse(jsonObject['startDate']);
-        let startCurrency = Currency.parse(jsonObject['startValue']);
-        let basisCurrency = Currency.parse(jsonObject['basisValue']);
-        let finishDateInt = DateInt.parse(jsonObject['finishDate']);
-        let monthsRemaining = parseInt(jsonObject['monthsRemaining']);
-        let annualReturnRate = ARR.parse(jsonObject['annualReturnRate']);
-        let fundTransfers = jsonObject.fundTransfers;
+        let startDateInt = new DateInt(jsonObject.startDateInt.year * 100 + jsonObject.startDateInt.month);
+        let startCurrency = new Currency(jsonObject.startCurrency.amount);
+        let basisCurrency = new Currency(jsonObject.basisCurrency.amount);
+        let finishDateInt = new DateInt(jsonObject.finishDateInt.year * 100 + jsonObject.finishDateInt.month);
+        let monthsRemaining = jsonObject.monthsRemaining;
+        let annualReturnRate = new ARR(jsonObject.annualReturnRate.annualReturnRate);
+        let fundTransfers = [];
+        for (let ii = 0; ii < jsonObject.fundTransfers.length; ii++) {
+            fundTransfers.push(FundTransfer.parseJSON(jsonObject.fundTransfers[ii]));
+        }
         return new ModelAsset(instrument, displayName, startDateInt, startCurrency, basisCurrency, finishDateInt, monthsRemaining, annualReturnRate, fundTransfers);
     }
 
@@ -342,6 +350,22 @@ class ModelAsset {
         return sInstrumentSortOrder.indexOf(this.instrument);
     }
 
+    copy() {
+
+        // copy the fund transfers
+        let fundTransfers = [];
+        for (let fundTransfer of this.fundTransfers) {
+            fundTransfers.push(fundTransfer.copy());
+        }
+        let modelAsset = new ModelAsset(this.instrument, this.displayName, this.startDateInt, this.startCurrency, this.basisCurrency, this.finishDateInt, this.monthsRemaining, this.annualReturnRate, this.fundTransfers);
+        modelAsset.finishCurrency = this.finishCurrency.copy();
+        modelAsset.colorId = this.colorId;
+        modelAsset.fundTransfers = fundTransfers;
+
+        return modelAsset;
+
+    }
+
     // remember you cannot take both ira and 401K deduction
     takeIRATaxDeduction() {
         if (this.isIRA(this.instrument))
@@ -374,19 +398,126 @@ class ModelAsset {
             return false;
 
     }
+    
+    hasFundTransfer(displayName) {
+        for (let fundTransfer of this.fundTransfers) {
+            if (fundTransfer.toDisplayName == displayName)
+                return true;
+        }
+        return false;
+    }
+
+    bindFundTransfers(models) {
+
+        for (let fundTransfer of this.fundTransfers) {
+            fundTransfer.bind(this, models);
+        }
+
+    }
+
+    fundTransferMoveValueFor(displayName) {
+
+        let moveValue = 0.0;
+        for (let fundTransfer of this.fundTransfers) {
+            if (fundTransfer.toDisplayName == displayName) {
+                moveValue = fundTransfer.moveValue;
+                break;
+            }
+        }
+        return moveValue;
+
+    }
+
+    zeroFundTransfersMoveValues() {
+
+        for (let fundTransfer of this.fundTransfers) {
+            fundTransfer.moveValue = 0.0;
+        }
+
+    }
+
+    combinedFundTransfersMoveValue() {
+
+        let moveValue = 0.0;
+        for (let fundTransfer of this.fundTransfers) {
+            moveValue += fundTransfer.moveValue;
+        }
+        return moveValue;
+
+    }
+
+    updateFundTransfers(fundTransferStepping) {        
+
+        while (this.updateFundTransfer(0, fundTransferStepping)) {
+
+            if (this.combinedFundTransfersMoveValue() <= 100.0)
+                return true;
+
+        }
+
+        return false;
+
+    }
+
+    updateFundTransfer(index, fundTransferStepping) {
+
+        if (index >= this.fundTransfers.length)
+            return false;
+        else if (this.fundTransfers[index].moveOnFinishDate)
+            return false;
+
+        if (this.updateFundTransfer(index + 1, fundTransferStepping))
+            return true;
+        else {
+            if (this.fundTransfers[index].moveValue < 100.0) {
+                this.fundTransfers[index].moveValue += fundTransferStepping;
+                if (this.fundTransfers[index].moveValue >= 100.0)
+                    this.fundTransfers[index].moveValue = 100.0;                    
+                return true;
+            }
+            else {
+                this.fundTransfers[index].moveValue = 0.0;
+                return false;
+            }
+        }
+
+    }
+
+    dnaFundTransfers() {
+
+        let result = '';
+        for (let fundTransfer of this.fundTransfers) {
+            result += this.displayName + '=>' + fundTransfer.toDisplayName + ' (' + fundTransfer.moveOnFinishDate + ') ' + fundTransfer.moveValue + '%\n';
+        }
+        return result;
+
+    }
+
+    cagr() {
+
+        let years = this.monthlyValues.length / 12.0;        
+        let cagr = 0.0;
+        let step1 = (this.monthlyValues[0] / this.monthlyValues[this.monthlyValues.length - 1]);
+        let step2 = (1 / years);
+        let step3 = Math.pow(step1, step2) - 1;
+        cagr = parseFloat(step3.toFixed(4));
+        cagr *= 100.0;
+        return cagr;
+
+    }
 
     credit(currency) {
 
         if (isMonthlyIncome(this.instrument)) {
-            //console.log('credit: ' + this.displayName + ' ' + ' is monthly income so ignoring');
+            //logger.log('credit: ' + this.displayName + ' ' + ' is monthly income so ignoring');
             return new Currency(0.0);
         }
         else if (isMonthlyExpense(this.instrument)) {
-            //console.log('credit: ' + this.displayName + ' ' + ' is monthly expense so ignoring');
+            //logger.log('credit: ' + this.displayName + ' ' + ' is monthly expense so ignoring');
             return new Currency(0.0);
         }
 
-        console.log('credit: ' + this.displayName + ' ' + currency.toString());
+        logger.log('credit: ' + this.displayName + ' ' + currency.toString());
         this.creditCurrency.add(currency);        
 
         return this.reconcileCredit();
@@ -395,15 +526,15 @@ class ModelAsset {
     debit(currency) {
         
         if (isMonthlyIncome(this.instrument)) {
-            //console.log('debit: ' + this.displayName + ' ' + ' is monthly income so ignoring');
+            //logger.log('debit: ' + this.displayName + ' ' + ' is monthly income so ignoring');
             return new Currency(0.0);
         }
         else if (isMonthlyExpense(this.instrument)) {
-            //console.log('debit: ' + this.displayName + ' ' + ' is monthly expense so ignoring');
+            //logger.log('debit: ' + this.displayName + ' ' + ' is monthly expense so ignoring');
             return new Currency(0.0);
         }
 
-        console.log('debit: ' + this.displayName + ' ' + currency.toString());
+        logger.log('debit: ' + this.displayName + ' ' + currency.toString());
         this.creditCurrency.subtract(currency);
         
         return this.reconcileCredit();
@@ -417,7 +548,7 @@ class ModelAsset {
             let toDebit = this.creditCurrency.copy().flipSign();
             this.creditCurrency.zero();
 
-            console.log('ModelAsset.reconcileCredit: ' + this.displayName + ' will debit ' + toDebit.toString() + ' from asset value');
+            logger.log('ModelAsset.reconcileCredit: ' + this.displayName + ' will debit ' + toDebit.toString() + ' from asset value');
             this.finishCurrency.subtract(toDebit);            
 
             if (isTaxableAccount(this.instrument)) {
@@ -429,12 +560,12 @@ class ModelAsset {
                 else if (is401K(this.instrument))
                     this.addFour01KDistribution(toDebit);
                 else
-                    console.log('reconcileCredit: ERROR - cannot handle instrument ' + this.instrument);
+                    logger.log('reconcileCredit: ERROR - cannot handle instrument ' + this.instrument);
             }
             else if (isTaxFree(this.instrument)) {
             }
             else
-                console.log('reconcileCredit: unsupported asset type -- ' + this.displayName);
+                logger.log('reconcileCredit: unsupported asset type -- ' + this.displayName);
 
             return toDebit;
         }
@@ -614,7 +745,7 @@ class ModelAsset {
             this.finishCurrency.add(this.creditCurrency);
         }
         else if (this.creditCurrency.amount < 0.0) {
-            console.log('ModelAsset.monthlyChron: negative creditCurrency indicates credits where not properly reconciled');
+            logger.log('ModelAsset.monthlyChron: negative creditCurrency indicates credits where not properly reconciled');
         }
 
         this.monthlyCredits.push(this.creditCurrency.toCurrency());
@@ -648,7 +779,7 @@ class ModelAsset {
 
     addMonthlyShortTermCapitalGains(amount) {
 
-        console.log(this.displayName + ' add shortTermCapitalGains: ' + amount.toString());
+        logger.log(this.displayName + ' add shortTermCapitalGains: ' + amount.toString());
         this.shortTermCapitalGainCurrency.add(amount);
         this.incomeCurrency.add(amount);
         return this.shortTermCapitalGainCurrency.copy();
@@ -657,7 +788,7 @@ class ModelAsset {
 
     addMonthlyLongTermCapitalGains(amount) {
 
-        console.log(this.displayName + ' add longTermCapitalGains: ' + amount.toString());
+        logger.log(this.displayName + ' add longTermCapitalGains: ' + amount.toString());
         this.longTermCapitalGainCurrency.add(amount);
         return this.longTermCapitalGainCurrency.copy();
 
@@ -665,7 +796,7 @@ class ModelAsset {
 
     addMonthlySocialSecurity(amount) {
 
-        console.log(this.displayName + ' add socialSecurity: ' + amount.toString());
+        logger.log(this.displayName + ' add socialSecurity: ' + amount.toString());
         this.socialSecurityCurrency.add(amount);
         return this.socialSecurityCurrency.copy();
 
@@ -673,7 +804,7 @@ class ModelAsset {
 
     addMonthlyMedicare(amount) {
 
-        console.log(this.displayName + ' add medicare: ' + amount.toString());
+        logger.log(this.displayName + ' add medicare: ' + amount.toString());
         this.medicareCurrency.add(amount);  
         return this.medicareCurrency.copy;
 
@@ -681,7 +812,7 @@ class ModelAsset {
 
     addMonthlyIncomeTax(amount) {
 
-        console.log(this.displayName + ' add incomeTax: ' + amount.toString());
+        logger.log(this.displayName + ' add incomeTax: ' + amount.toString());
         this.incomeTaxCurrency.add(amount);
         return this.incomeTaxCurrency.copy();
 
@@ -689,7 +820,7 @@ class ModelAsset {
 
     addMonthlyMortgagePayment(amount) {
             
-        console.log(this.displayName + ' add mortgagePayment: ' + amount.toString());
+        logger.log(this.displayName + ' add mortgagePayment: ' + amount.toString());
         this.mortgagePaymentCurrency.add(amount);
         return this.mortgagePaymentCurrency.copy();
 
@@ -697,7 +828,7 @@ class ModelAsset {
 
     addMonthlyMortgageInterest(amount) {
             
-        console.log(this.displayName + ' add mortgageInterest: ' + amount.toString());
+        logger.log(this.displayName + ' add mortgageInterest: ' + amount.toString());
         this.mortgageInterestCurrency.add(amount);
         return this.mortgageInterestCurrency.copy();
 
@@ -705,7 +836,7 @@ class ModelAsset {
 
     addMonthlyMortgagePrincipal(amount) {
 
-        console.log(this.displayName + ' add mortgagePrincipal: ' + amount.toString());
+        logger.log(this.displayName + ' add mortgagePrincipal: ' + amount.toString());
         this.mortgagePrincipalCurrency.add(amount);
         return this.mortgagePrincipalCurrency.copy();
 
@@ -713,7 +844,7 @@ class ModelAsset {
 
     addMonthlyMortgageEscrow(amount) {
                 
-        console.log(this.displayName + ' add mortgageEscrow: ' + amount.toString());
+        logger.log(this.displayName + ' add mortgageEscrow: ' + amount.toString());
         this.mortgageEscrowCurrency.add(amount);
         return this.mortgageEscrowCurrency.copy();
 
@@ -721,7 +852,7 @@ class ModelAsset {
 
     addMonthlyRMD(amount) {
 
-        console.log(this.displayName + ' add RMD: ' + amount.toString());
+        logger.log(this.displayName + ' add RMD: ' + amount.toString());
         this.rmdCurrency.add(amount);
         return this.rmdCurrency.copy();
 
@@ -729,7 +860,7 @@ class ModelAsset {
 
     addMonthlyEstimatedTax(amount) {
 
-        console.log(this.displayName + ' add estimatedTax: ' + amount.toString());
+        logger.log(this.displayName + ' add estimatedTax: ' + amount.toString());
         this.estimatedTaxCurrency.add(amount);
         return this.estimatedTaxCurrency.copy();
 
@@ -737,7 +868,7 @@ class ModelAsset {
 
     addMonthlyAfterTax(amount) {
 
-        console.log(this.displayName + ' add afterTax: ' + amount.toString());
+        logger.log(this.displayName + ' add afterTax: ' + amount.toString());
         this.afterTaxCurrency.add(amount);
         return this.afterTaxCurrency.copy();
 
@@ -745,7 +876,7 @@ class ModelAsset {
 
     addMonthlyIncome(amount) {
             
-        console.log(this.displayName + ' add income: ' + amount.toString());
+        logger.log(this.displayName + ' add income: ' + amount.toString());
         this.incomeCurrency.add(amount);
         return this.incomeCurrency.copy();
 
@@ -753,7 +884,7 @@ class ModelAsset {
 
     addMonthlyInterestIncome(amount) {
 
-        console.log(this.displayName + ' add interest income: ' + amount.toString());
+        logger.log(this.displayName + ' add interest income: ' + amount.toString());
         this.incomeCurrency.add(amount);
         this.interestIncomeCurrency.add(amount);
         return this.incomeCurrency.copy();
@@ -762,7 +893,7 @@ class ModelAsset {
 
     addMonthlyEarning(amount) {
 
-        console.log(this.displayName + ' add earning: ' + amount.toString());
+        logger.log(this.displayName + ' add earning: ' + amount.toString());
         this.earningCurrency.add(amount);
         return this.earningCurrency.copy();
 
@@ -770,7 +901,7 @@ class ModelAsset {
 
 	addMonthlyValue(amount) {
 
-        console.log(this.displayName + ' add value: ' + amount.toString());
+        logger.log(this.displayName + ' add value: ' + amount.toString());
         this.finishCurrency.add(amount);
         return this.finishCurrency.copy();
 
@@ -778,7 +909,7 @@ class ModelAsset {
 
     addIRAContribution(amount) {
 
-        console.log(this.displayName + ' add iraContribution: ' + amount.toString());
+        logger.log(this.displayName + ' add iraContribution: ' + amount.toString());
         this.iraContributionCurrency.add(amount);
         return this.iraContributionCurrency.copy();
 
@@ -786,7 +917,7 @@ class ModelAsset {
 
     addFour01KContribution(amount) {
 
-        console.log(this.displayName + ' add 401KContribution: ' + amount.toString());
+        logger.log(this.displayName + ' add 401KContribution: ' + amount.toString());
         this.iraContributionCurrency.add(amount);
         return this.iraContributionCurrency.copy();
 
@@ -794,7 +925,7 @@ class ModelAsset {
 
     addIRADistribution(amount) {
 
-        console.log(this.displayName + ' add iraDistribution: ' + amount.toString());
+        logger.log(this.displayName + ' add iraDistribution: ' + amount.toString());
         this.iraDistributionCurrency.add(amount);
         return this.iraDistributionCurrency.copy();
 
@@ -802,7 +933,7 @@ class ModelAsset {
 
     addFour01KDistribution(amount) {
 
-        console.log(this.displayName + ' add 401KDistribution: ' + amount.toString());
+        logger.log(this.displayName + ' add 401KDistribution: ' + amount.toString());
         this.four01KDistributionCurrency.add(amount);
         return this.four01KDistributionCurrency.copy();
 
@@ -810,7 +941,7 @@ class ModelAsset {
 
     deductWithholding(withholding) {
         
-        console.log(this.displayName + ' deduct withholding');
+        logger.log(this.displayName + ' deduct withholding');
         this.afterTaxCurrency = this.earningCurrency.copy();
         
         this.addMonthlySocialSecurity(withholding.socialSecurity);
@@ -839,7 +970,7 @@ class ModelAsset {
         else if (isIncomeAccount(this.instrument))
             return this.applyMonthlyIncomeHoldings();
         else {
-            console.log('Model.applyMonthly: unsupported instrument ' + this.instrument);
+            logger.log('Model.applyMonthly: unsupported instrument ' + this.instrument);
             return null;
         }
 
@@ -848,7 +979,7 @@ class ModelAsset {
     applyMonthlyIncomeSalary() {
         
         if (!isMonthlyIncome(this.instrument)) {
-            console.log('Model.applyMonthlyIncome - model not income');
+            logger.log('Model.applyMonthlyIncome - model not income');
             return new Currency();
         }
 
@@ -857,7 +988,7 @@ class ModelAsset {
             this.finishCurrency.amount *= -1;
         }
 
-        console.log('monthly income: ' + this.displayName + ' ' + this.finishCurrency.toString());
+        logger.log('monthly income: ' + this.displayName + ' ' + this.finishCurrency.toString());
         this.earningCurrency = new Currency(this.finishCurrency.amount);
         this.incomeCurrency = new Currency(this.finishCurrency.amount);
 
@@ -871,7 +1002,7 @@ class ModelAsset {
     applyMonthlyIncomeHoldings() {
 
         if (!isIncomeAccount(this.instrument)) {
-            console.log('Model.applyMonthlyIncome - model not income');
+            logger.log('Model.applyMonthlyIncome - model not income');
             return new Currency();
         }
 
@@ -885,7 +1016,7 @@ class ModelAsset {
         this.incomeCurrency = this.earningCurrency.copy();
         this.finishCurrency.add(this.earningCurrency); 
 
-        console.log('monthly interest income: ' + this.displayName + ' ' + this.earningCurrency.toString());               
+        logger.log('monthly interest income: ' + this.displayName + ' ' + this.earningCurrency.toString());               
         
         return new InterestResult(this.incomeCurrency.copy());
         
@@ -894,7 +1025,7 @@ class ModelAsset {
     applyMonthlyExpense() {
         
         if (!isMonthlyExpense(this.instrument)) {
-            console.log('Model.applyMonth_expense - model not an expense');
+            logger.log('Model.applyMonth_expense - model not an expense');
             return new Currency();
         }
 
@@ -906,7 +1037,7 @@ class ModelAsset {
         this.earningCurrency = new Currency(this.finishCurrency.amount);        
         this.finishCurrency.multiply(1+this.annualReturnRate.asMonthly());
 
-        console.log('monthly expense: ' + this.displayName + ' inflation ' + this.finishCurrency.toString());
+        logger.log('monthly expense: ' + this.displayName + ' inflation ' + this.finishCurrency.toString());
 
         return new ExpenseResult(this.earningCurrency.copy(), this.finishCurrency.copy);
         
@@ -928,7 +1059,7 @@ class ModelAsset {
         let c = new Currency(monthlyMortgagePayment);
         this.earningCurrency = monthlyMortgagePrincipal.copy();
         this.earningCurrency.flipSign();                
-        console.log('mortgage payment: ' + this.displayName + ' ' + c.toString() + ', interest payment: ' + monthlyMortgageInterest.toString() + ' principal payment: ' + monthlyMortgagePrincipal.toString());
+        logger.log('mortgage payment: ' + this.displayName + ' ' + c.toString() + ', interest payment: ' + monthlyMortgageInterest.toString() + ' principal payment: ' + monthlyMortgagePrincipal.toString());
 
         this.finishCurrency.subtract(monthlyMortgagePrincipal);
         return new MortgageResult(monthlyMortgagePrincipal, monthlyMortgageInterest, new Currency());
@@ -938,7 +1069,7 @@ class ModelAsset {
     applyMonthlyCapital() {
 
         if (!isCapital(this.instrument)) {
-            console.log('Model.applyMonthlyCapital - model not capital');
+            logger.log('Model.applyMonthlyCapital - model not capital');
             return;
         }
 
@@ -947,7 +1078,7 @@ class ModelAsset {
             this.earningCurrency = new Currency(this.finishCurrency.amount - this.basisCurrency.amount);
             this.incomeCurrency = this.earningCurrency.copy();
             this.afterTaxCurrency = new Currency();
-            console.log('close capital account: ' + this.displayName + ' finishAmount: ' + this.finishCurrency.toString() + " total capitalGains: " + this.earningCurrency.toString());
+            logger.log('close capital account: ' + this.displayName + ' finishAmount: ' + this.finishCurrency.toString() + " total capitalGains: " + this.earningCurrency.toString());
 
         }
         else {
@@ -956,7 +1087,7 @@ class ModelAsset {
             this.earningCurrency = new Currency(this.finishCurrency.amount * this.annualReturnRate.asMonthly());
             this.afterTaxCurrency = new Currency(this.earningCurrency.amount);
             this.finishCurrency.add(this.earningCurrency);
-            console.log('monthly capital appreciation: ' + this.displayName + ' ' + this.earningCurrency.toString());
+            logger.log('monthly capital appreciation: ' + this.displayName + ' ' + this.earningCurrency.toString());
 
         }
 
@@ -1000,7 +1131,7 @@ class ModelAsset {
     close() {
 
         if (this.finishCurrency.amount != 0) {
-            console.log('Model.close: ' + this.displayName + ' finishCurrency: ' + this.finishCurrency.toString());
+            logger.log('Model.close: ' + this.displayName + ' finishCurrency: ' + this.finishCurrency.toString());
         }
         this.finishCurrency.zero();
 
@@ -1055,7 +1186,7 @@ class ModelAsset {
 
     isFinishDateInt(aDateInt) {
         if (aDateInt == null) {
-            console.log('model.isFinishDateInt passed null test');
+            logger.log('model.isFinishDateInt passed null test');
             return false;
         }
 

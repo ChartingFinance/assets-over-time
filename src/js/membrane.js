@@ -1,5 +1,5 @@
 function membrane_jsonObjectToModelAsset(jsonObject) {
-    var modelAsset = ModelAsset.parse(jsonObject);
+    var modelAsset = ModelAsset.parseJSON(jsonObject);
     return modelAsset;
 }
 
@@ -60,7 +60,7 @@ function membrane_htmlElementToAssetModel (assetElement) {
     return ModelAsset.parseHTML(inputElements, colorElement);
 }
 
-function membrane_htmlElementsToAssetModels () {
+function membrane_htmlElementsToAssetModels (assetsContainerElement) {
     var assetModels = [];
     const assetElements = assetsContainerElement.querySelectorAll('form');
     for (const assetElement of assetElements) {

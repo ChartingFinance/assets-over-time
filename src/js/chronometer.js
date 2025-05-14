@@ -1,18 +1,14 @@
-function chronometer_run(portfolio) {
+function chronometer_run(summaryContainerElement, portfolio) {
     
     if (portfolio.modelAssets == null || portfolio.modelAssets.length == 0) {
-        console.log('chronometer_run - no modelAssets');
+        logger.log('chronometer_run - no modelAssets');
         return;
     }
 
     if (portfolio.firstDateInt == null || portfolio.lastDateInt == null) {
-        console.log('chronometer_run - non firstDateInt or lastDateInt');
+        logger.log('chronometer_run - non firstDateInt or lastDateInt');
         return;
     }
-
-    summary_setStartDate(portfolio.firstDateInt);
-    summary_setStartValue(portfolio.startValue());  
-    summary_setFinishDate(portfolio.lastDateInt);
 
     let totalMonths = 0;    
 
@@ -39,10 +35,11 @@ function chronometer_run(portfolio) {
             activeTaxTable.yearlyChron(currentDateInt);
         }
 
-        summary_setFinishValue(portfolio.finishValue());
-        summary_setAccruedMonths(totalMonths);
-        summary_setAccumulatedValue(portfolio.accumulatedValue());
-        summary_computeCAGR();
+        portfolio.totalMonths = totalMonths;
+
+        if (summaryContainerElement)
+            buildSummary(summaryContainerElement, portfolio);
+
     }    
 
     portfolio.finalizeChron();
@@ -52,7 +49,7 @@ function chronometer_run(portfolio) {
 
 function chronometer_applyMonths(modelAssets) {
     if (modelAssets == null || modelAssets.length == 0) {
-        console.log('chronometer_applyMonths - no modelAssets');
+        logger.log('chronometer_applyMonths - no modelAssets');
         return;
     }    
 
@@ -98,10 +95,10 @@ function chronometer_applyMonth_accumulate(firstDateInt, lastDateInt, currentDat
 }
 
 function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, modelAssets, activeUser) {
-    console.log('chronometer_applyTaxesBeforeComputationsThisMonth');
+    logger.log('chronometer_applyTaxesBeforeComputationsThisMonth');
 
     if (!activeTaxTable) {
-        console.log('chronometer_applyTaxesBeforeComputationsThisMonth - activeTaxTable not set');
+        logger.log('chronometer_applyTaxesBeforeComputationsThisMonth - activeTaxTable not set');
         return;
     }
 
@@ -118,10 +115,10 @@ function chronometer_applyTaxesBeforeComputationsThisMonth(currentDateInt, model
 }
 
 function chronometer_applyTaxesAfterComputationsThisMonth(currentDateInt, modelAssets, activeUser) {
-    console.log('chronometer_applyTaxesAfterComputationsThisMonth');
+    logger.log('chronometer_applyTaxesAfterComputationsThisMonth');
 
     if (!activeTaxTable) {
-        console.log('chronometer_applyTaxesAfterComputationsThisMonth - activeTaxTable not set');
+        logger.log('chronometer_applyTaxesAfterComputationsThisMonth - activeTaxTable not set');
         return;
     }
 

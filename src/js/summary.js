@@ -1,69 +1,68 @@
-function summary_setStartDate(startDateInt) {
-    let summaryStartDateElement = document.getElementById("summaryStartDate");
+function summary_setStartDate(summaryContainerElement, startDateInt) {
+    let summaryStartDateElement = summaryContainerElement.querySelector('[name="startDate"]');
     if (startDateInt)
         summaryStartDateElement.value = startDateInt.toHTML();
     else
     summaryStartDateElement.value = '';
 }
 
-function summary_setStartValue(startCurrency) {
-    let summaryStartValueElement = document.getElementById("summaryStartValue");
+function summary_setStartValue(summaryContainerElement, startCurrency) {
+    let summaryStartValueElement = summaryContainerElement.querySelector('[name="startValue"]');
     if (startCurrency)
         summaryStartValueElement.value = startCurrency.toHTML();
     else
         summaryStartValueElement.value = '';
 }
 
-function summary_setFinishDate(finishDateInt) {
-    let summaryFinishDateElement = document.getElementById("summaryFinishDate");
+function summary_setFinishDate(summaryContainerElement, finishDateInt) {
+    let summaryFinishDateElement = summaryContainerElement.querySelector('[name="finishDate"]');
     if (finishDateInt)
         summaryFinishDateElement.value = finishDateInt.toHTML();
     else
         summaryFinishDateElement.value = '';
 }
 
-function summary_setAccruedMonths(accruedMonths) {
-    let summaryAccruedMonthsElement = document.getElementById("summaryAccruedMonths");
+function summary_setAccruedMonths(summaryContainerElement, accruedMonths) {
+    let summaryAccruedMonthsElement = summaryContainerElement.querySelector('[name="totalMonths"]');
     if (accruedMonths)
         summaryAccruedMonthsElement.value = accruedMonths.toString();
     else
         summaryAccruedMonthsElement.value = '';
 }
 
-function summary_setFinishValue(finishCurrency) {
-    let summaryFinishValueElement = document.getElementById("summaryFinishValue");
+function summary_setFinishValue(summaryContainerElement, finishCurrency) {
+    let summaryFinishValueElement = summaryContainerElement.querySelector('[name="finishValue"]');
     if (finishCurrency)
         summaryFinishValueElement.value = finishCurrency.toHTML();
     else
         summaryFinishValueElement.value = '';
 }
 
-function summary_setAccumulatedValue(accumulatedCurrency) {
-    let summaryAccumulatedValueElement = document.getElementById("summaryAccumulatedValue");
+function summary_setAccumulatedValue(summaryContainerElement, accumulatedCurrency) {
+    let summaryAccumulatedValueElement = summaryContainerElement.querySelector('[name="accumulatedValue"]');
     if (accumulatedCurrency) {
         summaryAccumulatedValueElement.value = accumulatedCurrency.toHTML();
     }
     else {
         summaryAccumulatedValueElement.value = '';
     }
-    summary_setBackgroundColor(accumulatedCurrency);
+    summary_setBackgroundColor(summaryContainerElement, accumulatedCurrency);
 }
 
-function summary_setBackgroundColor(accumulatedCurrency) {
-    let summaryFormElement = document.getElementById('rollup');
+function summary_setBackgroundColor(summaryContainerElement, accumulatedCurrency) {
     if (accumulatedCurrency && accumulatedCurrency.amount > 0)
-        summaryFormElement.style.backgroundColor = positiveBackgroundColor;
+        summaryContainerElement.style.backgroundColor = positiveBackgroundColor;
     else if (accumulatedCurrency && accumulatedCurrency.amount < 0)
-        summaryFormElement.style.backgroundColor = negativeBackgroundColor;
+        summaryContainerElement.style.backgroundColor = negativeBackgroundColor;
     else
-        summaryFormElement.style.backdropFilter = 'white';
+        summaryContainerElement.style.backdropFilter = 'white';
 }
 
-function summary_computeCAGR() {
-    let summaryStartDateElement = document.getElementById("summaryStartDate");
-    let summaryStartValueElement = document.getElementById("summaryStartValue");
-    let summaryFinishDateElement = document.getElementById("summaryFinishDate");
-    let summaryFinishValueElement = document.getElementById("summaryFinishValue");
+function summary_computeCAGR(summaryContainerElement) {
+    let summaryStartDateElement = summaryContainerElement.querySelector('[name="startDate"]');
+    let summaryStartValueElement = summaryContainerElement.querySelector('[name="startValue"]');
+    let summaryFinishDateElement = summaryContainerElement.querySelector('[name="finishDate"]');
+    let summaryFinishValueElement = summaryContainerElement.querySelector('[name="finishValue"]');
 
     let dateStart = DateInt.parse(summaryStartDateElement.value);
     let valueStart = Currency.parse(summaryStartValueElement.value);
@@ -73,7 +72,7 @@ function summary_computeCAGR() {
     let startYearMonth = dateStart.year + ((dateStart.month -1)/12);
     let finishYearMonth = dateFinish.year + ((dateFinish.month -1)/12);
     let years = finishYearMonth - startYearMonth;
-    let summaryAnnualReturnRateElement = document.getElementById("summaryAnnualReturnRate");
+    let summaryAnnualReturnRateElement = summaryContainerElement.querySelector('[name="annualReturnRate"]');
     let cagr = 0.0;
 
     let step1 = (valueFinish.toCurrency() / valueStart.toCurrency());
@@ -83,4 +82,17 @@ function summary_computeCAGR() {
     cagr *= 100.0;
     
     summaryAnnualReturnRateElement.value = cagr;
+}
+
+function buildSummary(summaryElement, portfolio) {
+        
+    summary_setStartDate(summaryElement, portfolio.firstDateInt);
+    summary_setStartValue(summaryElement, portfolio.startValue());  
+    summary_setFinishDate(summaryElement, portfolio.lastDateInt);
+    
+    summary_setFinishValue(summaryElement, portfolio.finishValue());
+    summary_setAccruedMonths(summaryElement, portfolio.totalMonths);
+    summary_setAccumulatedValue(summaryElement, portfolio.accumulatedValue());
+    summary_computeCAGR(summaryElement);        
+
 }

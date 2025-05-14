@@ -273,7 +273,7 @@ function util_lastDateInt(modelAssets) {
 
 function util_totalMonths(startDateInt, finishDateInt) {
     if (startDateInt == null || finishDateInt == null) {
-        console.log('util_totalMonths - startDateInt or finishDateInt is null');
+        logger.log('util_totalMonths - startDateInt or finishDateInt is null');
         return 0;
     }
 
@@ -287,7 +287,7 @@ function util_totalMonths(startDateInt, finishDateInt) {
 }
 
 function computeMonthsRemainingFromStartDateChange(finishDateValue, startDateValue) {
-    console.log('computecomputeMonthsRemainingFromFinishDateChange(' + startDateValue + ', ' + finishDateValue + ')');
+    logger.log('computecomputeMonthsRemainingFromFinishDateChange(' + startDateValue + ', ' + finishDateValue + ')');
     if (startDateValue == null || startDateValue.length < 10) // 10 characters in yyyy-MM-dd format
         startDateValue = new Date().toISOString();
     if (finishDateValue == null || finishDateValue.length < 10)
@@ -297,7 +297,7 @@ function computeMonthsRemainingFromStartDateChange(finishDateValue, startDateVal
 }
 
 function computeMonthsRemainingFromFinishDateChange(startDateValue, finishDateValue) {
-    console.log('computecomputeMonthsRemainingFromFinishDateChange(' + startDateValue + ', ' + finishDateValue + ')');
+    logger.log('computecomputeMonthsRemainingFromFinishDateChange(' + startDateValue + ', ' + finishDateValue + ')');
     if (startDateValue == null || startDateValue.length < 10) // 10 characters in yyyy-MM-dd format
         startDateValue = new Date().toISOString();
     if (finishDateValue == null || finishDateValue.length < 10)
@@ -318,7 +318,7 @@ function computeMonthsRemainingFromStartDateToFinishDate(startDateValue, finishD
 }
 
 function computeFinishDateFromMonthsRemainingChange(startDateValue, monthsRemainingValue) {
-    console.log('computeFinishDateFromMonthsRemainingChange(' + startDateValue + ', ' + monthsRemainingValue + ')');
+    logger.log('computeFinishDateFromMonthsRemainingChange(' + startDateValue + ', ' + monthsRemainingValue + ')');
     if (startDateValue == null || startDateValue.length < 10) // 10 characters in yyyy-MM-dd format
         startDateValue = new Date().toISOString();
     if (monthsRemainingValue == null || monthsRemainingValue < 0)
@@ -493,6 +493,12 @@ function isExpensableAsset(value) {
         return true;
     else if (value == sInstrumentNames[sInstrumentsIDs.taxableEquity])
         return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.four01K])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.ira])
+        return true;
+    else if (value == sInstrumentNames[sInstrumentsIDs.rothIRA])
+        return true;
     else
         return false;
 }
@@ -527,12 +533,12 @@ const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice
 const storyArcsKey = 'storyArcs';
 function util_buildStoryArcKey(storyArc, storyName) {
     if (!storyArc)
-        console.log('util_buildStoryArcKey - null storyArc');
+        logger.log('util_buildStoryArcKey - null storyArc');
     if (!storyName)
-        console.log('util_buildStoryArcKey - null storyName');
+        logger.log('util_buildStoryArcKey - null storyName');
 
     if (storyName == 'default') {
-        console.log('util_buildStoryArcKey - default passed to function. Did you call util_ensureStoryNames first?');
+        logger.log('util_buildStoryArcKey - default passed to function. Did you call util_ensureStoryNames first?');
         storyName = util_YYYYmm();
     }
 
@@ -582,9 +588,9 @@ function util_ensureStoryNames(storyArc, storyName) {
         // copy the most recent dataset, if available
         if (ii > 0) {
             let storyArcNameKey = util_buildStoryArcKey(storyArc, storyName)
-            console.log('util-ensureStoryNames - copy most recent dataset to ' + storyArcNameKey);
+            logger.log('util-ensureStoryNames - copy most recent dataset to ' + storyArcNameKey);
             let previousStoryArcNameKey = util_buildStoryArcKey(storyArc, storyNames[ii -1]);
-            console.log('util-ensureStoryNames - previous key to use ' + previousStoryArcNameKey);
+            logger.log('util-ensureStoryNames - previous key to use ' + previousStoryArcNameKey);
             let previousStoryArcNameData = localStorage.getItem(previousStoryArcNameKey);
             localStorage.setItem(storyArcNameKey, previousStoryArcNameData);
         }
