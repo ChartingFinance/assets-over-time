@@ -483,6 +483,23 @@ class ModelAsset {
 
     }
 
+    stochasticLimit() {
+
+        if (this.fundTransfers.length <= 1)
+            return;
+
+        let totalMoveValue = this.combinedFundTransfersMoveValue();
+        if (totalMoveValue <= 100.0)
+            return;
+
+        let scale = 100.0 / totalMoveValue;
+
+        for (let fundTransfer of this.fundTransfers) {
+            fundTransfer.moveValue *= scale;
+        }
+        
+    }
+
     dnaFundTransfers() {
 
         let result = '';

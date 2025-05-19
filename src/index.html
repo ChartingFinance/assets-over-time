@@ -208,7 +208,9 @@
                 <div style="width: 100%">
                 </div><br />
                 <h3>Goals</h3>
-                <button onclick="doMaximize()">Maximize</button>                
+                <button onclick="doMaximize()">Maximize</button>
+                <br />
+                <textarea id="permutations" style="height: 300px; width: 100%; overflow: auto;" placeholder="Funding transfer Combinations."></textarea>                
             </div>
             <div class="column middle">
                 <div style="text-align: center; clear: both">
@@ -296,7 +298,7 @@
             </div>
             <div style="float: left; width: 25%">
                 <div style="width: 100%; padding: 8px;">
-                    <div id="reports"></div>
+                    <div id="reports" style="height: 700px"></div>
                 </div>
             </div>
             <div class="column left">
@@ -713,15 +715,23 @@
                 if (window.Worker) {
                     let worker = new Worker('js/simulator.js');
                     worker.postMessage(modelAssets);
-                    worker.onmessage = function(event) {                        
-                        summaryContainerElement.classList.remove('highlight');
-                        let assetModels = membrane_jsonObjectsToModelAssets(event.data);
-                        let portfolio = new Portfolio(assetModels, false);
-                        chronometer_run(null, portfolio);
-                        assetsSimulatorElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
-                        removeRemoveButtons(assetsSimulatorElement);                        
-                        buildSummary(summaryContainerElement, portfolio);
-                        summaryContainerElement.classList.add('highlight');
+                    worker.onmessage = function(event) {
+                        let richMessage = event.data;
+                        if (richMessage.action == 'iteration') {
+                            let permutationTextBox = document.getElementById('permutations');
+                            permutationTextBox.value = richMessage.data;
+                        }   
+                        else if (richMessage.action == 'foundBetter') {
+                            summaryContainerElement.classList.remove('highlight');
+                            let assetModels = membrane_jsonObjectsToModelAssets(richMessage.data);
+                            let portfolio = new Portfolio(assetModels, false);
+                            chronometer_run(null, portfolio);
+                            assetsSimulatorElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
+                            removeRemoveButtons(assetsSimulatorElement);                        
+                            buildSummary(summaryContainerElement, portfolio);
+                            summaryContainerElement.classList.add('highlight');
+                        }                     
+                        
                     }
                 }
                 else {
