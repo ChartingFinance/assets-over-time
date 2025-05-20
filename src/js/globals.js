@@ -6,7 +6,7 @@ const global_default_filingAs = 'Single';
 
 const global_default_propertyTaxRate = 0.01;
 
-const global_default_propertyTaxDeductionMax = 10000.0;
+const global_default_propertyTaxDeductionMax = 20000.0;
 
 const global_default_user_startAge = 30;
 const gobal_default_user_retirementAge = 67;

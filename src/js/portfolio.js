@@ -937,10 +937,17 @@ class Portfolio {
 
     closeAsset(modelAsset) {
 
-        if (!isCapital(modelAsset.instrument)) 
-            return;
-    
         modelAsset.onFinishDate = true;
+        if (!isCapital(modelAsset.instrument)) {
+
+            if (isMortgage(modelAsset.instrument)) {
+                this.applyAssetCloseFundTransfers(modelAsset);    
+                modelAsset.close();
+            }
+
+            return;
+        }            
+    
         const amountToTransfer = new Currency(modelAsset.finishCurrency.amount);
         logger.log('close capital asset: ' + modelAsset.displayName + ' valued at ' + amountToTransfer.toString());    
 
@@ -987,8 +994,7 @@ class Portfolio {
 
     applyAssetCloseFundTransfers(modelAsset) {
 
-        if (!isCapital(modelAsset.instrument)) {
-            //logger.log('Portfolio.applyFirstDayOfMonthIncomeFundTransfers: ' + modelAsset.displayName + ' is not monthlyIncome');
+        if (!isCapital(modelAsset.instrument) && !isMortgage(modelAsset.instrument)) {
             return;                     
         }
 

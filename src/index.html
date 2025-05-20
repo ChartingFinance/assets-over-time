@@ -145,10 +145,10 @@
             <div class="column middle">
                 <div style="text-align: center; clear: both">
                     <a href="https://buymeacoffee.com/charting.finance" target="_blank">Buy me a Coffee</a><br /><br />
-                    <button onclick="calculate()" title="Incorporate any changes made to the financial cards and recalculate">Recalculate</button>
+                    <button onclick="calculate('assets')" title="Incorporate any changes made to the financial cards and recalculate">Recalculate Assets</button>
                 </div>
                 <br />
-                <div style="padding: 10px" class="scrollable-x" id="assets"></div>                
+                <div style="padding: 10px" class="scrollable-x selected-assets" id="assets"></div>                
             </div>
             <div class="column right" style="text-align: center">
                 <div style="width: 100%;">
@@ -214,6 +214,7 @@
             </div>
             <div class="column middle">
                 <div style="text-align: center; clear: both">
+                    <button onclick="calculate('simulator')" title="Incorporate any changes made to the simulated financial cards and recalculate">Recalculate Simulation</button>
                 </div>
                 <br />
                 <div style="padding: 10px" class="scrollable-x" id="assetsSimulator"></div>                
@@ -312,8 +313,14 @@
             var topRowContainerElement = document.getElementById('topRowContainer');
             var bottomRowElement = document.getElementById('bottomRowContainer');
             var assetElement = document.getElementById('asset');
+
             var assetsContainerElement = document.getElementById('assets');
             var assetsSimulatorElement = document.getElementById('assetsSimulator');
+            var activeAssetsElement = assetsContainerElement;
+
+            var assetsSummaryElement = document.getElementById('rollup1');
+            var assetsSimulatorSummaryElement = document.getElementById('rollup2');
+            var activeSummaryElement = assetsSummaryElement;
             
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
             var chartEarningsCanvas = document.getElementById('chartEarningsCanvas');
@@ -398,7 +405,7 @@
                     //gtag("event", "asset_add", null);                                    
                     assetsContainerElement.innerHTML += html_buildRemovableAssetElement(null, assetModel);
                    
-                    calculate();
+                    calculate('assets');
                 });
             }
 
@@ -434,7 +441,7 @@
                             removeContainerNode = removeContainerNode.parentNode;
                         assetsContainerElement.removeChild(removeContainerNode);
 
-                        calculate();
+                        calculate('assets');
                     }
 
                 });
@@ -576,7 +583,7 @@
                 let assetModelsRaw = util_loadLocalAssetModels(activeStoryArc, 'APlus');
                 let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
                 assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
-                calculate();
+                calculate('assets');
             }
 
             function bplus_click() {
@@ -588,11 +595,21 @@
                 let assetModelsRaw = util_loadLocalAssetModels(activeStoryArc, 'BPlus');
                 let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
                 assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
-                calculate();
+                calculate('assets');
             }
         </script>
         <script>
             <!-- charting -->
+
+            function updateActiveAssetsElement(assetsElement, summaryElement) {
+
+                assetsContainerElement.classList.remove('selected-assets');
+                assetsSimulatorElement.classList.remove('selected-assets');
+                assetsElement.classList.add('selected-assets');
+                activeAssetsElement = assetsElement;
+                activeSummaryElement = summaryElement;
+
+            }
 
             function ensureHighlightDisplayName() {
                 if (highlightDisplayName == null) {
@@ -613,9 +630,9 @@
          
             function updateCharts() {
 
-                let modelAssets = membrane_htmlElementsToAssetModels(assetsContainerElement);
+                let modelAssets = membrane_htmlElementsToAssetModels(activeAssetsElement);
                 let portfolio = new Portfolio(modelAssets);
-                chronometer_run(document.getElementById('rollup1'), portfolio);
+                chronometer_run(document.getElementById(activeSummaryElement), portfolio);
                 portfolio.buildChartingDisplayData();
                 ensureHighlightDisplayName();
                 charting_buildFromPortfolio(portfolio, false);
@@ -625,17 +642,26 @@
 
             }
 
-            function calculate() {
+            function calculate(target) {
                 reportsElement.innerHTML = '';
-                let modelAssets = membrane_htmlElementsToAssetModels(assetsContainerElement);
+                
+                if (target == 'assets')
+                    updateActiveAssetsElement(assetsContainerElement, assetsSummaryElement);
+                else if (target == 'simulator')
+                    updateActiveAssetsElement(assetsSimulatorElement, assetsSimulatorSummaryElement);
+
+                let modelAssets = membrane_htmlElementsToAssetModels(activeAssetsElement);
                 let portfolio = new Portfolio(modelAssets, true);
-                chronometer_run(document.getElementById('rollup1'), portfolio);
+                chronometer_run(activeSummaryElement, portfolio);
 
                 // unhook mouse events
                 clearMouseEvents();
 
                 // use the updated modelAssets to produce the updated html
-                assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
+                activeAssetsElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
+                if (activeAssetsElement == assetsSimulatorElement) {
+                    removeRemoveButtons(activeAssetsElement);
+                }
 
                 // hook mouse events
                 attachMouseEvents();
@@ -647,10 +673,13 @@
                 ensureHighlightDisplayName();
 
                 // then build the charts
-                charting_buildFromPortfolio(portfolio, true)
+                charting_buildFromPortfolio(portfolio, true);
                 innerCalculate();
 
-                saveLocalData();
+                if (activeAssetsElement == assetsContainerElement) {
+                    saveLocalData();
+                }
+                
             };
 
             function innerCalculate() {              
@@ -683,7 +712,7 @@
                 let assetModelsRaw = util_loadLocalAssetModels(activeStoryArc, activeStoryName);
                 let assetModels = membrane_rawDataToModelAssets(assetModelsRaw);
                 assetsContainerElement.innerHTML = membrane_modelAssetsToHTML(assetModels);
-                calculate();
+                calculate('assets');
             }
         </script>
         <script>
@@ -693,14 +722,16 @@
                 let showHideSimulatorButton = document.getElementById('showHideSimulator');
 
                 if (middleContainerElement.style.display == 'none') {
+                    updateActiveAssetsElement(assetsSimulatorElement, assetsSimulatorSummaryElement);
                     middleContainerElement.style.display = '';
                     showHideSimulatorButton.innerHTML = 'Hide Simulator';
                 }
                 else {
+                    updateActiveAssetsElement(assetsContainerElement, assetsSummaryElement);
                     middleContainerElement.style.display = 'none';
                     showHideSimulatorButton.innerHTML = 'Show Simulator';
                 }
-            }
+            }            
 
             function doMaximize() {
 
@@ -722,14 +753,16 @@
                             permutationTextBox.value = richMessage.data;
                         }   
                         else if (richMessage.action == 'foundBetter') {
-                            summaryContainerElement.classList.remove('highlight');
+                            
                             let assetModels = membrane_jsonObjectsToModelAssets(richMessage.data);
                             let portfolio = new Portfolio(assetModels, false);
                             chronometer_run(null, portfolio);
-                            assetsSimulatorElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);
-                            removeRemoveButtons(assetsSimulatorElement);                        
+                            assetsSimulatorElement.innerHTML = membrane_modelAssetsToHTML(portfolio.modelAssets);                                                    
                             buildSummary(summaryContainerElement, portfolio);
-                            summaryContainerElement.classList.add('highlight');
+                            updateActiveAssetsElement(assetsSimulatorElement, assetsSimulatorSummaryElement);
+                            //updateCharts();
+                            calculate('simulator');
+
                         }                     
                         
                     }

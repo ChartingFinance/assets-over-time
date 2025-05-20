@@ -129,6 +129,12 @@ div.scrollable-y > .fund-transfer {
     height: 130px;
 }
 
+.selected-assets {
+   
+    border: 3px solid yellow;
+
+}
+
 .highlight {
     background-color: #76ad76;
     animation: fadeHighlight 1s ease-in-out forwards;

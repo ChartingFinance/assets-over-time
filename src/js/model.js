@@ -1150,6 +1150,7 @@ class ModelAsset {
         if (this.finishCurrency.amount != 0) {
             logger.log('Model.close: ' + this.displayName + ' finishCurrency: ' + this.finishCurrency.toString());
         }
+        this.creditCurrency.zero();
         this.finishCurrency.zero();
 
     }
