@@ -152,7 +152,7 @@ class FinancialPackage {
 
     ordinaryIncome() {
 
-        let income = this.socialSecurity.copy();
+        let income = this.socialSecurity.copy().multiply(0.85); // maximum allowed for social security
         income.add(this.interestIncome);
         income.add(this.shortTermCapitalGains);
         income.add(this.iraDistribution);
@@ -263,37 +263,37 @@ class FinancialPackage {
 
     report() {
 
-        logger.log('income:                  ' + this.totalIncome().toString());
-        logger.log('  employedIncome:          ' + this.employedIncome.toString());
-        logger.log('  selfIncome:              ' + this.selfIncome.toString());
-        logger.log('  ordinaryIncome:          ' + this.ordinaryIncome().toString());
-        logger.log('    socialSecurity:          ' + this.socialSecurity.toString());
+        logger.log('income:                      ' + this.totalIncome().toString());
+        logger.log('  employedIncome:            ' + this.employedIncome.toString());
+        logger.log('  selfIncome:                ' + this.selfIncome.toString());
+        logger.log('  ordinaryIncome:            ' + this.ordinaryIncome().toString());
+        logger.log('    socialSecurity (taxed):  ' + this.socialSecurity.toString());
         logger.log('    iraDistribution:         ' + this.iraDistribution.toString());
         logger.log('    401KDistribution:        ' + this.four01KDistribution.toString());                       
         logger.log('    shortTermCapitalGains:   ' + this.shortTermCapitalGains.toString());
         logger.log('    interestIncome:          ' + this.interestIncome.toString());
         logger.log('    nonQualifiedDividends:   ' + this.nonQualifiedDividends.toString());        
-        logger.log('  longTermCapitalGains:    ' + this.longTermCapitalGains.toString());        
-        logger.log('  nonTaxableIncome:        ' + this.nontaxableIncome().toString());
+        logger.log('  longTermCapitalGains:      ' + this.longTermCapitalGains.toString());        
+        logger.log('  nonTaxableIncome:          ' + this.nontaxableIncome().toString());
         logger.log('    qualifiedDividends       ' + this.qualifiedDividends.toString());
-        logger.log('    rothDistribution:         ' + this.rothDistribution.toString());
-        logger.log('deductions:              ' + this.deductions().toString());
-        logger.log('  iraContribution:         ' + this.iraContribution.toString());
-        logger.log('  401KContribution:        ' + this.four01KContribution.toString());
-        logger.log('  mortgageInterest:        ' + this.mortgageInterest.toString());
-        logger.log('  propertyTaxes:           ' + this.deductiblePropertyTaxes().toString());
-        logger.log('taxes:                   ' + this.totalTaxes().toString());
-        logger.log('  fica:                    ' + this.fica.toString());
-        logger.log('  incomeTax:               ' + this.incomeTax.toString());
-        logger.log('  longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString());
-        logger.log('  propertyTaxes:           ' + this.propertyTaxes.toString());
-        logger.log('  estimatedTaxes:          ' + this.estimatedTaxes.toString());
-        logger.log('rothContribution:        ' + this.rothContribution.toString());
-        logger.log('assetAppreciation:       ' + this.assetAppreciation.toString());
-        logger.log('mortgagePrincipal:       ' + this.mortgagePrincipal.toString());        
-        logger.log('afterTaxIncome:          ' + this.afterTaxIncome().toString());
-        logger.log('effectTaxRate:           ' + this.effectiveTaxRate().toFixed(2));
-        logger.log('expenses:                ' + this.expense.toString());      
+        logger.log('    rothDistribution:        ' + this.rothDistribution.toString());
+        logger.log('deductions:                  ' + this.deductions().toString());
+        logger.log('  iraContribution:           ' + this.iraContribution.toString());
+        logger.log('  401KContribution:          ' + this.four01KContribution.toString());
+        logger.log('  mortgageInterest:          ' + this.mortgageInterest.toString());
+        logger.log('  propertyTaxes:             ' + this.deductiblePropertyTaxes().toString());
+        logger.log('taxes:                       ' + this.totalTaxes().toString());
+        logger.log('  fica:                      ' + this.fica.toString());
+        logger.log('  incomeTax:                 ' + this.incomeTax.toString());
+        logger.log('  longTermCapitalGainsTax:   ' + this.longTermCapitalGainsTax.toString());
+        logger.log('  propertyTaxes:             ' + this.propertyTaxes.toString());
+        logger.log('  estimatedTaxes:            ' + this.estimatedTaxes.toString());
+        logger.log('rothContribution:            ' + this.rothContribution.toString());
+        logger.log('assetAppreciation:           ' + this.assetAppreciation.toString());
+        logger.log('mortgagePrincipal:           ' + this.mortgagePrincipal.toString());        
+        logger.log('afterTaxIncome:              ' + this.afterTaxIncome().toString());
+        logger.log('effectTaxRate:               ' + this.effectiveTaxRate().toFixed(2));
+        logger.log('expenses:                    ' + this.expense.toString());      
     }
 
     reportHTML(currentDateInt) {
@@ -301,38 +301,38 @@ class FinancialPackage {
         let html = '<div>';
         html += ('<h3>' + currentDateInt.toString() + '</h3>');
         html += "<ul>";
-        html += '<li>income:                  ' + this.totalIncome().toString() + '<ul>';
-        html += '  <li>employedIncome:          ' + this.employedIncome.toString() + '</li>';
-        html += '  <li>selfIncome:              ' + this.selfIncome.toString() + '</li>';
-        html += '  <li>ordinaryIncome:          ' + this.ordinaryIncome().toString() + '<ul>';
+        html += '<li>income:                      ' + this.totalIncome().toString() + '<ul>';
+        html += '  <li>employedIncome:            ' + this.employedIncome.toString() + '</li>';
+        html += '  <li>selfIncome:                ' + this.selfIncome.toString() + '</li>';
+        html += '  <li>ordinaryIncome:            ' + this.ordinaryIncome().toString() + '<ul>';
         html += '    <li>socialSecurity:          ' + this.socialSecurity.toString() + '</li>';
         html += '    <li>iraDistribution:         ' + this.iraDistribution.toString() + '</li>';
         html += '    <li>401KDistribution:        ' + this.four01KDistribution.toString() + '</li>';                       
         html += '    <li>shortTermCapitalGains:   ' + this.shortTermCapitalGains.toString() + '</li>';
         html += '    <li>interestIncome:          ' + this.interestIncome.toString() + '</li>';
         html += '    <li>nonQualifiedDividends:   ' + this.nonQualifiedDividends.toString() + '</li></ul>';        
-        html += '  <li>longTermCapitalGains:    ' + this.longTermCapitalGains.toString() + '</li>';        
-        html += '  <li>nonTaxableIncome:        ' + this.nontaxableIncome().toString() + '<ul>';
+        html += '  <li>longTermCapitalGains:      ' + this.longTermCapitalGains.toString() + '</li>';        
+        html += '  <li>nonTaxableIncome:          ' + this.nontaxableIncome().toString() + '<ul>';
         html += '    <li>qualifiedDividends       ' + this.qualifiedDividends.toString() + '</li>';
-        html += '    <li>rothDistribution:         ' + this.rothDistribution.toString() + '</li></ul></ul>';
-        html += '<li>deductions:              ' + this.deductions().toString() + '<ul>';
-        html += '  <li>iraContribution:         ' + this.iraContribution.toString() + '</li>';
-        html += '  <li>401KContribution:        ' + this.four01KContribution.toString() + '</li>';
-        html += '  <li>mortgageInterest:        ' + this.mortgageInterest.toString() + '</li>';
-        html += '  <li>propertyTaxes:           ' + this.deductiblePropertyTaxes().toString() + '</li></ul>';
-        html += '<li>taxes:                   ' + this.totalTaxes().toString() + '<ul>';
-        html += '  <li>fica:                    ' + this.fica.toString() + '</li>';
-        html += '  <li>incomeTax:               ' + this.incomeTax.toString() + '</li>';
-        html += '  <li>longTermCapitalGainsTax: ' + this.longTermCapitalGainsTax.toString() + '</li>';
-        html += '  <li>propertyTaxes:           ' + this.propertyTaxes.toString() + '</li>';
-        html += '  <li>estimatedTaxes:          ' + this.estimatedTaxes.toString() + '</li></ul>';
-        html += '<li>rothContribution:        ' + this.rothContribution.toString() + '</li>';
-        html += '<li>assetAppreciation:       ' + this.assetAppreciation.toString() + '</li>';
-        html += '<li>mortgagePrincipal:       ' + this.mortgagePrincipal.toString() + '</li>';        
-        html += '<li>afterTaxIncome:          ' + this.afterTaxIncome().toString() + '</li>';
-        html += '<li>effectiveTaxRate:        ' + this.effectiveTaxRate().toFixed(2) + '</li>';
-        html += '<li>expenses:                ' + this.expense.toString() + '</li>'; 
-        html += "</ul>";
+        html += '    <li>rothDistribution:        ' + this.rothDistribution.toString() + '</li></ul></ul>';
+        html += '<li>deductions:                  ' + this.deductions().toString() + '<ul>';
+        html += '  <li>iraContribution:           ' + this.iraContribution.toString() + '</li>';
+        html += '  <li>401KContribution:          ' + this.four01KContribution.toString() + '</li>';
+        html += '  <li>mortgageInterest:          ' + this.mortgageInterest.toString() + '</li>';
+        html += '  <li>propertyTaxes:             ' + this.deductiblePropertyTaxes().toString() + '</li></ul>';
+        html += '<li>taxes:                       ' + this.totalTaxes().toString() + '<ul>';
+        html += '  <li>fica:                      ' + this.fica.toString() + '</li>';
+        html += '  <li>incomeTax:                 ' + this.incomeTax.toString() + '</li>';
+        html += '  <li>longTermCapitalGainsTax:   ' + this.longTermCapitalGainsTax.toString() + '</li>';
+        html += '  <li>propertyTaxes:             ' + this.propertyTaxes.toString() + '</li>';
+        html += '  <li>estimatedTaxes:            ' + this.estimatedTaxes.toString() + '</li></ul>';
+        html += '<li>rothContribution:            ' + this.rothContribution.toString() + '</li>';
+        html += '<li>assetAppreciation:           ' + this.assetAppreciation.toString() + '</li>';
+        html += '<li>mortgagePrincipal:           ' + this.mortgagePrincipal.toString() + '</li>';        
+        html += '<li>afterTaxIncome:              ' + this.afterTaxIncome().toString() + '</li>';
+        html += '<li>effectiveTaxRate:            ' + this.effectiveTaxRate().toFixed(2) + '</li>';
+        html += '<li>expenses:                    ' + this.expense.toString() + '</li>'; 
+        html += '</ul>';
         html += '</div>';
 
         return html;
@@ -629,7 +629,7 @@ class Portfolio {
 
             let taxableIncome = modelAsset.incomeCurrency.copy();
             if (isSocialSecurity(modelAsset.instrument)) {
-                taxableIncome.multiply(0.85); // maximum allowed for social security
+                //taxableIncome.multiply(0.85); // maximum allowed for social security
                 this.monthly.socialSecurity.add(taxableIncome);
             }
             else if (modelAsset.isSelfEmployed)
