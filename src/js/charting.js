@@ -65,6 +65,8 @@ var charting_jsonAssetsChartData = null;
 var charting_jsonEarningsChartData = null;
 var charting_jsonCashFlowChartData = null;
 
+var charting_jsonEarningsChartDataIndividual = null;
+
 function charting_buildDisplayLabels(firstDateInt, lastDateInt) {
   let monthsSpan = MonthsSpan.build(firstDateInt, lastDateInt);
   let runnerDateInt = new DateInt(firstDateInt.toInt());
@@ -271,6 +273,54 @@ function charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt,
   return chartingEarningsConfig;
 }
 
+function charting_buildDisplayEarningsFromModelAsset(firstDateInt, lastDateInt, modelAsset, buildNewDataSet) {
+  if (firstDateInt == null) {
+    logger.log('charting_buildDisplayEarningsFromModelAssets - null firstDateInt provided');
+    return null;
+  }  
+  else if (lastDateInt == null) {
+    logger.log('charting_buildDisplayEarningsFromModelAssets - null lastDateInt provided');
+    return null;
+  }
+  
+  let chartingEarningsConfig = null;
+  let chartingEarningsData = null;
+
+  if (!buildNewDataSet && charting_jsonEarningsChartDataIndividual == null) {
+    logger.log('charting_buildDisplayEarningsFromModelAsset - attempting to reuse null charting_jsonEarningsChartDataIndividual. Building new data set.');
+    buildNewDataSet = true;
+  }
+
+  if (buildNewDataSet) {
+    chartingEarningsConfig = JSON.parse(JSON.stringify(lineChartConfig));    
+    chartingEarningsData = JSON.parse(JSON.stringify(lineChartData));
+    let labels = charting_buildDisplayLabels(firstDateInt, lastDateInt);
+    chartingEarningsData.labels = labels;  
+  }
+  else {
+    chartingEarningsConfig = charting_jsonEarningsChartData;
+    chartingEarningsData = chartingEarningsConfig.data;
+  }
+  
+  let chartingEarningsDataSet = null;
+    
+  if (buildNewDataSet) {
+    chartingEarningsDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
+    chartingEarningsDataSet.label = modelAsset.displayName;
+    chartingEarningsDataSet.data = modelAsset.displayEarningData;
+  }
+  else
+    chartingEarningsDataSet = chartingEarningsData.datasets[dataIndex];
+
+  chartingEarningsDataSet.backgroundColor = colorRange[modelAsset.colorId];
+
+  if (buildNewDataSet)
+    chartingEarningsData.datasets.push(chartingEarningsDataSet);  
+
+  chartingEarningsConfig.data = chartingEarningsData;
+  return chartingEarningsConfig;
+}
+
 function charting_buildCashFlowDataSet(modelAssets, label, sign) {
   let cashFlowDataSet = JSON.parse(JSON.stringify(lineChartDataSet));
   cashFlowDataSet.label = label;
@@ -398,4 +448,11 @@ function charting_buildFromPortfolio(portfolio, buildNewDataSet) {
     charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromPortfolio(portfolio, buildNewDataSet);
 
   }
+}
+
+function charting_buildFromModelAsset(portfolio, modelDisplayName) {
+
+    let modelAsset = util_findModelAssetByDisplayName(portfolio.modelAssets, modelDisplayName);
+    charting_jsonEarningsChartDataIndividual = charting_buildDisplayEarningsFromModelAsset(portfolio.firstDateInt, portfolio.lastDateInt, modelAsset, true);
+
 }

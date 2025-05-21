@@ -268,9 +268,9 @@ const htmlTransferAsset =
 
 function html_applyModelAssetToPopupTransfers(modelAsset, popupFormsTransfersElement) {
     popupFormsTransfersElement.querySelector('#popupFormTransfers-title').innerHTML = modelAsset.displayName;
-    popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyEarning').value = modelAsset.monthlyEarnings[0];
-    popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyAfterTax').value = modelAsset.monthlyAfterTaxes[0];
-    popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyCredits').value = modelAsset.monthlyCredits[0];
+    //popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyEarning').value = modelAsset.monthlyEarnings[0];
+    //popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyAfterTax').value = modelAsset.monthlyAfterTaxes[0];
+    //popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyCredits').value = modelAsset.monthlyCredits[0];
     //popupFormsTransfersElement.querySelector('#popupFormTransfers-monthlyDebits').value = modelAsset.monthlyDebits[0];
 }
 

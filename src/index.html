@@ -57,25 +57,9 @@
                 <span class="closeBtn" style="width: 100%; text-align: right;">&times;</span>  
                 <div style="float: left; width: 50%">             
                     <h3 id="popupFormTransfers-title"></h3>
+                    <br /><br />
                     <div class="width-full" style="padding-top: 10px;">                        
-                        <div style="float: left; width: 45%; padding: 5px;">
-                            <label for="popupFormTransfers-monthlyEarning">Monthly Earning</label><br />
-                            <input type="number" class="width-full" id="popupFormTransfers-monthlyEarning" step="0.01" readonly />
-                        </div>
-                        <div style="float: left; width: 45%; padding: 5px">
-                            <label for="monthlyAfterTax">Monthly After Tax</label><br />
-                            <input type="number" class="width-full" id="popupFormTransfers-monthlyAfterTax" step="0.01" readonly />
-                        </div>
-                    </div>
-                    <div class="width-full" style="padding-top: 10px;">
-                        <div style="float: left; width: 45%; padding: 5px;">
-                            <label for="popupFormTransfers-monthlyCredits">Monthly Credits</label><br />
-                            <input type="number" class="width-full" id="popupFormTransfers-monthlyCredits" step="0.01" readonly />
-                        </div>
-                        <div style="float: left; width: 45%; padding: 5px">
-                            <label for="popformTransfers-monthlyDebits">Monthly Debits</label><br />
-                            <input type="number" class="width-full" id="popupFormTransfers-monthlyDebits" step="0.01" readonly />
-                        </div>
+                        <canvas id="chartEarningsCanvasIndividual"></canvas>
                     </div>
                 </div>
                 <div style="float: left; width: 50%">
@@ -325,12 +309,14 @@
             var chartAssetCanvas = document.getElementById('chartAssetCanvas');
             var chartEarningsCanvas = document.getElementById('chartEarningsCanvas');
             var chartCashFlowCanvas = document.getElementById('chartCashFlowCanvas');
+            var chartEarningsCanvasIndividual = document.getElementById('chartEarningsCanvasIndividual');
             var reportsElement = document.getElementById('reports');
             var activeStoryArc = null;
             var activeStoryName = null;
             var activeAssetCanvas = null;
             var activeEarningsCanvas = null;
             var activeCashFlowCanvas = null;
+            var activeEarningsCanvasIndividual = null;
 
             var highlightDisplayName = null;
         </script>
@@ -821,11 +807,18 @@
                 let modelAssets = membrane_htmlElementsToAssetModels(containerElement);                
                 let portfolio = new Portfolio(modelAssets, false);
                 chronometer_run(null, portfolio);
+                portfolio.buildChartingDisplayData();
 
                 html_applyModelAssetToPopupTransfers(util_findModelAssetByDisplayName(portfolio.modelAssets, currentDisplayName), popupFormTransfersElement);
                 scrollableYElement.innerHTML = html_buildTransferrableAssets(portfolio.modelAssets, currentDisplayName);
+                charting_buildFromModelAsset(portfolio, currentDisplayName);
+                if (activeEarningsCanvasIndividual != null)
+                    activeEarningsCanvasIndividual.destroy();
 
                 popupFormTransfersElement.style.display = 'block';
+
+                if (charting_jsonEarningsChartDataIndividual != null)
+                    activeEarningsCanvasIndividual = new Chart(chartEarningsCanvasIndividual, charting_jsonEarningsChartDataIndividual);
 
             }
 

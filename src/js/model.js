@@ -214,6 +214,16 @@ class FundTransfer {
             return new Currency(0.0);
         }
 
+        if (this.toModel == null) {
+            logger.log('FundTransfer.calculate: make sure to call bind() because to model not found: ' + this.toDisplayName);
+            return new Currency(0.0);
+        }
+
+        if (this.toModel.isClosed) {
+            logger.log('FundTransfer.calculate: to model is closed: ' + this.toDisplayName);
+            return new Currency(0.0);
+        }
+
         let amount = null;
         let percentage = this.moveValue / 100.0;
         amount = new Currency(this.fromModel.finishCurrency.amount * percentage);
@@ -1152,6 +1162,7 @@ class ModelAsset {
         }
         this.creditCurrency.zero();
         this.finishCurrency.zero();
+        this.isClosed = true;
 
     }
 
