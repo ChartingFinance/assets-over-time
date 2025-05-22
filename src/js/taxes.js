@@ -177,7 +177,8 @@ class TaxTable {
         for (let taxTable of taxTables) {
             for (let taxRow of taxTable.taxRows) {
                 taxRow.fromAmount *= (1.0 + global_inflationRate);
-                taxRow.toAmount *= (1.0 + global_inflationRate);
+                if (taxRow.toAmount != -1.0)
+                    taxRow.toAmount *= (1.0 + global_inflationRate);
             }
         }
     }
