@@ -808,10 +808,11 @@
                 let portfolio = new Portfolio(modelAssets, false);
                 chronometer_run(null, portfolio);
                 portfolio.buildChartingDisplayData();
+                charting_buildFromModelAsset(portfolio, currentDisplayName);
 
                 html_applyModelAssetToPopupTransfers(util_findModelAssetByDisplayName(portfolio.modelAssets, currentDisplayName), popupFormTransfersElement);
                 scrollableYElement.innerHTML = html_buildTransferrableAssets(portfolio.modelAssets, currentDisplayName);
-                charting_buildFromModelAsset(portfolio, currentDisplayName);
+                
                 if (activeEarningsCanvasIndividual != null)
                     activeEarningsCanvasIndividual.destroy();
 

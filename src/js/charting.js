@@ -118,6 +118,14 @@ function charting_buildDisplayLabels(firstDateInt, lastDateInt) {
   return labels;
 }
 
+function setModelAssetColorIds(modelAssets) {
+    let colorId = -1;
+    for (let modelAsset of modelAssets) {
+        ++colorId;
+        modelAsset.colorId = colorId;
+    }
+}
+
 // The reduction keeps the modelAssets positionally in the array. This is so the colorId value is consistent across chart views.
 function charting_reducedModelAssetsForAssets(modelAssets) {
   let results = [];
@@ -152,16 +160,14 @@ function charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet) {
     chartingAssetData = chartingAssetConfig.data;    
   }
 
-  let reducedModelAssets = charting_reducedModelAssetsForAssets(portfolio.modelAssets);
-  let colorId = -1;
+  let reducedModelAssets = charting_reducedModelAssetsForAssets(portfolio.modelAssets);  
   let dataIndex = -1;
 
   for (const modelAsset of reducedModelAssets) {
-    ++colorId;
+    
     if (modelAsset == null)
         continue;
-    else
-      modelAsset.colorId = colorId;
+
     ++dataIndex;
 
     let chartingAssetDataSet = null;
@@ -234,15 +240,13 @@ function charting_buildDisplayEarningsFromModelAssets(firstDateInt, lastDateInt,
   }
   
   let reducedModelAssets = charting_reducedModelAssetsForEarnings(modelAssets);
-  let colorId = -1;
   let dataIndex = -1;
 
   for (const modelAsset of reducedModelAssets) {
-    ++colorId;
+    
     if (modelAsset == null)
       continue;
-    else
-      modelAsset.colorId = colorId;
+
     ++dataIndex;
 
     let chartingEarningsDataSet = null;
@@ -443,6 +447,7 @@ function charting_buildFromPortfolio(portfolio, buildNewDataSet) {
   }
   else {
 
+    setModelAssetColorIds(portfolio.modelAssets);
     charting_jsonAssetsChartData = charting_buildDisplayAssetsFromPortfolio(portfolio, buildNewDataSet);
     charting_jsonEarningsChartData = charting_buildDisplayEarningsFromModelAssets(portfolio.firstDateInt, portfolio.lastDateInt, portfolio.modelAssets, buildNewDataSet);
     charting_jsonCashFlowChartData = charting_buildDisplayCashFlowFromPortfolio(portfolio, buildNewDataSet);
@@ -452,6 +457,7 @@ function charting_buildFromPortfolio(portfolio, buildNewDataSet) {
 
 function charting_buildFromModelAsset(portfolio, modelDisplayName) {
 
+    setModelAssetColorIds(portfolio.modelAssets);
     let modelAsset = util_findModelAssetByDisplayName(portfolio.modelAssets, modelDisplayName);
     charting_jsonEarningsChartDataIndividual = charting_buildDisplayEarningsFromModelAsset(portfolio.firstDateInt, portfolio.lastDateInt, modelAsset, true);
 
